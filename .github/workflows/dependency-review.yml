@@ -1,0 +1,23 @@
+name: Dependency Review
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  dependency-review:
+    name: Review dependency changes
+    # Advanced Security is required for dependency review on private repos.
+    # Gate on public visibility — flip will Just Work when repo goes public.
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+      - name: Run dependency review
+        uses: actions/dependency-review-action@595b5aeba73380359d98a5e087f648dbb0edce1b  # v4.7.3
+        with:
+          fail-on-severity: high

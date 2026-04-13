@@ -1,0 +1,22 @@
+name: yamllint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  yamllint:
+    name: Lint YAML
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+      - name: Run yamllint
+        uses: ibiqlik/action-yamllint@ae1abb2821b567e96742aa776f7b62c9b6a26bc8  # v3
+        with:
+          config_file: .yamllint.yaml
+          strict: true

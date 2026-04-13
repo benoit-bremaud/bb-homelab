@@ -1,0 +1,39 @@
+name: hadolint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  hadolint:
+    name: Lint Dockerfiles
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+      - name: Detect Dockerfiles
+        id: detect
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(find . -type f \
+            \( -name 'Dockerfile' -o -name '*.Dockerfile' \) \
+            -not -path './.git/*' \
+            -not -path './node_modules/*')
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "found=false" >>"$GITHUB_OUTPUT"
+            echo "No Dockerfiles found — skipping hadolint."
+          else
+            echo "found=true" >>"$GITHUB_OUTPUT"
+            printf 'Found %d Dockerfile(s):\n' "${#files[@]}"
+            printf '  %s\n' "${files[@]}"
+          fi
+      - name: Run hadolint
+        if: steps.detect.outputs.found == 'true'
+        uses: hadolint/hadolint-action@54c9adbab1582c2ef04b2016b760714a4bfde3cf  # v3.1.0
+        with:
+          recursive: true
+          failure-threshold: warning
