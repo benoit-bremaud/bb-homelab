@@ -22,8 +22,8 @@ your tailnet.
 
 ## Install Tailscale on your own devices
 
-You (and anyone you invite) needs Tailscale installed on each device
-they will use to reach the Pi:
+You (and anyone you invite) need Tailscale installed on each device
+that will be used to reach the Pi:
 
 - Desktop / laptop (Linux, macOS, Windows): <https://tailscale.com/download>
 - iOS / Android: App Store / Play Store, search "Tailscale"

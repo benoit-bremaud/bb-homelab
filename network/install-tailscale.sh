@@ -35,33 +35,87 @@ require_root() {
 
 # --- Steps -------------------------------------------------------------------
 
+preflight_curl() {
+  if ! command -v curl >/dev/null 2>&1; then
+    die "curl is required but not installed. Run 'sudo apt-get install -y curl ca-certificates' (or run bootstrap.sh first), then re-run this script."
+  fi
+}
+
+# resolve_distro_and_codename — sets DISTRO + CODENAME to values
+# accepted by pkgs.tailscale.com. Dies with a clear message if the
+# host's distro can't be mapped.
+DISTRO=""
+CODENAME=""
+resolve_distro_and_codename() {
+  if [ ! -f /etc/os-release ]; then
+    die "/etc/os-release not found — cannot determine distro for Tailscale repo URL."
+  fi
+  # shellcheck disable=SC1091
+  . /etc/os-release
+
+  case "$ID" in
+    ubuntu)   DISTRO="ubuntu" ;;
+    raspbian) DISTRO="raspbian" ;;
+    debian)   DISTRO="debian" ;;
+    *)
+      die "Unsupported distro ID='$ID' (PRETTY_NAME='${PRETTY_NAME:-?}'). Tailscale's apt repo is published for debian / raspbian / ubuntu. Install manually from https://tailscale.com/download/linux for any other system."
+      ;;
+  esac
+
+  # VERSION_CODENAME is the canonical field; some derivatives leave it
+  # empty and expose UBUNTU_CODENAME instead.
+  CODENAME="${VERSION_CODENAME:-${UBUNTU_CODENAME:-}}"
+  if [ -z "$CODENAME" ] && command -v lsb_release >/dev/null 2>&1; then
+    CODENAME="$(lsb_release -cs 2>/dev/null || true)"
+  fi
+  if [ -z "$CODENAME" ]; then
+    die "Could not determine the distro codename (VERSION_CODENAME / UBUNTU_CODENAME / lsb_release -cs all empty). Tailscale apt URL would 404."
+  fi
+}
+
 step_install_tailscale() {
   if command -v tailscale >/dev/null 2>&1; then
     log "Tailscale already installed ($(tailscale version | head -1)). Skipping install."
     return
   fi
 
-  log "Installing Tailscale via the official signed apt repository…"
-  # shellcheck disable=SC1091
-  . /etc/os-release
-  # Tailscale publishes separate repo paths per distro.
-  local distro
-  case "$ID" in
-    ubuntu)              distro="ubuntu" ;;
-    raspbian)            distro="raspbian" ;;
-    debian|*)            distro="debian" ;;
-  esac
+  preflight_curl
+  resolve_distro_and_codename
 
+  log "Installing Tailscale via the official signed apt repository (${DISTRO} / ${CODENAME})…"
   install -m 0755 -d /usr/share/keyrings
-  curl -fsSL "https://pkgs.tailscale.com/stable/${distro}/${VERSION_CODENAME}.noarmor.gpg" \
+  curl -fsSL "https://pkgs.tailscale.com/stable/${DISTRO}/${CODENAME}.noarmor.gpg" \
     -o /usr/share/keyrings/tailscale-archive-keyring.gpg
-  curl -fsSL "https://pkgs.tailscale.com/stable/${distro}/${VERSION_CODENAME}.tailscale-keyring.list" \
+  curl -fsSL "https://pkgs.tailscale.com/stable/${DISTRO}/${CODENAME}.tailscale-keyring.list" \
     -o /etc/apt/sources.list.d/tailscale.list
+
+  # Make both files world-readable so the unprivileged `_apt` user can
+  # access them during `apt-get update`. Without this, a restrictive
+  # root umask leaves the keyring at 0600 and apt fails verification.
+  chmod 0644 /usr/share/keyrings/tailscale-archive-keyring.gpg
+  chmod 0644 /etc/apt/sources.list.d/tailscale.list
 
   apt-get update -qq
   DEBIAN_FRONTEND=noninteractive apt-get install -yqq tailscale
 
   log "Tailscale installed: $(tailscale version | head -1)"
+}
+
+step_ensure_tailscaled_running() {
+  # `tailscale status` / `tailscale up` need tailscaled. The package
+  # post-install enables the unit on systemd hosts but it may have
+  # been stopped/disabled, or we may be on a non-systemd host.
+  if [ -d /run/systemd/system ]; then
+    if ! systemctl is-active --quiet tailscaled; then
+      log "Starting tailscaled service…"
+      systemctl enable --now tailscaled
+    fi
+  else
+    if ! service tailscaled status >/dev/null 2>&1; then
+      log "Starting tailscaled service (non-systemd)…"
+      service tailscaled start
+    fi
+  fi
 }
 
 step_connect_tailscale() {
@@ -104,6 +158,7 @@ step_show_connection_info() {
 main() {
   require_root
   step_install_tailscale
+  step_ensure_tailscaled_running
   step_connect_tailscale
   step_show_connection_info
 }
