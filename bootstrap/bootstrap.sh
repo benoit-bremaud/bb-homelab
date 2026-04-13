@@ -87,15 +87,29 @@ step_install_docker() {
     return
   fi
 
-  log "Installing Docker via the official convenience script…"
-  local script
-  script="$(mktemp)"
-  curl -fsSL https://get.docker.com -o "$script"
-  # We deliberately pin nothing here: the official script tracks the
-  # current Docker stable release and is reviewed by the user via the
-  # README before running.
-  sh "$script"
-  rm -f "$script"
+  log "Installing Docker via the official apt repository (GPG-verified)…"
+  # GPG-verified apt repo install — the upstream get.docker.com pipe is
+  # convenient but executes unverified shell as root. apt + signed
+  # repository gives us integrity verification on every install/update.
+  install -m 0755 -d /etc/apt/keyrings
+  curl -fsSL https://download.docker.com/linux/debian/gpg \
+    -o /etc/apt/keyrings/docker.asc
+  chmod a+r /etc/apt/keyrings/docker.asc
+
+  # shellcheck disable=SC1091
+  . /etc/os-release
+  # On Raspberry Pi OS (ID=raspbian, ID_LIKE=debian) Docker publishes
+  # packages under the "debian" path with the matching codename.
+  local arch
+  arch="$(dpkg --print-architecture)"
+  echo "deb [arch=${arch} signed-by=/etc/apt/keyrings/docker.asc] \
+https://download.docker.com/linux/debian ${VERSION_CODENAME} stable" \
+    >/etc/apt/sources.list.d/docker.list
+
+  apt-get update -qq
+  DEBIAN_FRONTEND=noninteractive apt-get install -yqq \
+    docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
   log "Docker installed: $(docker --version)"
   log "Compose plugin: $(docker compose version)"
 }
@@ -151,26 +165,57 @@ step_configure_swap() {
 }
 
 step_set_timezone() {
-  local current
-  current="$(timedatectl show -p Timezone --value 2>/dev/null || true)"
+  local current=""
+  if command -v timedatectl >/dev/null 2>&1; then
+    current="$(timedatectl show -p Timezone --value 2>/dev/null || true)"
+  elif [ -f /etc/timezone ]; then
+    current="$(cat /etc/timezone)"
+  fi
+
   if [ "$current" = "$HOMELAB_TZ" ]; then
     log "Timezone already $HOMELAB_TZ. Skipping."
     return
   fi
+
   log "Setting timezone to $HOMELAB_TZ…"
-  timedatectl set-timezone "$HOMELAB_TZ"
+  if command -v timedatectl >/dev/null 2>&1; then
+    timedatectl set-timezone "$HOMELAB_TZ"
+  else
+    # Non-systemd fallback (debian-based without systemd, e.g. WSL).
+    if [ ! -f "/usr/share/zoneinfo/$HOMELAB_TZ" ]; then
+      warn "Zoneinfo for '$HOMELAB_TZ' not found. Skipping."
+      return
+    fi
+    ln -sf "/usr/share/zoneinfo/$HOMELAB_TZ" /etc/localtime
+    echo "$HOMELAB_TZ" >/etc/timezone
+  fi
 }
 
 step_set_hostname() {
   local current
-  current="$(hostnamectl --static 2>/dev/null || hostname)"
-  if [ "$current" = "$HOMELAB_HOSTNAME" ]; then
-    log "Hostname already $HOMELAB_HOSTNAME. Skipping."
-    return
+  if command -v hostnamectl >/dev/null 2>&1; then
+    current="$(hostnamectl --static 2>/dev/null || hostname)"
+  else
+    current="$(hostname)"
   fi
-  log "Setting hostname to $HOMELAB_HOSTNAME (was $current)…"
-  hostnamectl set-hostname "$HOMELAB_HOSTNAME"
-  # Keep /etc/hosts in sync so sudo and local DNS lookups stay happy.
+
+  if [ "$current" != "$HOMELAB_HOSTNAME" ]; then
+    log "Setting hostname to $HOMELAB_HOSTNAME (was $current)…"
+    if command -v hostnamectl >/dev/null 2>&1; then
+      hostnamectl set-hostname "$HOMELAB_HOSTNAME"
+    else
+      # Non-systemd fallback.
+      echo "$HOMELAB_HOSTNAME" >/etc/hostname
+      hostname "$HOMELAB_HOSTNAME"
+    fi
+  else
+    log "Hostname already $HOMELAB_HOSTNAME."
+  fi
+
+  # Always reconcile /etc/hosts to the configured hostname, even if the
+  # active hostname already matches. /etc/hosts can drift independently
+  # (manual edit, image with stale 127.0.1.1 line) and would silently
+  # break sudo + local DNS resolution.
   if grep -qE "^127\.0\.1\.1[[:space:]]+" /etc/hosts; then
     sed -i "s/^127\.0\.1\.1[[:space:]].*/127.0.1.1\t$HOMELAB_HOSTNAME/" /etc/hosts
   else
@@ -180,10 +225,31 @@ step_set_hostname() {
 
 step_enable_unattended_upgrades() {
   log "Enabling unattended-upgrades for security packages only…"
-  # Generate the default config (idempotent — debconf reuses existing answers).
+
+  # Enable the periodic auto-update timer (idempotent).
   echo 'unattended-upgrades unattended-upgrades/enable_auto_updates boolean true' \
     | debconf-set-selections
   DEBIAN_FRONTEND=noninteractive dpkg-reconfigure -f noninteractive unattended-upgrades
+
+  # Enforce "security packages only" by writing an explicit override that
+  # narrows Allowed-Origins / Origins-Pattern. Without this, the distro
+  # default may pick up regular updates too.
+  cat >/etc/apt/apt.conf.d/52unattended-upgrades-bb-homelab <<'CONF'
+// Managed by bb-homelab/bootstrap/bootstrap.sh — edits will be overwritten.
+//
+// Restrict unattended upgrades to security packages only. Pattern works
+// for both Debian and Raspbian (Raspberry Pi OS) since it matches by
+// label rather than codename.
+Unattended-Upgrade::Origins-Pattern {
+    "origin=Debian,codename=${distro_codename},label=Debian-Security";
+    "origin=Debian,codename=${distro_codename}-security,label=Debian-Security";
+    "origin=Raspbian,codename=${distro_codename},label=Raspbian";
+};
+
+// Reboot only if explicitly required by an installed package, never on
+// a fixed schedule — avoids silent restarts of running services.
+Unattended-Upgrade::Automatic-Reboot "false";
+CONF
 }
 
 # --- Main --------------------------------------------------------------------
