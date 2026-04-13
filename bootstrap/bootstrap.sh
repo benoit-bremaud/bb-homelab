@@ -40,6 +40,14 @@ require_root() {
   fi
 }
 
+has_systemd() {
+  # /run/systemd/system is the canonical marker that systemd is the
+  # active init (per `man systemd`). `command -v timedatectl` is not
+  # enough: the binary may be installed without systemd actually
+  # running (containers, WSL, chroots).
+  [ -d /run/systemd/system ]
+}
+
 require_debian_like() {
   if [ ! -f /etc/os-release ]; then
     die "/etc/os-release not found — unsupported system."
@@ -87,15 +95,38 @@ step_install_docker() {
     return
   fi
 
-  log "Installing Docker via the official convenience script…"
-  local script
-  script="$(mktemp)"
-  curl -fsSL https://get.docker.com -o "$script"
-  # We deliberately pin nothing here: the official script tracks the
-  # current Docker stable release and is reviewed by the user via the
-  # README before running.
-  sh "$script"
-  rm -f "$script"
+  log "Installing Docker via the official apt repository (GPG-verified)…"
+  # GPG-verified apt repo install — the upstream get.docker.com pipe is
+  # convenient but executes unverified shell as root. apt + signed
+  # repository gives us integrity verification on every install/update.
+  install -m 0755 -d /etc/apt/keyrings
+
+  # Pick the right Docker repo path per distro. require_debian_like
+  # accepts both Debian/Raspbian and Ubuntu (ID_LIKE=debian), but Docker
+  # publishes them at different URLs and signs them with different keys.
+  # shellcheck disable=SC1091
+  . /etc/os-release
+  local docker_repo
+  case "$ID" in
+    ubuntu)         docker_repo="ubuntu" ;;
+    raspbian)       docker_repo="raspbian" ;;
+    debian|*)       docker_repo="debian" ;;
+  esac
+
+  curl -fsSL "https://download.docker.com/linux/${docker_repo}/gpg" \
+    -o /etc/apt/keyrings/docker.asc
+  chmod a+r /etc/apt/keyrings/docker.asc
+
+  local arch
+  arch="$(dpkg --print-architecture)"
+  echo "deb [arch=${arch} signed-by=/etc/apt/keyrings/docker.asc] \
+https://download.docker.com/linux/${docker_repo} ${VERSION_CODENAME} stable" \
+    >/etc/apt/sources.list.d/docker.list
+
+  apt-get update -qq
+  DEBIAN_FRONTEND=noninteractive apt-get install -yqq \
+    docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
   log "Docker installed: $(docker --version)"
   log "Compose plugin: $(docker compose version)"
 }
@@ -151,26 +182,57 @@ step_configure_swap() {
 }
 
 step_set_timezone() {
-  local current
-  current="$(timedatectl show -p Timezone --value 2>/dev/null || true)"
+  local current=""
+  if has_systemd; then
+    current="$(timedatectl show -p Timezone --value 2>/dev/null || true)"
+  elif [ -f /etc/timezone ]; then
+    current="$(cat /etc/timezone)"
+  fi
+
   if [ "$current" = "$HOMELAB_TZ" ]; then
     log "Timezone already $HOMELAB_TZ. Skipping."
     return
   fi
+
   log "Setting timezone to $HOMELAB_TZ…"
-  timedatectl set-timezone "$HOMELAB_TZ"
+  if has_systemd; then
+    timedatectl set-timezone "$HOMELAB_TZ"
+  else
+    # Non-systemd fallback (containers, WSL, chroot).
+    if [ ! -f "/usr/share/zoneinfo/$HOMELAB_TZ" ]; then
+      warn "Zoneinfo for '$HOMELAB_TZ' not found. Skipping."
+      return
+    fi
+    ln -sf "/usr/share/zoneinfo/$HOMELAB_TZ" /etc/localtime
+    echo "$HOMELAB_TZ" >/etc/timezone
+  fi
 }
 
 step_set_hostname() {
   local current
-  current="$(hostnamectl --static 2>/dev/null || hostname)"
-  if [ "$current" = "$HOMELAB_HOSTNAME" ]; then
-    log "Hostname already $HOMELAB_HOSTNAME. Skipping."
-    return
+  if has_systemd; then
+    current="$(hostnamectl --static 2>/dev/null || hostname)"
+  else
+    current="$(hostname)"
   fi
-  log "Setting hostname to $HOMELAB_HOSTNAME (was $current)…"
-  hostnamectl set-hostname "$HOMELAB_HOSTNAME"
-  # Keep /etc/hosts in sync so sudo and local DNS lookups stay happy.
+
+  if [ "$current" != "$HOMELAB_HOSTNAME" ]; then
+    log "Setting hostname to $HOMELAB_HOSTNAME (was $current)…"
+    if has_systemd; then
+      hostnamectl set-hostname "$HOMELAB_HOSTNAME"
+    else
+      # Non-systemd fallback (containers, WSL, chroot).
+      echo "$HOMELAB_HOSTNAME" >/etc/hostname
+      hostname "$HOMELAB_HOSTNAME"
+    fi
+  else
+    log "Hostname already $HOMELAB_HOSTNAME."
+  fi
+
+  # Always reconcile /etc/hosts to the configured hostname, even if the
+  # active hostname already matches. /etc/hosts can drift independently
+  # (manual edit, image with stale 127.0.1.1 line) and would silently
+  # break sudo + local DNS resolution.
   if grep -qE "^127\.0\.1\.1[[:space:]]+" /etc/hosts; then
     sed -i "s/^127\.0\.1\.1[[:space:]].*/127.0.1.1\t$HOMELAB_HOSTNAME/" /etc/hosts
   else
@@ -180,10 +242,43 @@ step_set_hostname() {
 
 step_enable_unattended_upgrades() {
   log "Enabling unattended-upgrades for security packages only…"
-  # Generate the default config (idempotent — debconf reuses existing answers).
+
+  # Enable the periodic auto-update timer (idempotent).
   echo 'unattended-upgrades unattended-upgrades/enable_auto_updates boolean true' \
     | debconf-set-selections
   DEBIAN_FRONTEND=noninteractive dpkg-reconfigure -f noninteractive unattended-upgrades
+
+  # Enforce "security packages only" by overriding any patterns the
+  # distro's 50unattended-upgrades may have set. APT list options like
+  # Origins-Pattern are ADDITIVE across config files unless explicitly
+  # cleared with `#clear`, so we drop the inherited list first.
+  #
+  # On Raspberry Pi OS, Raspbian itself does not ship a separate
+  # security pocket: security fixes for Raspbian-only packages flow as
+  # regular updates. We deliberately do NOT include
+  # `origin=Raspbian,label=Raspbian` here because it would auto-update
+  # *everything* from the main repo (not just security). Pi OS based
+  # on Debian inherits Debian-Security via the configured ports repo,
+  # which is matched by the Debian-Security pattern below.
+  cat >/etc/apt/apt.conf.d/52unattended-upgrades-bb-homelab <<'CONF'
+// Managed by bb-homelab/bootstrap/bootstrap.sh — edits will be overwritten.
+
+// Discard whatever 50unattended-upgrades inherited so our list below
+// is the single source of truth.
+#clear "Unattended-Upgrade::Origins-Pattern";
+#clear "Unattended-Upgrade::Allowed-Origins";
+
+// Allow security updates only.
+Unattended-Upgrade::Origins-Pattern {
+    "origin=Debian,codename=${distro_codename},label=Debian-Security";
+    "origin=Debian,codename=${distro_codename}-security,label=Debian-Security";
+};
+
+// Never automatically reboot after unattended upgrades — even if a
+// package signals it requires one. Service restarts stay manual to
+// avoid surprise downtime.
+Unattended-Upgrade::Automatic-Reboot "false";
+CONF
 }
 
 # --- Main --------------------------------------------------------------------

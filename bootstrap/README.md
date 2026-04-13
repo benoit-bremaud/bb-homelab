@@ -53,22 +53,26 @@ If you'd rather do it by hand:
    `hostname -I` directly on the device.
 3. SSH in: `ssh <user>@<ip>`.
 4. Update the OS: `sudo apt update && sudo apt upgrade -y`.
-5. Install Docker. Piping `curl ... | sh` as root is convenient but
-   executes arbitrary network content with elevated privileges; download
-   the script first and inspect it before running it:
+5. Install Docker via the official **apt repository** (GPG-verified;
+   preferred over `curl ... | sh` because every package install is
+   integrity-checked):
 
    ```bash
-   curl -fsSL https://get.docker.com -o get-docker.sh
-   less get-docker.sh                 # quick sanity check
-   sudo sh get-docker.sh
-   rm get-docker.sh
+   sudo install -m 0755 -d /etc/apt/keyrings
+   sudo curl -fsSL https://download.docker.com/linux/debian/gpg \
+     -o /etc/apt/keyrings/docker.asc
+   sudo chmod a+r /etc/apt/keyrings/docker.asc
+   . /etc/os-release
+   echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] \
+   https://download.docker.com/linux/debian ${VERSION_CODENAME} stable" \
+     | sudo tee /etc/apt/sources.list.d/docker.list
+   sudo apt-get update
+   sudo apt-get install -y docker-ce docker-ce-cli containerd.io \
+     docker-buildx-plugin docker-compose-plugin
    ```
 
-   Alternatively, follow the official Docker Engine install steps for
-   Debian/Raspberry Pi OS, which add Docker's apt repository and let you
-   install via `apt install docker-ce docker-ce-cli containerd.io
-   docker-buildx-plugin docker-compose-plugin`:
-   <https://docs.docker.com/engine/install/debian/>.
+   See <https://docs.docker.com/engine/install/debian/> for the upstream
+   reference.
 6. Add your user to the docker group: `sudo usermod -aG docker $USER`,
    then log out and log back in.
 
