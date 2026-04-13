@@ -22,7 +22,7 @@ reasons**.
 Organise the repo around six explicit layers, with strict dependencies
 flowing top-down:
 
-```
+```text
 6. Service              (the thing users actually use)
 5. Application packaging (OCI / Docker images)
 4. Orchestration         (docker compose today)

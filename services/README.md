@@ -27,7 +27,7 @@ infrastructure (reverse proxy, Tailscale) which is bootstrapped first.
 
 ## Per-service folder conventions
 
-```
+```text
 services/<name>/
 ├── docker-compose.yml
 ├── .env.example          # all required env vars, placeholder values

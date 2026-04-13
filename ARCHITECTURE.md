@@ -29,7 +29,7 @@ to evolve as scale, budget, or hardware change.
 
 ## Repo layout reflects the layers
 
-```
+```text
 bb-homelab/
 ├── README.md                       # entry point
 ├── ARCHITECTURE.md                 # this file

@@ -31,12 +31,14 @@ The script is tracked as **issue #3**. Manual procedure for now:
 5. Install Docker. Piping `curl ... | sh` as root is convenient but
    executes arbitrary network content with elevated privileges; download
    the script first and inspect it before running it:
+
    ```bash
    curl -fsSL https://get.docker.com -o get-docker.sh
    less get-docker.sh                 # quick sanity check
    sudo sh get-docker.sh
    rm get-docker.sh
    ```
+
    Alternatively, follow the official Docker Engine install steps for
    Debian/Raspberry Pi OS, which add Docker's apt repository and let you
    install via `apt install docker-ce docker-ce-cli containerd.io
