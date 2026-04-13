@@ -101,19 +101,41 @@ was done and why, by date.
 - **Closes**: #3
 - **Merges**: `7673bb2` (#34), `6b25c54` (#35)
 
-### PR #36 in progress: SSH hardening script
+### PR #36 merged: SSH hardening script
 
-- **What**: Adds `bootstrap/harden-ssh.sh`, an idempotent script that
-  disables password SSH, disables root login, enforces public-key
-  auth, validates the new sshd_config with `sshd -t` before reload,
-  and configures `ufw` to allow port 22 (scope: any | LAN cidr |
-  Tailscale CGNAT).
-- **Safety**: refuses to run if the target user has no
-  authorized_keys (prevents lock-out), backs up sshd_config before
-  edit, uses `reload` not `restart` so the live SSH session survives,
-  prints clear instructions to verify in a new terminal before
-  closing the original one.
-- **Why deliberately separate from bootstrap.sh**: misconfiguring SSH
-  on a remote host = lock-out. Splitting the two scripts lets the
-  user verify key-based SSH works first, then opt into hardening.
-- **Closes**: #4 (when merged).
+- **What**: `bootstrap/harden-ssh.sh` locks SSH down (no password, no
+  root, key-only, UFW allows 22 with configurable scope any / LAN
+  CIDR / Tailscale CGNAT). Lock-out-proof: refuses to run without
+  authorized_keys, validates with `sshd -t` before reload, uses
+  reload (not restart) so the live session survives.
+- **Deliberately separate from bootstrap.sh**: misconfiguring SSH on
+  a remote host = lock-out. Splitting the two scripts lets the user
+  verify key-based SSH works first, then opt into hardening.
+- **Review fixes** (7 comments addressed in one commit): source of
+  truth switched to `sshd -T` (authoritative effective config,
+  resolves Include + Match last-wins), awk-based authorized_keys scan
+  handles option-prefixed entries (`from=…`, `command=…`, `restrict`),
+  lazy backup only on real change (no more clutter on no-op re-runs),
+  CIDR regex validation + tokenised ufw call (no word-splitting of a
+  single string), comment-out-all-duplicates + append-canonical so our
+  line wins regardless of Include ordering.
+- **Closes**: #4
+- **Merge**: `e6df8dd`
+
+### PR #37 in progress: Tailscale install script
+
+- **What**: `network/install-tailscale.sh` installs Tailscale from
+  the official signed apt repository (GPG-verified), then runs
+  `tailscale up` so the user authenticates the device in a browser
+  against their Tailscale account. Idempotent: already-installed and
+  already-connected cases are detected and skipped.
+- **Why**: Remote access to the homelab without port forwarding,
+  without a public IP, and without a domain. Free for personal use
+  (up to 100 devices + 3 users). Prerequisite for inviting the circle
+  of trust (family / theatre troupe) to reach specific services.
+- **Companion doc**: `network/tailscale.md` documents device-side
+  install on laptops and phones, two invitation patterns (node
+  sharing vs tailnet users), and the follow-up command to tighten
+  SSH to the tailnet only
+  (`SSH_UFW_SCOPE=tailscale bash bootstrap/harden-ssh.sh`).
+- **Closes**: #5 (when merged).

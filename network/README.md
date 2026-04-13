@@ -8,7 +8,8 @@ need to be reachable from the internet (e.g. the impropedia widget).
 ## Components planned
 
 - **Tailscale** — mesh VPN for admin SSH and private service access.
-  Free, no domain required. Tracked as **issue #5**.
+  Free, no domain required. Install procedure + script:
+  [tailscale.md](tailscale.md) / [install-tailscale.sh](install-tailscale.sh).
 - **cloudflared** — Cloudflare tunnel exposing public webhooks. Today
   ephemeral (`*.trycloudflare.com`), upgradable to a named tunnel once
   a domain is purchased (decision **#28**).
