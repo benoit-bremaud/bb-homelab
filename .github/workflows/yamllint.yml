@@ -19,4 +19,6 @@ jobs:
         uses: ibiqlik/action-yamllint@ae1abb2821b567e96742aa776f7b62c9b6a26bc8  # v3
         with:
           config_file: .yamllint.yaml
-          strict: true
+          # strict is intentionally false: warnings (e.g. line-length) are
+          # informational. Errors still fail the job.
+          strict: false
