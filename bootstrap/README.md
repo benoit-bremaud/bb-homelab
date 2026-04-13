@@ -17,9 +17,34 @@ Raspberry Pi OS Lite 64-bit machine to the same baseline:
 - `unattended-upgrades` enabled for security packages only.
 - Useful CLI tools available: `htop`, `smartmontools`, `ufw`, `curl`.
 
-## Until the script lands
+## Running the script
 
-The script is tracked as **issue #3**. Manual procedure for now:
+```bash
+# Option 1: from a fresh SSH session, fetch + inspect + run
+curl -fsSL https://raw.githubusercontent.com/benoit-bremaud/bb-homelab/main/bootstrap/bootstrap.sh -o bootstrap.sh
+less bootstrap.sh         # always inspect what you're about to run as root
+sudo bash bootstrap.sh
+
+# Option 2: from a clone of the repo on the Pi
+git clone git@github.com:benoit-bremaud/bb-homelab.git
+cd bb-homelab
+sudo bash bootstrap/bootstrap.sh
+```
+
+Override defaults via environment variables:
+
+```bash
+sudo HOMELAB_HOSTNAME=my-pi HOMELAB_TZ=Europe/London \
+  bash bootstrap/bootstrap.sh
+```
+
+The script is **idempotent** — every step checks whether the desired
+state already holds before acting. Re-run it after a Raspberry Pi OS
+upgrade or any time you want to converge the host back to baseline.
+
+## Manual procedure (without the script)
+
+If you'd rather do it by hand:
 
 1. Flash Raspberry Pi OS Lite 64-bit with Raspberry Pi Imager. In
    Imager's "Advanced options": set hostname, username, password (or SSH
