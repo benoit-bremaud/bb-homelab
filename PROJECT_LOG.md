@@ -54,7 +54,7 @@ was done and why, by date.
 
 ## 2026-04-14
 
-### PR #32 in progress: bootstrap CI security & quality workflows
+### PR #33 merged: bootstrap CI security & quality workflows
 
 - **What**: Adds eight GitHub Actions workflows covering secret
   detection (gitleaks), shell scripts (shellcheck), YAML (yamllint),
@@ -66,4 +66,29 @@ was done and why, by date.
 - **Why**: Per the global "CI Security Tooling — Standard for All
   Projects" rule, every project must ship the security baseline from
   day 1, before code starts piling up.
-- **Closes**: #32 (when merged).
+- **Review fixes**: gitleaks switched to CLI mode (action 403'd on
+  default token); markdownlint MD040/MD031 errors fixed across docs;
+  yamllint workflow `strict: false` to honour the `level: warning`
+  config intent.
+- **Closes**: #32
+- **Merge**: `e9c2cd5`
+
+### Issue #2 closed (no PR)
+
+- **What**: Closed as fully delivered by PR #31 — ARCHITECTURE.md
+  already ships the 6-layer DIP table + request walkthrough, and
+  ADR 0001 records the layering decision.
+
+### PR #34 in progress: bootstrap script for fresh Pi setup
+
+- **What**: Adds `bootstrap/bootstrap.sh`, an idempotent shell script
+  that takes a freshly flashed Raspberry Pi OS Lite installation to a
+  "ready to run services" baseline: apt update/upgrade, install of
+  baseline tools (curl, htop, smartmontools, ufw, unattended-upgrades),
+  Docker via the official convenience script, user added to the docker
+  group, swapfile, timezone (default Europe/Paris), hostname (default
+  bb-homelab), unattended security upgrades enabled.
+- **Why**: Recovery from a dead SD card or first boot of a fresh Pi
+  must take minutes, not hours. Encodes the manual procedure that was
+  in `bootstrap/README.md` so it cannot drift.
+- **Closes**: #3 (when merged).
