@@ -40,6 +40,14 @@ require_root() {
   fi
 }
 
+has_systemd() {
+  # /run/systemd/system is the canonical marker that systemd is the
+  # active init (per `man systemd`). `command -v timedatectl` is not
+  # enough: the binary may be installed without systemd actually
+  # running (containers, WSL, chroots).
+  [ -d /run/systemd/system ]
+}
+
 require_debian_like() {
   if [ ! -f /etc/os-release ]; then
     die "/etc/os-release not found — unsupported system."
@@ -92,18 +100,27 @@ step_install_docker() {
   # convenient but executes unverified shell as root. apt + signed
   # repository gives us integrity verification on every install/update.
   install -m 0755 -d /etc/apt/keyrings
-  curl -fsSL https://download.docker.com/linux/debian/gpg \
+
+  # Pick the right Docker repo path per distro. require_debian_like
+  # accepts both Debian/Raspbian and Ubuntu (ID_LIKE=debian), but Docker
+  # publishes them at different URLs and signs them with different keys.
+  # shellcheck disable=SC1091
+  . /etc/os-release
+  local docker_repo
+  case "$ID" in
+    ubuntu)         docker_repo="ubuntu" ;;
+    raspbian)       docker_repo="raspbian" ;;
+    debian|*)       docker_repo="debian" ;;
+  esac
+
+  curl -fsSL "https://download.docker.com/linux/${docker_repo}/gpg" \
     -o /etc/apt/keyrings/docker.asc
   chmod a+r /etc/apt/keyrings/docker.asc
 
-  # shellcheck disable=SC1091
-  . /etc/os-release
-  # On Raspberry Pi OS (ID=raspbian, ID_LIKE=debian) Docker publishes
-  # packages under the "debian" path with the matching codename.
   local arch
   arch="$(dpkg --print-architecture)"
   echo "deb [arch=${arch} signed-by=/etc/apt/keyrings/docker.asc] \
-https://download.docker.com/linux/debian ${VERSION_CODENAME} stable" \
+https://download.docker.com/linux/${docker_repo} ${VERSION_CODENAME} stable" \
     >/etc/apt/sources.list.d/docker.list
 
   apt-get update -qq
@@ -166,7 +183,7 @@ step_configure_swap() {
 
 step_set_timezone() {
   local current=""
-  if command -v timedatectl >/dev/null 2>&1; then
+  if has_systemd; then
     current="$(timedatectl show -p Timezone --value 2>/dev/null || true)"
   elif [ -f /etc/timezone ]; then
     current="$(cat /etc/timezone)"
@@ -178,10 +195,10 @@ step_set_timezone() {
   fi
 
   log "Setting timezone to $HOMELAB_TZ…"
-  if command -v timedatectl >/dev/null 2>&1; then
+  if has_systemd; then
     timedatectl set-timezone "$HOMELAB_TZ"
   else
-    # Non-systemd fallback (debian-based without systemd, e.g. WSL).
+    # Non-systemd fallback (containers, WSL, chroot).
     if [ ! -f "/usr/share/zoneinfo/$HOMELAB_TZ" ]; then
       warn "Zoneinfo for '$HOMELAB_TZ' not found. Skipping."
       return
@@ -193,7 +210,7 @@ step_set_timezone() {
 
 step_set_hostname() {
   local current
-  if command -v hostnamectl >/dev/null 2>&1; then
+  if has_systemd; then
     current="$(hostnamectl --static 2>/dev/null || hostname)"
   else
     current="$(hostname)"
@@ -201,10 +218,10 @@ step_set_hostname() {
 
   if [ "$current" != "$HOMELAB_HOSTNAME" ]; then
     log "Setting hostname to $HOMELAB_HOSTNAME (was $current)…"
-    if command -v hostnamectl >/dev/null 2>&1; then
+    if has_systemd; then
       hostnamectl set-hostname "$HOMELAB_HOSTNAME"
     else
-      # Non-systemd fallback.
+      # Non-systemd fallback (containers, WSL, chroot).
       echo "$HOMELAB_HOSTNAME" >/etc/hostname
       hostname "$HOMELAB_HOSTNAME"
     fi
@@ -231,23 +248,35 @@ step_enable_unattended_upgrades() {
     | debconf-set-selections
   DEBIAN_FRONTEND=noninteractive dpkg-reconfigure -f noninteractive unattended-upgrades
 
-  # Enforce "security packages only" by writing an explicit override that
-  # narrows Allowed-Origins / Origins-Pattern. Without this, the distro
-  # default may pick up regular updates too.
+  # Enforce "security packages only" by overriding any patterns the
+  # distro's 50unattended-upgrades may have set. APT list options like
+  # Origins-Pattern are ADDITIVE across config files unless explicitly
+  # cleared with `#clear`, so we drop the inherited list first.
+  #
+  # On Raspberry Pi OS, Raspbian itself does not ship a separate
+  # security pocket: security fixes for Raspbian-only packages flow as
+  # regular updates. We deliberately do NOT include
+  # `origin=Raspbian,label=Raspbian` here because it would auto-update
+  # *everything* from the main repo (not just security). Pi OS based
+  # on Debian inherits Debian-Security via the configured ports repo,
+  # which is matched by the Debian-Security pattern below.
   cat >/etc/apt/apt.conf.d/52unattended-upgrades-bb-homelab <<'CONF'
 // Managed by bb-homelab/bootstrap/bootstrap.sh — edits will be overwritten.
-//
-// Restrict unattended upgrades to security packages only. Pattern works
-// for both Debian and Raspbian (Raspberry Pi OS) since it matches by
-// label rather than codename.
+
+// Discard whatever 50unattended-upgrades inherited so our list below
+// is the single source of truth.
+#clear "Unattended-Upgrade::Origins-Pattern";
+#clear "Unattended-Upgrade::Allowed-Origins";
+
+// Allow security updates only.
 Unattended-Upgrade::Origins-Pattern {
     "origin=Debian,codename=${distro_codename},label=Debian-Security";
     "origin=Debian,codename=${distro_codename}-security,label=Debian-Security";
-    "origin=Raspbian,codename=${distro_codename},label=Raspbian";
 };
 
-// Reboot only if explicitly required by an installed package, never on
-// a fixed schedule — avoids silent restarts of running services.
+// Never automatically reboot after unattended upgrades — even if a
+// package signals it requires one. Service restarts stay manual to
+// avoid surprise downtime.
 Unattended-Upgrade::Automatic-Reboot "false";
 CONF
 }
