@@ -67,10 +67,26 @@ step_install_tools() {
 }
 
 step_install_docker() {
-  if command -v docker >/dev/null 2>&1; then
-    log "Docker already installed ($(docker --version)). Skipping."
+  local has_engine=false has_compose=false
+  command -v docker >/dev/null 2>&1 && has_engine=true
+  if [ "$has_engine" = "true" ] && docker compose version >/dev/null 2>&1; then
+    has_compose=true
+  fi
+
+  if [ "$has_engine" = "true" ] && [ "$has_compose" = "true" ]; then
+    log "Docker engine + Compose v2 already installed ($(docker --version | head -1)). Skipping."
     return
   fi
+
+  if [ "$has_engine" = "true" ] && [ "$has_compose" = "false" ]; then
+    # Engine present but Compose plugin missing — common on older installs.
+    # Add the plugin without re-running the engine installer.
+    log "Docker engine present but Compose v2 missing — installing docker-compose-plugin…"
+    DEBIAN_FRONTEND=noninteractive apt-get install -yqq docker-compose-plugin
+    log "Compose plugin: $(docker compose version)"
+    return
+  fi
+
   log "Installing Docker via the official convenience script…"
   local script
   script="$(mktemp)"
@@ -103,10 +119,24 @@ step_add_user_to_docker_group() {
 }
 
 step_configure_swap() {
-  if swapon --show=NAME --noheadings | grep -q .; then
-    log "Swap already configured ($(swapon --show=NAME,SIZE --noheadings | tr '\n' ' '))."
+  # Idempotency: only skip if the configured /swapfile is already active
+  # at the configured size. Pre-existing distro swap (zram, default Pi
+  # swapfile of a different size) does NOT count as "already done"
+  # because it would silently ignore HOMELAB_SWAP_MB.
+  local target_bytes=$((HOMELAB_SWAP_MB * 1024 * 1024))
+  if swapon --show=NAME,SIZE --bytes --noheadings 2>/dev/null \
+       | awk -v p=/swapfile -v s="$target_bytes" '$1==p && $2==s {found=1} END {exit !found}'; then
+    log "Swap already configured at /swapfile (${HOMELAB_SWAP_MB} MB). Skipping."
     return
   fi
+
+  # If /swapfile exists at the wrong size, swap it off and recreate.
+  if [ -f /swapfile ]; then
+    log "/swapfile exists but does not match target size — recreating."
+    swapoff /swapfile 2>/dev/null || true
+    rm -f /swapfile
+  fi
+
   log "Creating ${HOMELAB_SWAP_MB} MB swapfile at /swapfile…"
   fallocate -l "${HOMELAB_SWAP_MB}M" /swapfile
   chmod 600 /swapfile
@@ -115,6 +145,9 @@ step_configure_swap() {
   if ! grep -q '^/swapfile' /etc/fstab; then
     echo '/swapfile none swap sw 0 0' >>/etc/fstab
   fi
+
+  # Note: pre-existing distro swap (zram, etc.) is left alone on
+  # purpose. HOMELAB_SWAP_MB only governs /swapfile.
 }
 
 step_set_timezone() {
