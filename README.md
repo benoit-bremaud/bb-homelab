@@ -23,8 +23,7 @@ it could run on a mini-PC or a VPS without rewriting any service.
 ## What's deployed today
 
 Tracked in [PROJECT_LOG.md](PROJECT_LOG.md). The full backlog lives in
-[GitHub Issues](https://github.com/benoit-bremaud/bb-homelab/issues) and on
-the project board.
+[GitHub Issues](../../issues) and on the project board.
 
 ## Getting started on a fresh Pi
 

@@ -27,9 +27,23 @@ The script is tracked as **issue #3**. Manual procedure for now:
 2. Boot the Pi, find its IP via the home router admin page or
    `hostname -I` directly on the device.
 3. SSH in: `ssh <user>@<ip>`.
-4. Run the manual setup: `apt update && apt upgrade`, install Docker via
-   `curl -fsSL https://get.docker.com | sudo sh`, add user to docker
-   group with `sudo usermod -aG docker $USER`, log out, log back in.
+4. Update the OS: `sudo apt update && sudo apt upgrade -y`.
+5. Install Docker. Piping `curl ... | sh` as root is convenient but
+   executes arbitrary network content with elevated privileges; download
+   the script first and inspect it before running it:
+   ```bash
+   curl -fsSL https://get.docker.com -o get-docker.sh
+   less get-docker.sh                 # quick sanity check
+   sudo sh get-docker.sh
+   rm get-docker.sh
+   ```
+   Alternatively, follow the official Docker Engine install steps for
+   Debian/Raspberry Pi OS, which add Docker's apt repository and let you
+   install via `apt install docker-ce docker-ce-cli containerd.io
+   docker-buildx-plugin docker-compose-plugin`:
+   <https://docs.docker.com/engine/install/debian/>.
+6. Add your user to the docker group: `sudo usermod -aG docker $USER`,
+   then log out and log back in.
 
 SSH hardening (key-only auth, no root login) is tracked separately as
 **issue #4**.

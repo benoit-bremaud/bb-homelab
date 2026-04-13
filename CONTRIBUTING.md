@@ -14,12 +14,12 @@ the public `impropedia` project so muscle memory transfers.
    - **Summary** (what / why)
    - **Checklist** (build, lint, security, docs)
    - `Closes #<issue>` (so the issue auto-closes on merge)
-5. Wait for CI green + review (Copilot or human).
+5. Wait for CI green + reviewer feedback.
 6. Squash-merge unless there is a strong reason to keep individual commits.
 
 ## PR review comments
 
-Mandatory procedure (mirrors the global rule from `~/.claude/CLAUDE.md`):
+Mandatory procedure for every reviewer (automated or human):
 
 - Every comment gets an inline reply (never a single block summary).
 - Classify by priority: Must Have / Should Have / Nice to Have / Disagree.
