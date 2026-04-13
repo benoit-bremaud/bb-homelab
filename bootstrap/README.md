@@ -42,6 +42,47 @@ The script is **idempotent** — every step checks whether the desired
 state already holds before acting. Re-run it after a Raspberry Pi OS
 upgrade or any time you want to converge the host back to baseline.
 
+## SSH hardening (issue #4)
+
+`bootstrap/harden-ssh.sh` is a separate, idempotent script that
+disables password SSH, disables root login, enforces public-key
+authentication, and configures `ufw` to allow port 22.
+
+It is deliberately **not** part of `bootstrap.sh` because misconfiguring
+SSH can lock you out of a remote machine. Run it manually after
+verifying that key-based SSH already works:
+
+```bash
+# 1. From your PC, copy your public key to the Pi (one-time setup)
+ssh-copy-id <user>@<pi-ip>
+
+# 2. SSH in with the key (this MUST work before hardening)
+ssh <user>@<pi-ip>
+
+# 3. Run the hardening script
+sudo bash bootstrap/harden-ssh.sh
+```
+
+The script refuses to run if `~/.ssh/authorized_keys` is missing or
+empty for the target user, validates the new `sshd_config` with
+`sshd -t` before reloading, and uses `reload` (not `restart`) so the
+current SSH session stays alive while the daemon picks up the new
+config. The original `sshd_config` is backed up to
+`/etc/ssh/sshd_config.bak.<timestamp>` before any edit.
+
+UFW scope can be tightened via env vars:
+
+```bash
+# LAN-only access (replace with your subnet)
+sudo SSH_UFW_SCOPE=lan SSH_LAN_CIDR=192.168.1.0/24 bash bootstrap/harden-ssh.sh
+
+# Tailscale-only access (recommended once issue #5 is done)
+sudo SSH_UFW_SCOPE=tailscale bash bootstrap/harden-ssh.sh
+```
+
+After running, **always open a new terminal and verify SSH still
+works** before closing the original session.
+
 ## Manual procedure (without the script)
 
 If you'd rather do it by hand:
