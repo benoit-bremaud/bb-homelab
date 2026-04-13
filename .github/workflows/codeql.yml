@@ -1,0 +1,37 @@
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 6 * * 1"   # Mondays 06:00 UTC
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  analyze:
+    name: Analyze code
+    # CodeQL on private repos requires GitHub Advanced Security. Gate on public.
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Add languages here as the repo grows. Shell scripts are not yet
+        # supported by CodeQL — for shell coverage we rely on shellcheck.
+        language: [actions]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+      - name: Initialise CodeQL
+        uses: github/codeql-action/init@3b1a19a80ab047f35cbb237b5bd9bdc1e14f166c  # v3
+        with:
+          languages: ${{ matrix.language }}
+      - name: Run analysis
+        uses: github/codeql-action/analyze@3b1a19a80ab047f35cbb237b5bd9bdc1e14f166c  # v3
+        with:
+          category: "/language:${{ matrix.language }}"

@@ -1,0 +1,15 @@
+{
+  // markdownlint-cli2 config — adapted to README/ADR/PROJECT_LOG patterns
+  "config": {
+    "default": true,
+    "MD013": false,         // line length — content prose can be long
+    "MD024": { "siblings_only": true }, // duplicate heading allowed in different sections (ADR pattern)
+    "MD033": false,         // allow inline HTML for callouts later if needed
+    "MD034": false,         // allow bare URLs (commit hashes, command examples)
+    "MD041": false          // first line not required to be H1 (frontmatter-friendly)
+  },
+  "ignores": [
+    "node_modules/**",
+    ".git/**"
+  ]
+}
