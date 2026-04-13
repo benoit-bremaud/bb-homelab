@@ -91,4 +91,29 @@ was done and why, by date.
 - **Why**: Recovery from a dead SD card or first boot of a fresh Pi
   must take minutes, not hours. Encodes the manual procedure that was
   in `bootstrap/README.md` so it cannot drift.
-- **Closes**: #3 (when merged).
+- **Follow-up** (PR #35): six post-merge review points addressed —
+  Docker apt repo (GPG-verified, distro-aware path for debian /
+  raspbian / ubuntu), real systemd detection via
+  `[ -d /run/systemd/system ]` for timezone/hostname steps, `#clear`
+  directive on `Origins-Pattern` so security-only is truly enforced
+  (not additive), removal of the over-broad Raspbian pattern, truthful
+  comment on `Automatic-Reboot "false"`.
+- **Closes**: #3
+- **Merges**: `7673bb2` (#34), `6b25c54` (#35)
+
+### PR #36 in progress: SSH hardening script
+
+- **What**: Adds `bootstrap/harden-ssh.sh`, an idempotent script that
+  disables password SSH, disables root login, enforces public-key
+  auth, validates the new sshd_config with `sshd -t` before reload,
+  and configures `ufw` to allow port 22 (scope: any | LAN cidr |
+  Tailscale CGNAT).
+- **Safety**: refuses to run if the target user has no
+  authorized_keys (prevents lock-out), backs up sshd_config before
+  edit, uses `reload` not `restart` so the live SSH session survives,
+  prints clear instructions to verify in a new terminal before
+  closing the original one.
+- **Why deliberately separate from bootstrap.sh**: misconfiguring SSH
+  on a remote host = lock-out. Splitting the two scripts lets the
+  user verify key-based SSH works first, then opt into hardening.
+- **Closes**: #4 (when merged).
