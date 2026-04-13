@@ -51,6 +51,7 @@ Jellyfin for the theatre troupe), invite the relevant people. Two
 patterns:
 
 ### Pattern A — Share with an existing Tailscale user
+
 If the person already has a Tailscale account (yours or someone else's
 tailnet), use **node sharing**:
 
@@ -61,6 +62,7 @@ tailnet), use **node sharing**:
    machine appears on their tailnet as a read-only peer.
 
 ### Pattern B — Add them to your tailnet (family members)
+
 If the person is family and you'll admin their Tailscale for them:
 
 1. Go to <https://login.tailscale.com/admin/users>
