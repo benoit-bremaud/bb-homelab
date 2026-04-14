@@ -29,8 +29,9 @@ Pre-requisite: Docker + Compose v2 installed by `bootstrap/bootstrap.sh`.
 ```bash
 cd services/n8n
 cp .env.example .env
-# Generate the encryption key and append it to .env
-echo "N8N_ENCRYPTION_KEY=$(openssl rand -hex 32)" >> .env
+# Replace the empty N8N_ENCRYPTION_KEY= placeholder in-place (avoids
+# leaving the original empty line sitting above a duplicate).
+sed -i "s|^N8N_ENCRYPTION_KEY=.*|N8N_ENCRYPTION_KEY=$(openssl rand -hex 32)|" .env
 # Edit .env to set WEBHOOK_URL / N8N_HOST once cloudflared announces
 # its ephemeral URL on first start.
 docker compose up -d
@@ -64,8 +65,9 @@ All sensitive values live in `.env` (gitignored). Never commit `.env`.
 
 ## Backup + migration
 
-Full backup + restore procedure lives in [BACKUP.md](BACKUP.md) (to be
-written as part of issue #8). High level:
+A full backup + restore procedure will be documented as part of issue
+#8 (this repo has no `BACKUP.md` yet — the link below will replace
+this note). High level:
 
 - **Backup**: `docker compose stop n8n && docker run --rm -v
   bb-homelab-n8n-data:/data -v $(pwd):/backup alpine tar czf

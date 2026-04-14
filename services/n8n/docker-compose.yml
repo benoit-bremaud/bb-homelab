@@ -3,7 +3,10 @@ services:
   # design rationale (host-only port binding, cloudflared in host
   # networking mode, MTU tweak, etc.).
   n8n:
-    image: docker.n8n.io/n8nio/n8n:latest
+    # Pinned by default. Bump deliberately via N8N_IMAGE_TAG in .env and
+    # test before rolling out. `:latest` is avoided because a background
+    # `docker compose pull` could drag in a breaking change.
+    image: docker.n8n.io/n8nio/n8n:${N8N_IMAGE_TAG:-1.97.1}
     container_name: bb-homelab-n8n
     restart: unless-stopped
     ports:
@@ -16,8 +19,11 @@ services:
       - WEBHOOK_URL=${WEBHOOK_URL:-https://localhost}
       - GENERIC_TIMEZONE=${TZ:-Europe/Paris}
       - TZ=${TZ:-Europe/Paris}
-      # Persist user/encryption key so workflows survive restarts.
-      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      # Encryption key is mandatory: it protects every credential n8n
+      # stores. Fail fast at `docker compose up` if it's missing rather
+      # than bringing up a stack whose future credentials would be
+      # unrecoverable.
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:?N8N_ENCRYPTION_KEY must be set in .env (generate with: openssl rand -hex 32)}
       # Disable telemetry and version checks.
       - N8N_DIAGNOSTICS_ENABLED=false
       - N8N_VERSION_NOTIFICATIONS_ENABLED=false
@@ -36,7 +42,9 @@ services:
   # environments. On host mode, it reaches n8n via 127.0.0.1:5678 (the
   # n8n service publishes on localhost).
   cloudflared:
-    image: cloudflare/cloudflared:latest
+    # Pinned by default. Bump via CLOUDFLARED_IMAGE_TAG in .env when a
+    # newer release is needed.
+    image: cloudflare/cloudflared:${CLOUDFLARED_IMAGE_TAG:-2024.8.3}
     container_name: bb-homelab-cloudflared
     restart: unless-stopped
     network_mode: host
