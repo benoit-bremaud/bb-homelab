@@ -208,3 +208,22 @@ was done and why, by date.
   be archived (not deleted) once PR #40 lands, with a stub README
   pointing to the new location.
 - **Closes**: #6 (when merged).
+
+### PR #42 in progress: bump default n8n image 1.97.1 → 2.16.0
+
+- **What**: Updates the default `N8N_IMAGE_TAG` in
+  `services/n8n/docker-compose.yml` and `.env.example` from `1.97.1`
+  to `2.16.0`.
+- **Why**: Discovered during issue #7 (volume migration PC → Pi) that
+  the SQLite schema shipped on the PC's `docker.n8n.io/n8nio/n8n:latest`
+  image was newer than `1.97.1`. Starting 1.97.1 against that DB raised
+  `SQLITE_ERROR: no such column: User.role` and the
+  `Impropedia — Feedback → Telegram` workflow never activated (webhook
+  returned 200 but the Telegram node was never reached). Overriding to
+  `latest` on the Pi (resolved to `2.16.0`) let n8n activate the
+  workflow and process the webhook end-to-end successfully.
+- **Follow-up**: bump again when a newer stable ships. No automatic
+  mechanism for this yet — the pin is intentional (`latest` would be
+  non-reproducible); a lightweight periodic review issue can be opened
+  when we add Watchtower / Renovate (P4).
+- **Closes**: (no issue — regression fix for #40 / #6).
