@@ -65,9 +65,9 @@ All sensitive values live in `.env` (gitignored). Never commit `.env`.
 
 ## Backup + migration
 
-A full backup + restore procedure will be documented as part of issue
-#8 (this repo has no `BACKUP.md` yet — the link below will replace
-this note). High level:
+A full backup + restore procedure will be documented as part of
+[issue #8](../../issues/8) (this repo has no `BACKUP.md` yet — the
+link below will replace this note). High level:
 
 - **Backup**: `docker compose stop n8n && docker run --rm -v
   bb-homelab-n8n-data:/data -v $(pwd):/backup alpine tar czf
