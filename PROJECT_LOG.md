@@ -145,8 +145,10 @@ was done and why, by date.
 
 - **What**: First physical deployment of the homelab on a fresh RPi 5 +
   32 GB microSD. At the end of the session the Pi runs 24/7 on ethernet
-  at `192.168.1.216` and is reachable from anywhere via Tailscale at
-  `100.121.134.61` (tailnet `bbd.concept@gmail.com`). SSH uses
+  on the LAN and is reachable from anywhere via Tailscale (specific
+  IPv4 addresses and the tailnet owner email are deliberately not
+  recorded here — they live in the password manager / Tailscale admin
+  console, not in git history). SSH uses
   public-key auth only, sudo requires a password, Docker is installed
   and validated with `hello-world`, swap (2 GB) + unattended-upgrades
   (security origins only) are active.
