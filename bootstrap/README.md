@@ -4,6 +4,14 @@ Everything that turns a freshly flashed Raspberry Pi (or any Linux box)
 into a "ready to host services" machine: kernel/OS settings, Docker
 install, swap, hostname, time zone, security hardening.
 
+## Looking for the full first-boot walkthrough?
+
+If you're setting up a fresh Pi from zero (flash → SSH → bootstrap →
+harden → Tailscale), read **[FIRSTBOOT.md](FIRSTBOOT.md)** first. It
+is the complete, linear, gotcha-aware recipe that was actually proven
+on the real hardware. The sections below document the pieces
+individually; FIRSTBOOT.md ties them together in the right order.
+
 ## Target end state
 
 A single command (`./bootstrap.sh`) brings any vanilla
