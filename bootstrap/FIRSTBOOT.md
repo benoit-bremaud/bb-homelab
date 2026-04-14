@@ -28,10 +28,12 @@ On your **PC**:
   Debian/Ubuntu, or from the Raspberry Pi Foundation site)
 - An SSH keypair you'll use to reach the Pi. Per the author's
   per-context-key hygiene, generate a dedicated one:
+
   ```bash
   ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_bb-homelab \
     -C "benoit@bb-homelab" -N ""
   ```
+
 - `gh` CLI logged in (optional but convenient for later steps)
 
 Physical:
@@ -220,9 +222,21 @@ Pi OS Lite doesn't ship `git`. Install it once, then clone:
 
 ```bash
 sudo apt update && sudo apt install -y git
+```
 
-# You'll need a SSH keypair on the Pi too, added to your GitHub
-# account. Skip this block if the repo is public / you clone by HTTPS.
+Then clone. Two options — pick one.
+
+**Option A — HTTPS (simplest, works immediately, no GitHub key needed):**
+
+```bash
+git clone https://github.com/benoit-bremaud/bb-homelab.git
+cd bb-homelab
+sudo bash bootstrap/bootstrap.sh
+```
+
+**Option B — SSH (required if you plan to push from the Pi):**
+
+```bash
 ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_github \
   -C "bb-homelab-pi@github" -N ""
 cat ~/.ssh/id_ed25519_github.pub
@@ -382,11 +396,11 @@ Next: deploy your first service (e.g. `services/n8n/` — see
 ## Troubleshooting — quick index
 
 | Symptom | Where to look |
-|---|---|
+| --- | --- |
 | Hostname stays `raspberrypi` on the router | Step 1 verification failed — see 1bis |
 | SSH refused after 3+ minutes | cloud-init not applied, or `ssh` sentinel missing — see 1bis |
 | `openssl passwd -6` keeps saying "Verify failure" | Use the quoted form: `openssl passwd -6 "password"` |
 | `sudo` doesn't ask for a password | Step 5 not done — remove `/etc/sudoers.d/010_pi-nopasswd` |
 | `tailscale up` prints nothing | Use the auth-key flow in step 7 |
-| `docker compose up` fails with `unexpected type map[string]interface {}` | YAML parsing issue on an env var with `: ` (colon-space). Wrap the list entry in double quotes. |
+| `docker compose up` fails with `unexpected type map[string]interface {}` | YAML parsing issue on an env var containing a colon followed by a space. Wrap the list entry in double quotes. |
 | n8n starts but workflow doesn't trigger after migration | DB schema newer than image. Bump the image pin (see `services/n8n/.env.example`). |
