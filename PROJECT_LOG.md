@@ -227,3 +227,19 @@ was done and why, by date.
   non-reproducible); a lightweight periodic review issue can be opened
   when we add Watchtower / Renovate (P4).
 - **Closes**: (no issue — regression fix for #40 / #6).
+
+### PR #43: bootstrap/FIRSTBOOT.md — proven Pi OS + Imager + hardening recipe
+
+- **What**: New top-to-bottom procedure document that consolidates
+  the lessons learned during the Pi 5 bring-up. Covers flashing, the
+  rpi-imager customisation failure + manual cloud-init fallback,
+  the `ssh` sentinel, first SSH, repo clone, `bootstrap.sh`, the
+  NOPASSWD sudoers removal, `harden-ssh.sh`, UFW activation,
+  Tailscale install with the auth-key bypass, and the optional
+  tailscale-only SSH tightening. Ends with a troubleshooting quick
+  index of the specific symptoms we actually saw.
+- **Why**: Six hard-won gotchas were burning ~2h of detective work
+  on the first real run. FIRSTBOOT.md captures them while fresh so
+  the next Pi (or reader) spends minutes, not hours.
+  `bootstrap/README.md` gets a prominent pointer to it at the top.
+- **Closes**: #38.
