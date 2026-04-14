@@ -209,7 +209,7 @@ was done and why, by date.
   pointing to the new location.
 - **Closes**: #6 (when merged).
 
-### PR #42 in progress: bump default n8n image 1.97.1 → 2.16.0
+### PR #42: bump default n8n image 1.97.1 → 2.16.0
 
 - **What**: Updates the default `N8N_IMAGE_TAG` in
   `services/n8n/docker-compose.yml` and `.env.example` from `1.97.1`
