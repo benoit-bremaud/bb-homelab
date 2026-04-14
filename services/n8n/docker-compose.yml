@@ -23,7 +23,7 @@ services:
       # stores. Fail fast at `docker compose up` if it's missing rather
       # than bringing up a stack whose future credentials would be
       # unrecoverable.
-      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:?N8N_ENCRYPTION_KEY must be set in .env (generate with: openssl rand -hex 32)}
+      - "N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:?N8N_ENCRYPTION_KEY must be set in .env -- generate with 'openssl rand -hex 32'}"
       # Disable telemetry and version checks.
       - N8N_DIAGNOSTICS_ENABLED=false
       - N8N_VERSION_NOTIFICATIONS_ENABLED=false
