@@ -188,3 +188,23 @@ was done and why, by date.
   - Optionally tighten SSH to tailnet-only via
     `SSH_UFW_SCOPE=tailscale bash bootstrap/harden-ssh.sh` (deferred —
     we keep LAN SSH during initial migration work).
+
+### PR #40 in progress: integrate impropedia-infra as services/n8n/
+
+- **What**: Copies the `docker-compose.yml` and `.env.example` from
+  the former `impropedia-infra` repo into `services/n8n/`, adapted
+  for the bb-homelab identity: `container_name` renamed from
+  `impropedia-{n8n,cloudflared}` to `bb-homelab-{n8n,cloudflared}`,
+  volume renamed from `impropedia-n8n-data` to `bb-homelab-n8n-data`,
+  service-specific README + `workflows/` placeholder added. The
+  cloudflared `network_mode: host` fix and the bridge MTU=1450 tweak
+  are preserved — both were needed during the original PC run.
+- **Why**: Single-repo deploy (issue #6). A fresh Pi now clones one
+  repo and has everything needed to bring up n8n from scratch.
+- **Out of scope**: The actual PC → Pi volume migration lives in
+  issue #7 (tar the old `impropedia-n8n-data` volume, scp to Pi,
+  restore into `bb-homelab-n8n-data`). Documentation of the backup
+  procedure is issue #8. The old `impropedia-infra` GitHub repo will
+  be archived (not deleted) once PR #40 lands, with a stub README
+  pointing to the new location.
+- **Closes**: #6 (when merged).

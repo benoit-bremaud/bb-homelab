@@ -13,7 +13,7 @@ infrastructure (reverse proxy, Tailscale) which is bootstrapped first.
 
 | Service | Folder | Tracked in | Status |
 |---|---|---|---|
-| n8n + cloudflared | `n8n/` | issue #6, #7, #8 | Pending migration from `impropedia-infra` |
+| n8n + cloudflared | `n8n/` | issue #6, #7, #8 | Files migrated from `impropedia-infra` (#6); volume migration PC → Pi pending (#7) |
 | Caddy reverse proxy | `caddy/` | issue #14 | Planned |
 | Jellyfin (media) | `jellyfin/` | issue #12 | Planned |
 | PostgreSQL | `postgres/` | issue #17 | Planned |

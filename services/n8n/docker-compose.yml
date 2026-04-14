@@ -1,0 +1,62 @@
+services:
+  # n8n — workflow orchestrator. See services/n8n/README.md for the full
+  # design rationale (host-only port binding, cloudflared in host
+  # networking mode, MTU tweak, etc.).
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: bb-homelab-n8n
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5678:5678"
+    environment:
+      # Bind only to localhost; public access goes through cloudflared.
+      - N8N_HOST=${N8N_HOST:-localhost}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=${WEBHOOK_URL:-https://localhost}
+      - GENERIC_TIMEZONE=${TZ:-Europe/Paris}
+      - TZ=${TZ:-Europe/Paris}
+      # Persist user/encryption key so workflows survive restarts.
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      # Disable telemetry and version checks.
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - N8N_VERSION_NOTIFICATIONS_ENABLED=false
+      # Default credentials prompt on first start (set via UI).
+    volumes:
+      - n8n_data:/home/node/.n8n
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:5678/healthz || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  # Cloudflare Tunnel — exposes n8n through a public HTTPS URL.
+  # network_mode: host so cloudflared uses the host's network stack
+  # directly, avoiding Docker-bridge MTU/TLS handshake issues on some
+  # environments. On host mode, it reaches n8n via 127.0.0.1:5678 (the
+  # n8n service publishes on localhost).
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: bb-homelab-cloudflared
+    restart: unless-stopped
+    network_mode: host
+    depends_on:
+      n8n:
+        condition: service_healthy
+    command: tunnel --no-autoupdate --url http://127.0.0.1:5678
+    # The public URL is printed in the logs:
+    #   docker compose logs cloudflared | grep trycloudflare.com
+
+networks:
+  default:
+    driver: bridge
+    driver_opts:
+      # MTU reduced to 1450 to avoid silent packet drops on links with
+      # lower effective MTU (common behind VPN, corporate proxies, WSL2,
+      # some ADSL/VDSL modems). Cloudflare Tunnel's TLS handshake sends
+      # large packets that would otherwise be fragmented and dropped.
+      com.docker.network.driver.mtu: "1450"
+
+volumes:
+  n8n_data:
+    name: bb-homelab-n8n-data
