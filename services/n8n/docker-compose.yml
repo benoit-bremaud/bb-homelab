@@ -6,7 +6,7 @@ services:
     # Pinned by default. Bump deliberately via N8N_IMAGE_TAG in .env and
     # test before rolling out. `:latest` is avoided because a background
     # `docker compose pull` could drag in a breaking change.
-    image: docker.n8n.io/n8nio/n8n:${N8N_IMAGE_TAG:-1.97.1}
+    image: docker.n8n.io/n8nio/n8n:${N8N_IMAGE_TAG:-2.16.0}
     container_name: bb-homelab-n8n
     restart: unless-stopped
     ports:
