@@ -22,6 +22,9 @@ homelab needs in one clone.
 - **volume `bb-homelab-n8n-data`** — persists n8n's SQLite DB,
   encrypted credentials, workflow JSONs. Backup target.
 
+See [BACKUP.md](BACKUP.md) for the backup & restore procedure (manual
+run, cron schedule, volume migration across hosts, restore verification).
+
 ## Bootstrap
 
 Pre-requisite: Docker + Compose v2 installed by `bootstrap/bootstrap.sh`.
