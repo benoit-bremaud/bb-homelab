@@ -71,10 +71,14 @@ Edit the crontab of the user that owns Docker (likely `benoit`):
 crontab -e
 ```
 
-Add a nightly run at 03:00 local time:
+Add a nightly run at 03:00 local time. The log goes next to the
+archives (`/var/backups/n8n/backup.log`) so it lives in a directory
+that the user already owns — no extra setup, no `/var/log` permission
+issue, and the log rotates with the backups when you change
+`BACKUP_DIR` later:
 
 ```cron
-0 3 * * *  /home/benoit/bb-homelab/services/n8n/scripts/backup.sh >> /var/log/n8n-backup.log 2>&1
+0 3 * * *  /home/benoit/bb-homelab/services/n8n/scripts/backup.sh >> /var/backups/n8n/backup.log 2>&1
 ```
 
 Verify with:
@@ -83,11 +87,13 @@ Verify with:
 crontab -l | grep backup.sh
 # Wait one night, then:
 ls -lt /var/backups/n8n/
-tail -n 20 /var/log/n8n-backup.log
+tail -n 20 /var/backups/n8n/backup.log
 ```
 
-`/var/log/n8n-backup.log` should be created by logrotate automatically
-on Debian, but you can pre-create it with:
+If you prefer to keep logs under `/var/log/`, pre-create the file
+once with the right ownership before adding the cron line, otherwise
+the shell redirection fails before `backup.sh` runs and the cron job
+silently produces nothing:
 
 ```bash
 sudo install -o "$USER" -g "$USER" -m 644 /dev/null /var/log/n8n-backup.log

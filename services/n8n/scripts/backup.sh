@@ -37,6 +37,16 @@ fi
 
 mkdir -p "${BACKUP_DIR}"
 
+# Ensure the in-container staging dir and the partial archive are
+# cleaned up no matter how we exit (success, error, or interrupt).
+# Without this, a failure during tar/mv leaves a full copy of .n8n
+# inside /tmp of the container, eating disk and compounding failures.
+cleanup() {
+  docker exec "${CONTAINER}" rm -rf "${TMP_IN_CONTAINER}" 2>/dev/null || true
+  rm -f "${ARCHIVE}.part" 2>/dev/null || true
+}
+trap cleanup EXIT
+
 log "staging snapshot inside container"
 docker exec "${CONTAINER}" sh -c "
   set -e
@@ -54,9 +64,6 @@ log "streaming archive to ${ARCHIVE}"
 docker exec "${CONTAINER}" tar -czf - -C "${TMP_IN_CONTAINER}" . > "${ARCHIVE}.part"
 mv "${ARCHIVE}.part" "${ARCHIVE}"
 chmod 600 "${ARCHIVE}"
-
-log "cleanup in-container staging"
-docker exec "${CONTAINER}" rm -rf "${TMP_IN_CONTAINER}"
 
 log "rotation: keep last ${KEEP} archives"
 # shellcheck disable=SC2012  # ls is fine here; filenames are controlled.
