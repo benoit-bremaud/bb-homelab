@@ -29,11 +29,26 @@ TMP_IN_CONTAINER="/tmp/n8n-backup-${TS}"
 log()  { printf '[backup] %s\n' "$*"; }
 die()  { printf '[backup] ERROR: %s\n' "$*" >&2; exit 1; }
 
+# Validate KEEP early so an invalid env var fails with a clear message
+# instead of a confusing arithmetic error from $((KEEP + 1)) below.
+if ! [[ "${KEEP}" =~ ^[0-9]+$ ]]; then
+  die "KEEP must be a non-negative integer (got: '${KEEP}')"
+fi
+
 command -v docker >/dev/null || die "docker not found in PATH"
 
 if ! docker ps --format '{{.Names}}' | grep -qx "${CONTAINER}"; then
   die "container '${CONTAINER}' is not running"
 fi
+
+# Preflight the tools we rely on inside the container so a missing
+# binary surfaces with a clear message instead of an opaque "not found"
+# from `docker exec` mid-snapshot.
+for tool in sqlite3 tar cp sh; do
+  if ! docker exec "${CONTAINER}" sh -c "command -v ${tool} >/dev/null"; then
+    die "container '${CONTAINER}' is missing required tool: ${tool}"
+  fi
+done
 
 mkdir -p "${BACKUP_DIR}"
 
@@ -58,6 +73,13 @@ docker exec "${CONTAINER}" sh -c "
   # Then: overwrite the copied .sqlite with an atomic SQLite .backup,
   # which is consistent even under concurrent writes (WAL-safe).
   sqlite3 /home/node/.n8n/database.sqlite \".backup '${TMP_IN_CONTAINER}/database.sqlite'\"
+  # Drop the SQLite sidecar files copied verbatim above. They reflect
+  # the live DB state at copy time, not the consistent .backup output,
+  # so leaving them in the archive would confuse a restore.
+  rm -f \\
+    '${TMP_IN_CONTAINER}/database.sqlite-wal' \\
+    '${TMP_IN_CONTAINER}/database.sqlite-shm' \\
+    '${TMP_IN_CONTAINER}/database.sqlite-journal'
 "
 
 log "streaming archive to ${ARCHIVE}"

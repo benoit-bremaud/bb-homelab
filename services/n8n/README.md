@@ -66,20 +66,6 @@ On first start, n8n will prompt for an admin account creation.
 
 All sensitive values live in `.env` (gitignored). Never commit `.env`.
 
-## Backup + migration
-
-A full backup + restore procedure will be documented as part of
-[issue #8](../../issues/8) (this repo has no `BACKUP.md` yet — the
-link below will replace this note). High level:
-
-- **Backup**: `docker compose stop n8n && docker run --rm -v
-  bb-homelab-n8n-data:/data -v $(pwd):/backup alpine tar czf
-  /backup/n8n-backup.tar.gz -C /data . && docker compose start n8n`
-- **Restore** on a fresh host: same `N8N_ENCRYPTION_KEY` in `.env` +
-  `docker run --rm -v bb-homelab-n8n-data:/data -v $(pwd):/backup
-  alpine tar xzf /backup/n8n-backup.tar.gz -C /data` before the first
-  `docker compose up -d`.
-
 ## Security notes
 
 - n8n binds on loopback only. Any port exposed to the LAN or the

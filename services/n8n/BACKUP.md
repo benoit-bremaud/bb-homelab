@@ -116,8 +116,10 @@ VOL_PATH=$(docker volume inspect bb-homelab-n8n-data --format '{{ .Mountpoint }}
 echo "${VOL_PATH}"
 
 # 4. Wipe + extract in place (requires sudo because the volume is
-#    owned by the container's uid).
-sudo rm -rf "${VOL_PATH:?}"/*
+#    owned by the container's uid). The find form deletes dotfiles
+#    too — n8n's volume contains hidden state (e.g. .cache, .npmrc)
+#    that a plain `rm -rf .../*` would silently leave behind.
+sudo find "${VOL_PATH:?}" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
 sudo tar -xzf "${ARCHIVE}" -C "${VOL_PATH}"
 
 # 5. Bring the stack back up.
