@@ -243,3 +243,108 @@ was done and why, by date.
   the next Pi (or reader) spends minutes, not hours.
   `bootstrap/README.md` gets a prominent pointer to it at the top.
 - **Closes**: #38.
+- **Merged**: 2026-04-14 21:03 UTC (commit `c3def76`). Follow-up fix
+  commit `3571c6c` on the branch addressed one markdownlint failure
+  (MD034 bare URL) and picked up the Codex P2 review comment
+  recommending an HTTPS clone path for the no-SSH-key branch of the
+  recipe.
+
+---
+
+## 2026-04-15
+
+### Full project audit + monitoring & storage debriefs
+
+- **What**: End-to-end audit of the repo (documentation, CI/CD,
+  security, git hygiene, PROJECT_LOG maintenance, open backlog). Grade
+  A-. Identified three high-priority gaps: Caddy reverse proxy (#14)
+  not yet deployed, n8n volume migration (#7) incomplete, storage
+  layer (Layer 1) still skeleton-only (no MOUNT.md / SMART.md /
+  BACKUP.md / INVENTORY.md).
+- **Monitoring debrief**: locked stack B (Uptime Kuma + Beszel) as the
+  short-term target — ~150 MB RAM, 2 containers, covers service-up
+  alerts (Kuma, symptom-based per SRE Book) and critical resources
+  (Beszel, USE method). Stack C (Prometheus + Grafana + Alertmanager)
+  queued as an explicit DevOps-learning milestone.
+- **Storage debrief**: chose Pattern Y (3 disks tiered —
+  appdata/archive on fast disk A, media on B, backups on C). Declined
+  SSD for now. Established data-tier classification T0→T6 to drive a
+  crescendo backup strategy (T0 admin docs → T1 photos → T2 videos).
+- **Decisions locked**:
+  - Monitoring: stack B first, stack C later for learning.
+  - Storage: Pattern Y, disciplined `/mnt/{appdata,archive,media,
+    backup}` layout, UUID + `nofail` in fstab.
+  - Offsite: deferred — candidate Backblaze B2 / Hetzner Storage Box
+    when T0+T1 land on the Pi (issue #19).
+- **Plan file**: `~/.claude/plans/indexed-growing-locket.md` — reference
+  for the agent side of the audit; full prose mirrored into this log
+  via the entries of 2026-04-15 / 2026-04-16.
+
+### HDD inventory received
+
+- **What**: Physical inventory of 6 old HDDs. 3 usable (WD Black 500 GB
+  2018, Seagate BarraCuda 1 TB 2018, WD Blue 1 TB 2016), 1 spare (HGST
+  500 GB 2013), 2 discarded (Hitachi 60 GB IDE — PATA incompatible,
+  Samsung 120 GB 2007 — too old).
+- **Why**: Needed to assign concrete disks to Pattern Y roles (A/B/C)
+  and to write #48 INVENTORY.md baseline against real hardware.
+- **Assignments**: A=WD Black (#2) → `/mnt/appdata` + `/mnt/archive`,
+  B=Seagate (#3) → `/mnt/media`, C=WD Blue (#4) → `/mnt/backup`.
+
+---
+
+## 2026-04-16
+
+### Backlog expansion — 7 issues created from audit findings
+
+- **What**: Opened #44–#50 to track the monitoring stack choice
+  (#44 Kuma+Beszel P3, #45 Prometheus migration plan P4), the
+  deferred security audit roadmap (#46 P4), the hardware procurement
+  for USB-SATA passthrough (#47 P3 — new, see JMS583 incident below),
+  the storage docs (#48 INVENTORY.md P2, #49 `/mnt` layout P2), and
+  the powered USB hub evaluation (#50 P4). #47 blocks #48 and #49.
+- **Why**: Execute the audit's recommendations by turning them into
+  tracked work instead of leaving them only in the plan file.
+
+### HDD #2 integration blocked — JMS583 is USB-NVMe, not USB-SATA
+
+- **What**: Plugged the WD Black 500 GB (#2) into the Pi via the USB
+  enclosure I had on hand. `lsblk` saw it as `/dev/sda`, partitions
+  readable (Windows + BitLocker-encrypted main partition). SMART
+  however kept returning
+  `Read NVMe Identify Controller failed: scsi error unsupported field
+  in scsi command` across every passthrough mode tried (`-d sat`,
+  `-d sat,12`, `-d scsi`, `-d sntjmicron`, `-d usbjmicron`). `lsusb`
+  identified the bridge as `152d:0583 JMicron JMS583 Gen 2 to PCIe
+  Gen3x2 Bridge`.
+- **Root cause**: JMS583 is a USB-to-NVMe M.2 bridge, not USB-SATA.
+  The disk is detected as a block device by coincidence of dual-mode
+  firmware, but SMART commands tunnel through an NVMe pipe that
+  cannot translate ATA SMART → hard stop.
+- **Decision**: do not use a disk in production without SMART visibility
+  (risk of silent corruption). Order proper USB-SATA enclosures with
+  JMS567 / JMS578 / ASM1153 / ASM225CM chipsets (issue #47). Pause
+  HDD integration until they arrive. Physical disk content (BitLocker
+  Windows volume) left untouched.
+- **Gotcha to add to FIRSTBOOT / hardware docs**: an enclosure chipset
+  check (`lsusb` → cross-reference against a known-good list) must
+  precede any disk integration.
+
+### n8n backup procedure — PR fix/8-n8n-backup-procedure
+
+- **What**: Added `services/n8n/scripts/backup.sh` (atomic SQLite
+  `.backup` + tar of the full `/home/node/.n8n` dir, default target
+  `/var/backups/n8n`, retention 7 archives, overridable via env
+  variables), `services/n8n/BACKUP.md` (manual run, cron schedule,
+  restore procedure for same-host and cross-host, archive integrity
+  verification, rotation policy). Linked from `services/n8n/README.md`.
+- **Why**: Closes #8 (P1). n8n had been running in prod with no
+  documented backup for two weeks — the single point of failure of
+  the homelab today. The procedure is deliberately SD-local for now
+  (`/var/backups/n8n/`) and will move to HDD C (`/mnt/backup/n8n/`)
+  when #47 unblocks storage deployment.
+- **Key management**: `N8N_ENCRYPTION_KEY` intentionally excluded from
+  the archive and kept only in the password manager. Documented
+  explicitly in BACKUP.md so a restore on a fresh host can be
+  performed unambiguously.
+- **Closes**: #8.

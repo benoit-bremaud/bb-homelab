@@ -22,6 +22,9 @@ homelab needs in one clone.
 - **volume `bb-homelab-n8n-data`** — persists n8n's SQLite DB,
   encrypted credentials, workflow JSONs. Backup target.
 
+See [BACKUP.md](BACKUP.md) for the backup & restore procedure (manual
+run, cron schedule, volume migration across hosts, restore verification).
+
 ## Bootstrap
 
 Pre-requisite: Docker + Compose v2 installed by `bootstrap/bootstrap.sh`.
@@ -62,20 +65,6 @@ On first start, n8n will prompt for an admin account creation.
 | `CLOUDFLARE_TUNNEL_TOKEN` | *(future)* Stable named tunnel token once a Cloudflare domain is bought. |
 
 All sensitive values live in `.env` (gitignored). Never commit `.env`.
-
-## Backup + migration
-
-A full backup + restore procedure will be documented as part of
-[issue #8](../../issues/8) (this repo has no `BACKUP.md` yet — the
-link below will replace this note). High level:
-
-- **Backup**: `docker compose stop n8n && docker run --rm -v
-  bb-homelab-n8n-data:/data -v $(pwd):/backup alpine tar czf
-  /backup/n8n-backup.tar.gz -C /data . && docker compose start n8n`
-- **Restore** on a fresh host: same `N8N_ENCRYPTION_KEY` in `.env` +
-  `docker run --rm -v bb-homelab-n8n-data:/data -v $(pwd):/backup
-  alpine tar xzf /backup/n8n-backup.tar.gz -C /data` before the first
-  `docker compose up -d`.
 
 ## Security notes
 
