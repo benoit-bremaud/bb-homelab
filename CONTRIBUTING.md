@@ -41,10 +41,12 @@ Nobody (including admins) can:
 - Merge a PR whose branch is not up-to-date with `main` (strict mode).
 
 **Reviews**: Copilot is configured as the default code reviewer
-(auto-reviews every PR). Review comments are treated per the procedure
-below (Must Have / Should Have / Nice to Have / Disagree), but reviews
-are **not blocking** — a solo developer cannot self-approve on GitHub,
-so requiring an approving review would cause a lockout.
+(auto-reviews every PR). This is a GitHub repo setting, not code —
+verify or change it in **Settings → Code review → Copilot**.
+Review comments are treated per the procedure below (Must Have /
+Should Have / Nice to Have / Disagree), but reviews are **not
+blocking** — a solo developer cannot self-approve on GitHub, so
+requiring an approving review would cause a lockout.
 
 **Emergency bypass**: there is intentionally no escape hatch
 (`enforce_admins: true`). If a merge is truly urgent and a CI check
