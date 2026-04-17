@@ -26,6 +26,32 @@ Mandatory procedure for every reviewer (automated or human):
 - Implement Must/Should fixes; explain Disagree with technical reasoning.
 - Do not resolve conversations programmatically — that's a human action.
 
+## Branch protection — `main`
+
+The `main` branch is protected by a GitHub branch protection rule.
+Nobody (including admins) can:
+
+- Push directly to `main` — every change must go through a PR.
+- Force-push to `main` — history is immutable once merged.
+- Delete `main`.
+- Merge a PR unless **all 5 CI status checks** pass:
+  `Detect secrets` (gitleaks), `Lint shell scripts` (shellcheck),
+  `Lint Dockerfiles` (hadolint), `Lint Markdown` (markdownlint),
+  `Lint YAML` (yamllint).
+- Merge a PR whose branch is not up-to-date with `main` (strict mode).
+
+**Reviews**: Copilot is configured as the default code reviewer
+(auto-reviews every PR). This is a GitHub repo setting, not code —
+verify or change it in **Settings → Code review → Copilot**.
+Review comments are treated per the procedure below (Must Have /
+Should Have / Nice to Have / Disagree), but reviews are **not
+blocking** — a solo developer cannot self-approve on GitHub, so
+requiring an approving review would cause a lockout.
+
+**Emergency bypass**: there is intentionally no escape hatch
+(`enforce_admins: true`). If a merge is truly urgent and a CI check
+flakes, fix the flake first.
+
 ## Security
 
 - `.env` and `.env.local` are gitignored. **Never** commit secrets, tokens,
