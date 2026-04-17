@@ -348,3 +348,17 @@ was done and why, by date.
   explicitly in BACKUP.md so a restore on a fresh host can be
   performed unambiguously.
 - **Closes**: #8.
+
+### PR #52: protect main branch — CI-gated merge + enforce admins
+
+- **What**: Added a GitHub branch protection rule on `main`: require
+  5 CI checks (gitleaks, shellcheck, hadolint, markdownlint, yamllint),
+  strict up-to-date branch, no direct push, no force-push, no deletion,
+  enforce for admins, dismiss stale reviews on new push. Copilot set as
+  default code reviewer (auto-reviews all PRs). Documented the
+  protection rule and its rationale in `CONTRIBUTING.md`.
+- **Why**: `main` was unprotected — any accidental `git push --force
+  origin main` would bypass CI and potentially destroy history. GitHub
+  showed a warning banner. 0 reviews required (solo dev cannot
+  self-approve on GitHub — requiring 1 review = lockout).
+- **Closes**: #52.
