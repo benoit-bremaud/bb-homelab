@@ -448,7 +448,9 @@ was done and why, by date.
 
 - **What**: Made `sqlite3` optional. With it present, the atomic
   Online Backup API path is used; without it, the script fell back
-  to a plain `cp -a` copy of `.sqlite` + WAL/SHM sidecars.
+  to a plain `cp -a` copy of `database.sqlite` plus its
+  `database.sqlite-wal` / `database.sqlite-shm` sidecars
+  (and `database.sqlite-journal` if present).
 - **Closes**: #54
 - **Merge**: `e90f0d4`
 - **Follow-up issue #56 opened immediately**: the fallback `cp -a`
