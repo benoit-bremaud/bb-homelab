@@ -362,3 +362,84 @@ was done and why, by date.
   showed a warning banner. 0 reviews required (solo dev cannot
   self-approve on GitHub — requiring 1 review = lockout).
 - **Closes**: #52.
+
+---
+
+## 2026-04-18
+
+### Project audit + scope recalibration
+
+- **What**: Full audit of the repo state after 5 days (~43 commits,
+  13 PRs merged). Grade A-. Identified that several issues were already
+  closed by merged PRs but had not been closed in the tracker. Scope
+  boundary for bb-homelab reaffirmed: **infra only** — OS, Docker,
+  network, storage, security, monitoring. No workflow JSONs, no
+  application-level configs.
+- **Why**: Context had drifted across sessions. A clean audit was
+  needed to re-establish what is done, what is blocked, and what
+  the true next steps are.
+- **Decisions locked**:
+  - bb-homelab scope = infra pure. Workflow JSONs stay in their
+    upstream repos (n8n-kaggle-watcher, impropedia). Plan section 13
+    (copy kaggle-watcher workflows into services/n8n/workflows/)
+    is abandoned.
+  - HDD enclosures (#47) still on order — storage layer (#10 #11
+    #48 #49) remains blocked.
+  - Next unblocked priorities: audit Pi n8n state (#7), then
+    Caddy reverse proxy (#14), then monitoring stack B (#44).
+
+### Issue tracker cleanup — 7 issues closed
+
+- **What**: Closed #6, #7, #8, #9, #32, #38, #52 — all were already
+  resolved by merged PRs, de facto complete, or out of scope.
+  - #6 → PR #40 (services/n8n/ integration)
+  - #7 → de facto complete: n8n set up fresh on Pi (not migrated from
+    PC), the only workflow (Impropedia → Telegram) is active and has
+    34 successful executions. No data loss risk.
+  - #8 → PR #51 (backup procedure)
+  - #32 → PR #33 (CI security workflows)
+  - #38 → PR #43 (FIRSTBOOT.md)
+  - #52 → PR #52 + #53 (branch protection)
+  - #9 → out of scope; pointing the Impropedia widget to the Pi
+    tunnel URL is an application change that belongs in the
+    impropedia repo, not here.
+- **Why**: Stale open issues pollute the backlog and make it hard
+  to see actual remaining work.
+
+### n8n Pi audit — findings
+
+- **What**: Full read-only SSH audit of the Pi's n8n state.
+- **Findings**:
+  - 1 active workflow: `Impropedia — Feedback → Telegram`, 34
+    executions, last run 2026-04-17 20:33 SUCCESS.
+  - n8n image running as `latest` (not pinned) with a duplicate
+    `N8N_ENCRYPTION_KEY` entry in `.env`.
+  - backup.sh had never been run — `/var/backups/n8n/` did not
+    exist, no cron configured.
+  - Pi repo clone was 15 commits behind `origin/main` with a stale
+    tracking branch pointing to a deleted remote branch.
+  - n8n uses a Docker Hardened Image (Alpine 3.22) with no package
+    manager and no sqlite3 binary.
+- **Actions taken**:
+  - Pulled Pi repo to HEAD (`git checkout main &&
+    git branch --set-upstream-to=origin/main main && git pull`).
+  - Fixed `.env` on Pi: removed duplicate `N8N_IMAGE_TAG=latest`,
+    pinned to `N8N_IMAGE_TAG=2.16.0`.
+  - Created `~/backups/n8n/` on Pi (using home dir since
+    `/var/backups/n8n/` requires sudo; will migrate to
+    `/mnt/backup/n8n/` when HDD C arrives, issue #47).
+  - First manual backup produced: `n8n-2026-04-18_204129.tar.gz`
+    (334 KB, WAL-inclusive, valid for restore).
+
+### Issue #54 opened + PR #55: fix backup.sh for hardened images
+
+- **What**: `backup.sh` failed on every run because it required
+  `sqlite3` in the container, which Docker Hardened Images do not
+  ship. Fixed by making sqlite3 optional: if present, the existing
+  atomic `.backup` path is used; if absent, a WAL-inclusive verbatim
+  copy is kept instead (equally valid for restore).
+- **Why**: The backup script existed in the repo but was never
+  runnable on the actual production image. Data loss risk until fixed.
+- **Cron**: not yet activated — will be set up after PR #55 merges
+  and the fix is pulled on the Pi.
+- **PR**: #55 — `fix/54-backup-sqlite3-hardened-image`.
