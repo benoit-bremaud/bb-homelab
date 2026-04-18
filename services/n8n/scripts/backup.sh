@@ -106,14 +106,18 @@ if [ "${HAS_SQLITE3}" = "true" ]; then
   docker exec "${CONTAINER}" tar -czf - -C "${TMP_IN_CONTAINER}" . > "${ARCHIVE}.part"
 else
   # Path B — sqlite3 absent: pause the container (SIGSTOP via docker pause) so
-  # no write can occur, copy files to a host temp dir via docker cp (which works
-  # on a paused container, bypassing exec), then resume immediately.
+  # no write can occur, copy files to a host temp dir via docker cp -a (which
+  # works on a paused container, bypassing exec), then resume immediately.
   # docker exec is NOT used while the container is paused — it would hang.
+  # -a is critical: preserves UID/GID from the container so that on restore,
+  # ownership of /home/node/.n8n matches n8n's runtime UID. Without it, files
+  # get chowned to whoever runs backup.sh (e.g. root via cron) and n8n fails
+  # to write to its data dir after restore.
   TMP_ON_HOST="$(mktemp -d)"
   log "staging snapshot via docker cp (sqlite3: false) — pausing container"
   CONTAINER_PAUSED=true
   docker pause "${CONTAINER}"
-  docker cp "${CONTAINER}:/home/node/.n8n/." "${TMP_ON_HOST}/"
+  docker cp -a "${CONTAINER}:/home/node/.n8n/." "${TMP_ON_HOST}/"
   docker unpause "${CONTAINER}"
   CONTAINER_PAUSED=false
   log "SQLite: container resumed — WAL-inclusive copy completed"
