@@ -13,11 +13,12 @@
 #     `database.sqlite-shm` (and, if present, `database.sqlite-journal`)
 #     are dropped from the archive.
 #   - If sqlite3 is absent (e.g. Docker Hardened Images): the container is
-#     paused (SIGSTOP via docker pause) for the duration of the file copy,
-#     then immediately resumed (docker unpause). The pause freezes all writes
-#     atomically so the copied `database.sqlite` + SQLite sidecar files such
-#     as `database.sqlite-wal` and `database.sqlite-shm` form a consistent
-#     set. Any SQLite client will merge the WAL automatically on first open.
+#     paused via the cgroup freezer (docker pause) for the duration of the
+#     file copy, then immediately resumed (docker unpause). The freeze halts
+#     all writes atomically so the copied `database.sqlite` + SQLite sidecar
+#     files such as `database.sqlite-wal` and `database.sqlite-shm` form a
+#     consistent set. Any SQLite client will merge the WAL automatically on
+#     first open.
 #
 # IMPORTANT — the N8N_ENCRYPTION_KEY is NOT included in this archive.
 # Without that key the encrypted credentials in the SQLite DB cannot be
@@ -48,6 +49,10 @@ if ! [[ "${KEEP}" =~ ^[0-9]+$ ]]; then
 fi
 
 command -v docker >/dev/null || die "docker not found in PATH"
+# Path B (sqlite3 absent) builds the archive on the host, so host tar is
+# required too. Check it upfront — otherwise the script would pause the
+# container, copy, then fail late at tar, leaving a partial archive.
+command -v tar >/dev/null    || die "tar not found in PATH (needed on host for sqlite3-absent fallback)"
 
 if ! docker ps --format '{{.Names}}' | grep -qx "${CONTAINER}"; then
   die "container '${CONTAINER}' is not running"
@@ -76,10 +81,22 @@ mkdir -p "${BACKUP_DIR}"
 TMP_ON_HOST=""
 CONTAINER_PAUSED=false
 cleanup() {
+  # If the container is (or may still be) paused, skip in-container cleanup:
+  # `docker exec` against a paused container hangs forever, and trap handlers
+  # must not block. We try unpause once and verify — only then run docker exec.
+  can_exec_in_container=true
   if [ "${CONTAINER_PAUSED}" = "true" ]; then
-    docker unpause "${CONTAINER}" 2>/dev/null || true
+    if ! docker unpause "${CONTAINER}" >/dev/null 2>&1; then
+      log "warning: failed to unpause '${CONTAINER}' in cleanup — skipping in-container rm (manual cleanup may be needed: ${TMP_IN_CONTAINER})"
+      can_exec_in_container=false
+    elif [ "$(docker inspect -f '{{.State.Paused}}' "${CONTAINER}" 2>/dev/null || printf 'true')" = "true" ]; then
+      log "warning: '${CONTAINER}' still paused after unpause — skipping in-container rm"
+      can_exec_in_container=false
+    fi
   fi
-  docker exec "${CONTAINER}" rm -rf "${TMP_IN_CONTAINER}" 2>/dev/null || true
+  if [ "${can_exec_in_container}" = "true" ]; then
+    docker exec "${CONTAINER}" rm -rf "${TMP_IN_CONTAINER}" 2>/dev/null || true
+  fi
   if [ -n "${TMP_ON_HOST}" ]; then rm -rf "${TMP_ON_HOST}" 2>/dev/null || true; fi
   rm -f "${ARCHIVE}.part" 2>/dev/null || true
 }
@@ -105,10 +122,11 @@ if [ "${HAS_SQLITE3}" = "true" ]; then
   log "streaming archive to ${ARCHIVE}"
   docker exec "${CONTAINER}" tar -czf - -C "${TMP_IN_CONTAINER}" . > "${ARCHIVE}.part"
 else
-  # Path B — sqlite3 absent: pause the container (SIGSTOP via docker pause) so
-  # no write can occur, copy files to a host temp dir via docker cp -a (which
-  # works on a paused container, bypassing exec), then resume immediately.
-  # docker exec is NOT used while the container is paused — it would hang.
+  # Path B — sqlite3 absent: pause the container (cgroup freezer via docker
+  # pause) so no write can occur, copy files to a host temp dir via docker
+  # cp -a (which works on a paused container, bypassing exec), then resume
+  # immediately. docker exec is NOT used while the container is paused — it
+  # would hang.
   # -a is critical: preserves UID/GID from the container so that on restore,
   # ownership of /home/node/.n8n matches n8n's runtime UID. Without it, files
   # get chowned to whoever runs backup.sh (e.g. root via cron) and n8n fails
