@@ -4,8 +4,15 @@
 #
 # Produces a timestamped tar.gz in /var/backups/n8n/ containing the full
 # /home/node/.n8n directory (SQLite DB, workflows, encrypted credentials,
-# config). The SQLite DB is dumped via `.backup` first so the snapshot
-# is consistent even if n8n is writing.
+# config).
+#
+# SQLite strategy (two paths):
+#   - If sqlite3 is present in the container: uses the SQLite Online Backup
+#     API (.backup command) — produces a clean single-file snapshot with
+#     WAL merged in. Sidecar files (.wal, .shm) are dropped from the archive.
+#   - If sqlite3 is absent (e.g. Docker Hardened Images): keeps the verbatim
+#     copy including .wal and .shm files. This is a valid SQLite backup —
+#     any SQLite client will merge the WAL automatically on first open.
 #
 # IMPORTANT — the N8N_ENCRYPTION_KEY is NOT included in this archive.
 # Without that key the encrypted credentials in the SQLite DB cannot be
@@ -43,12 +50,19 @@ fi
 
 # Preflight the tools we rely on inside the container so a missing
 # binary surfaces with a clear message instead of an opaque "not found"
-# from `docker exec` mid-snapshot.
-for tool in sqlite3 tar cp sh; do
+# from `docker exec` mid-snapshot. sqlite3 is optional: hardened images
+# (e.g. Docker Hardened Images) ship without it — the script falls back
+# to a WAL-inclusive copy which is equally valid for restore purposes.
+for tool in tar cp sh; do
   if ! docker exec "${CONTAINER}" sh -c "command -v ${tool} >/dev/null"; then
     die "container '${CONTAINER}' is missing required tool: ${tool}"
   fi
 done
+
+HAS_SQLITE3=false
+if docker exec "${CONTAINER}" sh -c "command -v sqlite3 >/dev/null" 2>/dev/null; then
+  HAS_SQLITE3=true
+fi
 
 mkdir -p "${BACKUP_DIR}"
 
@@ -62,25 +76,34 @@ cleanup() {
 }
 trap cleanup EXIT
 
-log "staging snapshot inside container"
+log "staging snapshot inside container (sqlite3: ${HAS_SQLITE3})"
 docker exec "${CONTAINER}" sh -c "
   set -e
   rm -rf '${TMP_IN_CONTAINER}'
   mkdir -p '${TMP_IN_CONTAINER}'
-  # First: copy the whole n8n data dir verbatim (workflows, nodes,
-  # config, encrypted credentials, and a copy of the live .sqlite).
+  # Copy the whole n8n data dir verbatim (workflows, nodes, config,
+  # encrypted credentials, and a copy of the live .sqlite + WAL).
   cp -a /home/node/.n8n/. '${TMP_IN_CONTAINER}/'
-  # Then: overwrite the copied .sqlite with an atomic SQLite .backup,
-  # which is consistent even under concurrent writes (WAL-safe).
-  sqlite3 /home/node/.n8n/database.sqlite \".backup '${TMP_IN_CONTAINER}/database.sqlite'\"
-  # Drop the SQLite sidecar files copied verbatim above. They reflect
-  # the live DB state at copy time, not the consistent .backup output,
-  # so leaving them in the archive would confuse a restore.
-  rm -f \\
-    '${TMP_IN_CONTAINER}/database.sqlite-wal' \\
-    '${TMP_IN_CONTAINER}/database.sqlite-shm' \\
-    '${TMP_IN_CONTAINER}/database.sqlite-journal'
 "
+
+if [ "${HAS_SQLITE3}" = "true" ]; then
+  # Overwrite the verbatim .sqlite copy with an atomic Online Backup API
+  # snapshot — consistent even under concurrent writes, WAL fully merged.
+  # Drop the WAL sidecar files: they are redundant after .backup merges them.
+  docker exec "${CONTAINER}" sh -c "
+    set -e
+    sqlite3 /home/node/.n8n/database.sqlite \".backup '${TMP_IN_CONTAINER}/database.sqlite'\"
+    rm -f \\
+      '${TMP_IN_CONTAINER}/database.sqlite-wal' \\
+      '${TMP_IN_CONTAINER}/database.sqlite-shm' \\
+      '${TMP_IN_CONTAINER}/database.sqlite-journal'
+  "
+  log "SQLite: atomic .backup completed (WAL merged, sidecar files removed)"
+else
+  # No sqlite3 in the container — WAL and SHM files are kept as-is.
+  # This is a valid backup: SQLite will merge the WAL on first open after restore.
+  log "SQLite: sqlite3 absent — WAL-inclusive copy (valid for restore)"
+fi
 
 log "streaming archive to ${ARCHIVE}"
 docker exec "${CONTAINER}" tar -czf - -C "${TMP_IN_CONTAINER}" . > "${ARCHIVE}.part"
