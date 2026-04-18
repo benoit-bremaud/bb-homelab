@@ -9,10 +9,16 @@
 # SQLite strategy (two paths):
 #   - If sqlite3 is present in the container: uses the SQLite Online Backup
 #     API (.backup command) — produces a clean single-file snapshot with
-#     WAL merged in. Sidecar files (.wal, .shm) are dropped from the archive.
-#   - If sqlite3 is absent (e.g. Docker Hardened Images): keeps the verbatim
-#     copy including .wal and .shm files. This is a valid SQLite backup —
-#     any SQLite client will merge the WAL automatically on first open.
+#     WAL merged in. SQLite sidecar files such as `database.sqlite-wal`,
+#     `database.sqlite-shm` (and, if present, `database.sqlite-journal`)
+#     are dropped from the archive.
+#   - If sqlite3 is absent (e.g. Docker Hardened Images): the container is
+#     paused via the cgroup freezer (docker pause) for the duration of the
+#     file copy, then immediately resumed (docker unpause). The freeze halts
+#     all writes atomically so the copied `database.sqlite` + SQLite sidecar
+#     files such as `database.sqlite-wal` and `database.sqlite-shm` form a
+#     consistent set. Any SQLite client will merge the WAL automatically on
+#     first open.
 #
 # IMPORTANT — the N8N_ENCRYPTION_KEY is NOT included in this archive.
 # Without that key the encrypted credentials in the SQLite DB cannot be
@@ -43,6 +49,10 @@ if ! [[ "${KEEP}" =~ ^[0-9]+$ ]]; then
 fi
 
 command -v docker >/dev/null || die "docker not found in PATH"
+# Path B (sqlite3 absent) builds the archive on the host, so host tar is
+# required too. Check it upfront — otherwise the script would pause the
+# container, copy, then fail late at tar, leaving a partial archive.
+command -v tar >/dev/null    || die "tar not found in PATH (needed on host for sqlite3-absent fallback)"
 
 if ! docker ps --format '{{.Names}}' | grep -qx "${CONTAINER}"; then
   die "container '${CONTAINER}' is not running"
@@ -66,32 +76,42 @@ fi
 
 mkdir -p "${BACKUP_DIR}"
 
-# Ensure the in-container staging dir and the partial archive are
-# cleaned up no matter how we exit (success, error, or interrupt).
-# Without this, a failure during tar/mv leaves a full copy of .n8n
-# inside /tmp of the container, eating disk and compounding failures.
+# Cleanup on exit: unpause container if it was left paused by an error,
+# remove the in-container staging dir, the host temp dir, and any partial archive.
+TMP_ON_HOST=""
+CONTAINER_PAUSED=false
 cleanup() {
-  docker exec "${CONTAINER}" rm -rf "${TMP_IN_CONTAINER}" 2>/dev/null || true
+  # If the container is (or may still be) paused, skip in-container cleanup:
+  # `docker exec` against a paused container hangs forever, and trap handlers
+  # must not block. We try unpause once and verify — only then run docker exec.
+  can_exec_in_container=true
+  if [ "${CONTAINER_PAUSED}" = "true" ]; then
+    if ! docker unpause "${CONTAINER}" >/dev/null 2>&1; then
+      log "warning: failed to unpause '${CONTAINER}' in cleanup — skipping in-container rm (manual cleanup may be needed: ${TMP_IN_CONTAINER})"
+      can_exec_in_container=false
+    elif [ "$(docker inspect -f '{{.State.Paused}}' "${CONTAINER}" 2>/dev/null || printf 'true')" = "true" ]; then
+      log "warning: '${CONTAINER}' still paused after unpause — skipping in-container rm"
+      can_exec_in_container=false
+    fi
+  fi
+  if [ "${can_exec_in_container}" = "true" ]; then
+    docker exec "${CONTAINER}" rm -rf "${TMP_IN_CONTAINER}" 2>/dev/null || true
+  fi
+  if [ -n "${TMP_ON_HOST}" ]; then rm -rf "${TMP_ON_HOST}" 2>/dev/null || true; fi
   rm -f "${ARCHIVE}.part" 2>/dev/null || true
 }
 trap cleanup EXIT
 
-log "staging snapshot inside container (sqlite3: ${HAS_SQLITE3})"
-docker exec "${CONTAINER}" sh -c "
-  set -e
-  rm -rf '${TMP_IN_CONTAINER}'
-  mkdir -p '${TMP_IN_CONTAINER}'
-  # Copy the whole n8n data dir verbatim (workflows, nodes, config,
-  # encrypted credentials, and a copy of the live .sqlite + WAL).
-  cp -a /home/node/.n8n/. '${TMP_IN_CONTAINER}/'
-"
-
 if [ "${HAS_SQLITE3}" = "true" ]; then
-  # Overwrite the verbatim .sqlite copy with an atomic Online Backup API
-  # snapshot — consistent even under concurrent writes, WAL fully merged.
-  # Drop the WAL sidecar files: they are redundant after .backup merges them.
+  # Path A — sqlite3 present: stage inside container, overwrite .sqlite with an
+  # atomic Online Backup API snapshot (WAL-safe, consistent under concurrent writes),
+  # drop the now-redundant WAL sidecar files, stream archive via docker exec tar.
+  log "staging snapshot inside container (sqlite3: true)"
   docker exec "${CONTAINER}" sh -c "
     set -e
+    rm -rf '${TMP_IN_CONTAINER}'
+    mkdir -p '${TMP_IN_CONTAINER}'
+    cp -a /home/node/.n8n/. '${TMP_IN_CONTAINER}/'
     sqlite3 /home/node/.n8n/database.sqlite \".backup '${TMP_IN_CONTAINER}/database.sqlite'\"
     rm -f \\
       '${TMP_IN_CONTAINER}/database.sqlite-wal' \\
@@ -99,14 +119,32 @@ if [ "${HAS_SQLITE3}" = "true" ]; then
       '${TMP_IN_CONTAINER}/database.sqlite-journal'
   "
   log "SQLite: atomic .backup completed (WAL merged, sidecar files removed)"
+  log "streaming archive to ${ARCHIVE}"
+  docker exec "${CONTAINER}" tar -czf - -C "${TMP_IN_CONTAINER}" . > "${ARCHIVE}.part"
 else
-  # No sqlite3 in the container — WAL and SHM files are kept as-is.
-  # This is a valid backup: SQLite will merge the WAL on first open after restore.
-  log "SQLite: sqlite3 absent — WAL-inclusive copy (valid for restore)"
+  # Path B — sqlite3 absent: pause the container (cgroup freezer via docker
+  # pause) so no write can occur, copy files to a host temp dir via docker
+  # cp -a (which works on a paused container, bypassing exec), then resume
+  # immediately. docker exec is NOT used while the container is paused — it
+  # would hang.
+  # -a is critical: preserves UID/GID from the container so that on restore,
+  # ownership of /home/node/.n8n matches n8n's runtime UID. Without it, files
+  # get chowned to whoever runs backup.sh (e.g. root via cron) and n8n fails
+  # to write to its data dir after restore.
+  TMP_ON_HOST="$(mktemp -d)"
+  log "staging snapshot via docker cp (sqlite3: false) — pausing container"
+  CONTAINER_PAUSED=true
+  docker pause "${CONTAINER}"
+  docker cp -a "${CONTAINER}:/home/node/.n8n/." "${TMP_ON_HOST}/"
+  docker unpause "${CONTAINER}"
+  CONTAINER_PAUSED=false
+  log "SQLite: container resumed — WAL-inclusive copy completed"
+  log "streaming archive to ${ARCHIVE}"
+  tar -czf "${ARCHIVE}.part" -C "${TMP_ON_HOST}" .
+  rm -rf "${TMP_ON_HOST}"
+  TMP_ON_HOST=""
 fi
 
-log "streaming archive to ${ARCHIVE}"
-docker exec "${CONTAINER}" tar -czf - -C "${TMP_IN_CONTAINER}" . > "${ARCHIVE}.part"
 mv "${ARCHIVE}.part" "${ARCHIVE}"
 chmod 600 "${ARCHIVE}"
 
