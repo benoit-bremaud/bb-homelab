@@ -52,6 +52,11 @@ requiring an approving review would cause a lockout.
 (`enforce_admins: true`). If a merge is truly urgent and a CI check
 flakes, fix the flake first.
 
+**Non-required checks**: `SonarQube Cloud / SonarQube Cloud scan`
+runs on every PR for code-quality and security visibility but is **not**
+in the required-checks list. It will be promoted to a required check
+once the Quality Gate has proven stable across several PRs.
+
 ## Security
 
 - `.env` and `.env.local` are gitignored. **Never** commit secrets, tokens,
@@ -67,6 +72,7 @@ flakes, fix the flake first.
 - [ ] `.env.example` files have placeholder values only
 - [ ] All development secrets rotated
 - [ ] CI includes secret detection job
+- [ ] SonarQube Cloud Quality Gate passes on `main`
 
 ## File organisation
 
