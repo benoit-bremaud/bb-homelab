@@ -6,3 +6,12 @@
 .DS_Store
 Thumbs.db
 node_modules/
+
+# IDE / agent local configs (user-specific)
+.claude/
+.vscode/
+
+# Defensive: never commit certs / private keys
+*.pem
+*.key
+*.crt
