@@ -1,0 +1,34 @@
+services:
+  caddy:
+    # Pinned by default. Bump via CADDY_IMAGE_TAG in .env when a newer
+    # release is needed. :latest avoided so a background pull cannot
+    # drag in a breaking change.
+    image: caddy:${CADDY_IMAGE_TAG:-2.8.4}
+    container_name: bb-homelab-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"  # HTTP/3 (QUIC)
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data          # certificates, ACME account, internal CA
+      - caddy_config:/config      # auto-managed runtime config
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    # External network shared with every backend service (n8n, future
+    # Jellyfin / Kuma / etc.). Must be created once by hand on the host:
+    #   docker network create bb-homelab-proxy
+    # External-first design so Caddy and the backend services can be
+    # torn down / upgraded independently without losing the shared bridge.
+    name: bb-homelab-proxy
+    external: true
+
+volumes:
+  caddy_data:
+    name: bb-homelab-caddy-data
+  caddy_config:
+    name: bb-homelab-caddy-config

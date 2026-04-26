@@ -1,0 +1,26 @@
+# bb-homelab reverse proxy — phase 1 (tailnet-only, TLS via internal CA).
+#
+# Every route below uses Caddy's internal CA (`tls internal`) because no
+# public domain is owned yet (decision #28). When a domain arrives, swap
+# `tls internal` for the default ACME flow (just remove the directive
+# and rename the hosts to the public FQDN).
+#
+# Root CA to install on every client device (laptop, phone, family
+# laptops). Copy it from the container after the first start:
+#   docker exec bb-homelab-caddy cat /data/caddy/pki/authorities/local/root.crt
+# See services/caddy/README.md for the full install procedure.
+{
+	# Global options.
+	# admin endpoint disabled: we don't need the HTTP API for now, and
+	# exposing it even on localhost widens the attack surface.
+	admin off
+}
+
+# ---- n8n ----
+# n8n.bb-homelab.local → n8n container on the shared proxy network.
+# Client devices add a single /etc/hosts entry pointing *.bb-homelab.local
+# to the Pi's Tailscale IP; routing is handled here.
+n8n.bb-homelab.local {
+	tls internal
+	reverse_proxy n8n:5678
+}

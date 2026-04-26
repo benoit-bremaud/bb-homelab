@@ -35,6 +35,13 @@ services:
       interval: 30s
       timeout: 5s
       retries: 5
+    networks:
+      # `default` keeps the existing MTU-tuned bridge for the
+      # 127.0.0.1:5678 host binding used by cloudflared.
+      # `proxy` is the shared external network on which Caddy reaches
+      # n8n via DNS name `n8n:5678` (see services/caddy/ + ADR 0002).
+      - default
+      - proxy
 
   # Cloudflare Tunnel — exposes n8n through a public HTTPS URL.
   # network_mode: host so cloudflared uses the host's network stack
@@ -64,6 +71,13 @@ networks:
       # some ADSL/VDSL modems). Cloudflare Tunnel's TLS handshake sends
       # large packets that would otherwise be fragmented and dropped.
       com.docker.network.driver.mtu: "1450"
+  proxy:
+    # Shared external network with services/caddy/. The reverse proxy
+    # reaches n8n via DNS name `n8n` on this bridge. Created on the
+    # host once with: `docker network create bb-homelab-proxy`
+    # (see services/caddy/README.md and ADR 0002).
+    name: bb-homelab-proxy
+    external: true
 
 volumes:
   n8n_data:
