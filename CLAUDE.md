@@ -17,7 +17,7 @@ The authoritative, agent-agnostic brief lives in [AGENTS.md](AGENTS.md). Read it
 
 ### Harness permissions
 
-Pre-authorised commands for this repo are listed in [.claude/settings.json](.claude/settings.json). It also grants access to the additional directory `services/n8n`. Extend that file (not ad-hoc prompts) when new repeating commands need to run without prompting.
+Pre-authorised commands for this repo are listed in the local Claude Code config file `.claude/settings.json` (gitignored — see `.gitignore`). It also grants access to the additional directory `services/n8n`. Extend that file (not ad-hoc prompts) when new repeating commands need to run without prompting.
 
 ### Interaction conventions
 
