@@ -511,3 +511,30 @@ was done and why, by date.
   form, never via an intermediate visible buffer.
 - **Closes**: #61
 - **Merge**: `90b0fbc`
+
+### PR #70 merged: version AGENTS.md + CLAUDE.md, gitignore .codex
+
+- **What**: Track `AGENTS.md` (132-line agent-agnostic onboarding
+  brief: architecture, workflow, merge gate, CI, security, PROJECT_LOG
+  discipline) and `CLAUDE.md` (39-line Claude Code-specific extensions
+  pointing back to AGENTS.md). Add `.codex` to `.gitignore` (Codex CLI
+  marker file, same precedent as `.claude/`).
+- **Why**: both agent files were sitting untracked at repo root since
+  2026-04-21. Versioning them turns ad-hoc onboarding instructions
+  into a reproducible canonical brief that any contributor or agent
+  can follow on a fresh clone.
+- **Review**:
+  - automated review (Should Have): mandatory `~/.agent-rules/common.md`
+    is machine-local, can't be followed on a fresh clone — reworded
+    as an *optional personal extension* (`afe4a0d`).
+  - automated review (Should Have): broken markdown link to gitignored
+    `.claude/settings.json` — replaced with backticked path pointing
+    at `.gitignore` (`250acae`).
+  - automated review (Disagree): false-positive about a `||` double
+    pipe in the AGENTS.md table — table is correctly single-piped
+    throughout.
+- **CI hiccup**: first run failed `Lint Markdown` (MD022/MD031/MD032
+  on AGENTS.md and CLAUDE.md). Fixed via `markdownlint-cli2 --fix`,
+  cleared on subsequent runs.
+- **Closes**: #69
+- **Merge**: `fa41e0d`
