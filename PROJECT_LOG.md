@@ -490,7 +490,7 @@ was done and why, by date.
 
 ### PR #62 merged: SonarCloud CI-based analysis
 
-- **What**: Switch SonarCloud from Automatic Analysis to CI-Based via
+- **What**: Switch SonarCloud from Automatic Analysis to CI-based via
   GitHub Actions (`sonarcloud.yml`, `sonar-project.properties`,
   CONTRIBUTING note). Quality Gate now computed per PR with inline
   Sonar decoration.
@@ -500,9 +500,11 @@ was done and why, by date.
   `benoit-bremaud_homelabb` (typo at creation) → `benoit-bremaud_bb-homelab`,
   Automatic Analysis disabled, project token generated and stored as
   `SONAR_TOKEN` repo secret.
-- **Review**: 2 Copilot Should Have on workflow trigger filter
-  inconsistency, addressed in `707630e`. Re-review post-`cd11693`
-  flagged nothing.
+- **Review**:
+  - Copilot (Should Have): two comments on workflow trigger filter
+    inconsistency, addressed in `707630e`.
+  - Copilot (Re-review): post-`cd11693` review flagged no further
+    issues.
 - **Token rotation incident**: a token was briefly exposed in a setup
   screenshot, immediately revoked and regenerated before use. Lesson:
   copy secrets straight from password manager into the destination
