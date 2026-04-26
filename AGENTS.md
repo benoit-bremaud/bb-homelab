@@ -1,6 +1,6 @@
 # AGENTS.md
 
-> **Cross-agent global rules**: inherit from `~/.agent-rules/common.md` (single source of truth on this machine — question & answer pattern with "need more explanation" option, language rules, decision traceability). Read that file first. The project-specific rules below extend the common rules.
+> **Optional personal extension**: the maintainer keeps a machine-local cross-agent rules file at `~/.agent-rules/common.md` (question & answer pattern with "need more explanation" option, language rules, decision traceability). It is **not** required to follow this repo — agents and contributors should treat the file below as fully self-contained. If the personal file is present in your environment, read it for additional context; otherwise proceed with this document alone.
 
 Shared instructions for any AI coding agent (or human contributor) working in this repository. This file is agent-agnostic by design: it depends on no specific tooling. If you are a new agent picking up this project, read this file first, then follow its links.
 
@@ -26,7 +26,7 @@ If this file and CONTRIBUTING.md disagree, CONTRIBUTING.md wins.
 Changes must land in the correct layer. Higher layers depend on lower layers, never the reverse.
 
 | Layer | Directory | Scope |
-|-------|-----------|-------|
+|---|---|---|
 | 1 — Data persistence | [storage/](storage/) | Disks, mounts, SMART, backups |
 | 2 — Network / remote access | [network/](network/) | Tailscale, tunnels, routing |
 | 3 — Host / OS | [bootstrap/](bootstrap/) | Pi OS setup, SSH hardening, Docker install |
@@ -37,12 +37,14 @@ When adding something, ask: which layer does it belong to? If unclear, write an 
 ## 4. Workflow rules (non-negotiable)
 
 ### Branching & commits
+
 - Branch from `main`: `<type>/<issue-number>-<slug>` (e.g. `feat/14-caddy-reverse-proxy`).
 - Never commit to `main` directly.
 - Conventional Commits: `<type>(<scope>): <short description>`.
 - All commit messages, code comments, and docs in **English**.
 
 ### Pull requests
+
 - Open a PR with the template from CONTRIBUTING.md. End the body with `Closes #<issue>`.
 - Add the PR to the project board, assign labels, assignee, milestone — see the API recipe in the user's global instructions.
 - **Never merge autonomously.** Full gate:
@@ -56,11 +58,13 @@ When adding something, ask: which layer does it belong to? If unclear, write an 
 - Do not resolve review conversations programmatically — that is the human's action.
 
 ### Post-merge cleanup
+
 ```bash
 git checkout main && git pull
 git branch -d <branch>
 git remote prune origin
 ```
+
 Then append a dated entry to [PROJECT_LOG.md](PROJECT_LOG.md) referencing the PR number.
 
 ## 5. CI checks
@@ -70,6 +74,7 @@ Nine workflows live in [.github/workflows/](.github/workflows/). Actions are pin
 Required on `main` (branch protection): `gitleaks`, `shellcheck`, `hadolint`, `markdownlint`, `yamllint`. Also run but not yet required: `sonarcloud`. Public-only (gated by visibility): `codeql`, `dependency-review`, `scorecard`.
 
 Run locally before pushing:
+
 ```bash
 shellcheck bootstrap/*.sh services/**/scripts/*.sh
 npx -y markdownlint-cli2 '**/*.md'
@@ -82,6 +87,7 @@ Never skip a required check with `--no-verify`, `--admin`, or by editing branch 
 ## 6. Common operational commands
 
 ### Deploy / manage n8n ([services/n8n/](services/n8n/))
+
 ```bash
 cd services/n8n
 cp .env.example .env
@@ -92,14 +98,18 @@ docker compose logs cloudflared   # shows the ephemeral public URL
 ```
 
 ### Backup n8n volume (atomic, container-quiesced)
+
 See [services/n8n/BACKUP.md](services/n8n/BACKUP.md). Script:
+
 ```bash
 services/n8n/scripts/backup.sh
 BACKUP_DIR=/mnt/backup/n8n KEEP=14 services/n8n/scripts/backup.sh
 ```
 
 ### Host bootstrap (Pi, one-time per machine)
+
 See [bootstrap/FIRSTBOOT.md](bootstrap/FIRSTBOOT.md). Scripts are idempotent.
+
 ```bash
 sudo bash bootstrap/bootstrap.sh
 sudo bash bootstrap/harden-ssh.sh
