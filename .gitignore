@@ -10,6 +10,7 @@ node_modules/
 # IDE / agent local configs (user-specific)
 .claude/
 .vscode/
+.codex
 
 # Defensive: never commit certs / private keys
 *.pem
