@@ -524,14 +524,15 @@ was done and why, by date.
   into a reproducible canonical brief that any contributor or agent
   can follow on a fresh clone.
 - **Review**:
-  - codex (Should Have): mandatory `~/.agent-rules/common.md` is
-    machine-local, can't be followed on a fresh clone — reworded as
-    an *optional personal extension* (`afe4a0d`).
-  - Copilot (Should Have): broken markdown link to gitignored
+  - automated review (Should Have): mandatory `~/.agent-rules/common.md`
+    is machine-local, can't be followed on a fresh clone — reworded
+    as an *optional personal extension* (`afe4a0d`).
+  - automated review (Should Have): broken markdown link to gitignored
     `.claude/settings.json` — replaced with backticked path pointing
     at `.gitignore` (`250acae`).
-  - Copilot (Disagree): false-positive about a `||` double pipe in
-    the AGENTS.md table — table is correctly single-piped throughout.
+  - automated review (Disagree): false-positive about a `||` double
+    pipe in the AGENTS.md table — table is correctly single-piped
+    throughout.
 - **CI hiccup**: first run failed `Lint Markdown` (MD022/MD031/MD032
   on AGENTS.md and CLAUDE.md). Fixed via `markdownlint-cli2 --fix`,
   cleared on subsequent runs.
