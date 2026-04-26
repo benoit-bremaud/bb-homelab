@@ -9,12 +9,10 @@
 # laptops). Copy it from the container after the first start:
 #   docker exec bb-homelab-caddy cat /data/caddy/pki/authorities/local/root.crt
 # See services/caddy/README.md for the full install procedure.
-{
-	# Global options.
-	# admin endpoint disabled: we don't need the HTTP API for now, and
-	# exposing it even on localhost widens the attack surface.
-	admin off
-}
+# (no global options block — admin API listens on its default
+# localhost:2019 inside the container only; not exposed to the host
+# or to the bb-homelab-proxy network. Required by `caddy reload` to
+# apply Caddyfile changes without restarting the container.)
 
 # ---- n8n ----
 # n8n.bb-homelab.local → n8n container on the shared proxy network.
