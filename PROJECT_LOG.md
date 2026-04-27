@@ -538,3 +538,30 @@ was done and why, by date.
   cleared on subsequent runs.
 - **Closes**: #69
 - **Merge**: `fa41e0d`
+
+## 2026-04-27
+
+### PR #72 merged: Caddy reverse proxy with internal CA + ADR 0002
+
+- **What**: Stand up Caddy 2.8.4 as the internal reverse proxy for
+  tailnet-facing traffic. Phase 1: TLS via Caddy's internal CA (no
+  public domain yet, decision #28 deferred), hostnames
+  `*.bb-homelab.local` via client `/etc/hosts`. cloudflared remains
+  decoupled — public webhooks still flow directly to n8n.
+- **Why**: prerequisite for multi-service deployment (Jellyfin,
+  monitoring, brasse-bouillon). Without a reverse proxy, every
+  service exposes a host port — that pattern collapses past 2-3
+  services. Formalised in ADR 0002.
+- **Review**:
+  - automated review (Should Have): `admin off` in Caddyfile
+    contradicts the `caddy reload` command documented in README —
+    they are mutually exclusive (reload uses the admin API).
+    Resolved in `b1dc4d2` by removing `admin off`; admin endpoint
+    stays on default localhost:2019 inside the container, not
+    exposed.
+- **Pending (post-merge, manual on Pi)**: `docker network create
+  bb-homelab-proxy`, re-up n8n, up Caddy, extract root CA, install
+  on each client device, add `/etc/hosts` lines. Full procedure in
+  the PR body and `services/caddy/README.md`.
+- **Closes**: #14
+- **Merge**: `3e30c16`
