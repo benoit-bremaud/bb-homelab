@@ -565,3 +565,19 @@ was done and why, by date.
   the PR body and `services/caddy/README.md`.
 - **Closes**: #14
 - **Merge**: `3e30c16`
+
+### PR #74 merged: rewrite review attributions as `automated review`
+
+- **What**: Apply the `automated review (X)` convention (established
+  on PR #71) retroactively to the 6 review bullets in PR #57 and
+  PR #62 entries that still carried `codex (X)` / `Copilot (X)`.
+  4 Cat B/C mentions (factual narrative + literal `.codex` filename)
+  left intact.
+- **Why**: honour the engagement made on the PR #71 codex P2 thread;
+  align historical entries with the active convention.
+- **CI hiccup**: first run blocked by GitHub Actions billing
+  (payment failed / spending limit reached). Unblocked by user,
+  re-run was clean.
+- **Review**: automated review COMMENTED with 0 inline comments —
+  mechanical rewrite, nothing to flag.
+- **Merge**: `0e2d03d`
