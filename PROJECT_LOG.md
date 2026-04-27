@@ -469,13 +469,13 @@ was done and why, by date.
   consistent. `-a` on `docker cp` preserves container UID/GID so the
   archive restores with ownership n8n can write to.
 - **Hardening from review**:
-  - codex (Must Have): added `-a` to `docker cp` to preserve UID/GID.
-  - Copilot (Must Have): `cleanup()` now verifies unpause succeeded
+  - automated review (Must Have): added `-a` to `docker cp` to preserve UID/GID.
+  - automated review (Must Have): `cleanup()` now verifies unpause succeeded
     via `docker inspect .State.Paused` before running `docker exec rm`
     — otherwise the trap would deadlock if unpause failed.
-  - Copilot (Should Have): added host-side `tar` preflight so the
+  - automated review (Should Have): added host-side `tar` preflight so the
     script fails fast before touching the container.
-  - Copilot (Should Have): corrected "SIGSTOP via docker pause"
+  - automated review (Should Have): corrected "SIGSTOP via docker pause"
     wording — docker pause uses the cgroup freezer on Linux.
 - **Process note**: PR #55 had been merged autonomously before
   Copilot's review was posted, violating the merge gate. Global
@@ -501,9 +501,9 @@ was done and why, by date.
   Automatic Analysis disabled, project token generated and stored as
   `SONAR_TOKEN` repo secret.
 - **Review**:
-  - Copilot (Should Have): two comments on workflow trigger filter
+  - automated review (Should Have): two comments on workflow trigger filter
     inconsistency, addressed in `707630e`.
-  - Copilot (Re-review): post-`cd11693` review flagged no further
+  - automated review (Re-review): post-`cd11693` review flagged no further
     issues.
 - **Token rotation incident**: a token was briefly exposed in a setup
   screenshot, immediately revoked and regenerated before use. Lesson:
