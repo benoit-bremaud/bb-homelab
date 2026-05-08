@@ -26,21 +26,27 @@ de dérive ultérieure.
   intégration du disque. Jamais réutilisé même si retiré.
 - **Rôle** : `disk-a` / `disk-b` / `disk-c` / `spare` / `retired`.
 - **État** : `active` / `spare` / `retired` / `failing`.
+- **Orthographe Seagate** : tous les modèles BarraCuda sont notés
+  `BarraCuda` (camelCase, nomenclature Seagate moderne post-2017)
+  dans ce document. La sortie `smartctl` peut afficher `Barracuda`
+  (ancienne forme) pour certains modèles 2.5" plus anciens — c'est
+  attendu et n'indique pas un produit différent. Le numéro de
+  modèle (`STxxxLMxxx`) reste l'identifiant fiable pour grep.
 
 ## Disques actifs
 
-### Disk #7 — Seagate Barracuda 2.5 5400 (rôle `disk-a`)
+### Disk #7 — Seagate BarraCuda 2.5 5400 (rôle `disk-a`)
 
 | Champ | Valeur |
 |---|---|
-| Modèle | Seagate Barracuda 2.5 5400 (`ST500LM030-2E717D`) |
+| Modèle | Seagate BarraCuda 2.5 5400 (`ST500LM030-2E717D`) |
 | Capacité | 500 GB (500 107 862 016 bytes) |
-| Form factor | 2.5" |
+| Format | 2.5" |
 | Numéro de série | `ZDEJ9BW5` |
 | WWN | `5 000c50 0c4c7085c` |
 | Firmware | `0001` |
 | Interface | SATA 3.1, 6.0 Gb/s (négocié à 6 Gb/s) |
-| Sectors | 512 logiques / 4096 physiques (Advanced Format) |
+| Secteurs | 512 logiques / 4096 physiques (Advanced Format) |
 | Vitesse rotation | 5400 rpm |
 | Date d'acquisition | 2026-05-08 (récupéré recyclé) |
 | **Enclosure USB-SATA** | JMicron **JMS578** (`152d:0578`, SMART passthrough OK) |
@@ -106,13 +112,22 @@ réception d'enclosures USB-SATA compatibles (issue #47).
 
 (Version détaillée à venir dans `storage/MOUNT.md`, issue #10.)
 
-1. Vérifier le chipset USB-SATA via `lsusb` (rejeter JMS583).
-2. Capturer la baseline SMART (`smartctl -i -H -A` + `-t short`).
-3. Wiper toute partition existante (`wipefs -a /dev/sdX`).
-4. Créer table GPT + 1 partition couvrant le disque (`parted`).
-5. Formater ext4 avec un label explicite (`mkfs.ext4 -L bb-<role>`).
-6. Ajouter ligne `/etc/fstab` : UUID + `nofail`.
-7. Tester via `mount -a` (sans reboot).
-8. Tester l'écriture (touch + cat + rm).
-9. Enregistrer le disque ici.
-10. Reboot test à la prochaine fenêtre planifiée.
+1. Vérifier le chipset USB-SATA via `lsusb` (rejeter JMS583, accepter
+   JMS567/JMS578/ASM1153/ASM225CM).
+2. **Identifier sans ambiguïté le disque cible** (`/dev/sdX`) : confirmer
+   le modèle, le numéro de série et la capacité via `lsblk -f /dev/sdX`
+   et `sudo smartctl -i /dev/sdX`. Comparer au matériel physique branché
+   (sticker du disque, slot USB utilisé). **Cette étape est critique
+   avant tout `wipefs` — wiper le mauvais disque est irréversible.**
+3. Capturer la baseline SMART : `sudo smartctl -i -H -A /dev/sdX` puis
+   `sudo smartctl -t short /dev/sdX` (attendre ~2 min) puis
+   `sudo smartctl -l selftest /dev/sdX`.
+4. Wiper toute partition existante : `sudo wipefs -a /dev/sdX`.
+5. Créer table GPT + 1 partition couvrant le disque : `sudo parted /dev/sdX --script mklabel gpt`
+   puis `sudo parted /dev/sdX --script mkpart primary ext4 0% 100%`.
+6. Formater ext4 avec un label explicite : `sudo mkfs.ext4 -L bb-<role> /dev/sdX1`.
+7. Ajouter ligne `/etc/fstab` : `UUID=<x> /mnt/<role> ext4 defaults,nofail 0 2`.
+8. Tester via `sudo mount -a` (sans reboot).
+9. Tester l'écriture (`sudo touch /mnt/<role>/.write_test` + `cat` + `rm`).
+10. Enregistrer le disque dans ce fichier (modèle, serial, SMART, mount, date).
+11. Reboot test à la prochaine fenêtre planifiée.
