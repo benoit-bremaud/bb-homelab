@@ -581,3 +581,57 @@ was done and why, by date.
 - **Review**: automated review COMMENTED with 0 inline comments —
   mechanical rewrite, nothing to flag.
 - **Merge**: `0e2d03d`
+
+## 2026-05-08
+
+### PR #79 merged: storage/INVENTORY.md and Disk #7 baseline
+
+- **What**: First HDD physically integrated into bb-homelab.
+  Recycled Seagate BarraCuda 2.5 5400 (`ST500LM030-2E717D`, serial
+  `ZDEJ9BW5`, 500 GB) connected via a JMicron JMS578 USB-SATA
+  enclosure. Wiped (was Windows 10 IoT MBR + NTFS Data), partitioned
+  GPT, formatted ext4 (label `bb-appdata`, UUID
+  `aed8879a-543a-4d43-90b1-0fb05aa371ea`), mounted persistently at
+  `/mnt/appdata` via fstab UUID + `nofail`. Registered in
+  `storage/INVENTORY.md` — first French Cat A doc landing (per PR
+  #77 convention).
+- **Why**: Storage layer of MVP CORE epic #66 finally unblocked
+  (was waiting on USB-SATA enclosures #47 — this disk arrived via
+  a separate channel with a compatible JMS578). Critical
+  prerequisite for the n8n SD→HDD volume migration (#66 done
+  criterion #5).
+- **Pattern Y reassignment**: Disk #7 takes the `disk-a` role
+  initially reserved for the WD Black 500 GB. Reassignment to
+  be revisited if/when the WD Black is integrable (#47 still
+  pending for Disks #2 / #3 / #4).
+- **Phases A→D completed on Pi (2026-05-08, 16:01-16:30 CEST)**:
+  - A: SMART identity + health (PASSED) + attributes (0 reallocated
+    / pending / uncorrectable) + short self-test (Completed without
+    error).
+  - B: `wipefs -a /dev/sda` (DOS + Atari signatures cleared).
+  - C: GPT + single ext4 partition, label `bb-appdata`. udev cache
+    refresh required after `mkfs.ext4` to see the new FS in
+    `lsblk -f`.
+  - D: `mkdir /mnt/appdata`, fstab line appended with UUID +
+    `defaults,nofail 0 2`, `mount -a` validated (no reboot
+    needed), write test confirmed.
+- **Out of scope (Phase 1)**: `/mnt/archive` mount point deferred
+  per Option γ (1 partition / direct mount, no bind-mount). Will
+  activate when additional disks arrive.
+- **Review**:
+  - automated review (Must Have): wipefs without explicit
+    "validate the target disk first" was a real safety gap on
+    multi-disk setups — fix added a dedicated identification step
+    in the procedure (`52e09cb`).
+  - automated review (Should Have): inconsistent `Barracuda` /
+    `BarraCuda` spelling — normalised to `BarraCuda` with an
+    explanatory note (`52e09cb`).
+  - automated review (Should Have): `smartctl` commands missing
+    `/dev/sdX` target — fixed (`52e09cb`).
+  - automated review (Should Have): two FR/EN mixed labels in the
+    identity table — translated (`52e09cb`).
+- **Pending follow-ups**: reboot test of the new fstab entry,
+  long SMART self-test (3-4h, scheduled later), eventual `MOUNT.md`
+  (#10) and `SMART.md` (#11) full procedures.
+- **Closes**: #78 (and contributes to #66 done criteria #1, #3).
+- **Merge**: `41e0302`
