@@ -38,7 +38,18 @@ context (rationale, troubleshooting, History table convention).
 ### 1. Pick the most recent archive
 
 ```bash
-ARCHIVE="$(ls -1t ~/backups/n8n/*.tar.gz | head -n1)"
+# The deployed cron on this Pi writes to ~/backups/n8n/ (user-owned).
+# The script default in services/n8n/scripts/backup.sh is
+# /var/backups/n8n/ but the running cron overrides it via the
+# BACKUP_DIR env var — check `crontab -l` if unsure of the actual
+# location on a given Pi.
+BACKUP_DIR_DEPLOYED="${BACKUP_DIR:-$HOME/backups/n8n}"
+# Fallback to /var/backups/n8n if the home-dir path is empty
+if [ -z "$(ls -1 "${BACKUP_DIR_DEPLOYED}"/*.tar.gz 2>/dev/null)" ] \
+   && [ -d /var/backups/n8n ]; then
+  BACKUP_DIR_DEPLOYED=/var/backups/n8n
+fi
+ARCHIVE="$(ls -1t "${BACKUP_DIR_DEPLOYED}"/*.tar.gz | head -n1)"
 echo "Will test: ${ARCHIVE}"
 ```
 

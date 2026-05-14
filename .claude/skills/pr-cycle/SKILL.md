@@ -81,8 +81,9 @@ Run this skill to execute the complete PR cycle for bb-homelab. The
 
 ## Phase C — Monitor CI + review (background)
 
-1. **Launch background monitor** — wait CI green AND at least one
-   auto-reviewer posted:
+1. **Launch background monitor** — wait until all checks have
+   completed (no longer IN_PROGRESS / QUEUED / PENDING) AND at least
+   one auto-reviewer has posted:
 
    ```bash
    until [ "$(gh pr view <n> --json statusCheckRollup --jq '[.statusCheckRollup[] | select(.status == "IN_PROGRESS" or .status == "QUEUED" or .status == "PENDING")] | length')" = "0" ] \
@@ -91,7 +92,23 @@ Run this skill to execute the complete PR cycle for bb-homelab. The
    done
    ```
 
-   If Copilot doesn't post automatically (422 on `requested_reviewers`
+2. **Mandatory failure check** after the monitor exits — the loop
+   above only waits for completion, not success. A FAILED, CANCELLED,
+   or TIMED_OUT check still counts as "completed" and would exit the
+   loop. Always run this gate before proceeding to Phase D:
+
+   ```bash
+   FAILED=$(gh pr view <n> --json statusCheckRollup \
+     --jq '[.statusCheckRollup[] | select(.conclusion == "FAILURE" or .conclusion == "CANCELLED" or .conclusion == "TIMED_OUT")] | length')
+   if [ "$FAILED" -gt "0" ]; then
+     echo "❌ CI not green ($FAILED check(s) failed). Investigate before any merge action."
+     gh pr view <n> --json statusCheckRollup --jq '.statusCheckRollup[] | select(.conclusion == "FAILURE" or .conclusion == "CANCELLED" or .conclusion == "TIMED_OUT") | {name, conclusion}'
+     # STOP here — do not proceed to Phase D/E. Surface to user, await
+     # diagnostic and fix (push to retrigger or root-cause first).
+   fi
+   ```
+
+3. If Copilot doesn't post automatically (422 on `requested_reviewers`
    because not a collaborator), prompt the user to add Copilot
    manually via the GitHub UI.
 
@@ -159,7 +176,27 @@ Run this skill to execute the complete PR cycle for bb-homelab. The
 
 ## Phase G — PROJECT_LOG entry (mini-PR follow-up)
 
-1. **Create mini-PR for PROJECT_LOG entry**:
+> **Termination rule (critical, prevents infinite recursion):** Phase
+> G is **skipped entirely** when the PR being cycled is itself a
+> `docs/project-log-pr*` PR (i.e. the mini-PR that adds the
+> PROJECT_LOG entry). Check the branch name before entering this
+> phase — if it starts with `docs/project-log-pr`, the cycle ends
+> at Phase F's post-merge cleanup. A PROJECT_LOG entry mini-PR does
+> not get its own PROJECT_LOG entry.
+
+1. **Skip Phase G if the branch is already a PROJECT_LOG mini-PR**:
+
+    ```bash
+    if [[ "$(git rev-parse --abbrev-ref HEAD)" == docs/project-log-pr* ]]; then
+      echo "PROJECT_LOG mini-PR detected — Phase G skipped (termination rule)."
+      # End of /pr-cycle.
+    fi
+    ```
+
+    (After Phase F you're already on `main`, so check the branch you
+    were on BEFORE merge — or pass it as a variable through Phase F.)
+
+2. **Otherwise — create the mini-PR for the PROJECT_LOG entry**:
 
     ```bash
     git checkout -b docs/project-log-pr<n>
@@ -169,9 +206,10 @@ Run this skill to execute the complete PR cycle for bb-homelab. The
     SHA + summary + review trouvailles (use `automated review (X)`
     form per `docs-conventions` rule).
 
-2. **Open and merge the mini-PR** using this same `/pr-cycle` skill
-    recursively (skip Phase A.3 implementation, since it's just one
-    file edit).
+3. **Open and merge the mini-PR** using this same `/pr-cycle` skill
+    recursively. The termination rule above guarantees this call
+    will skip its own Phase G — exactly one PROJECT_LOG entry per
+    feature PR, never more.
 
 ## Failure recovery
 
