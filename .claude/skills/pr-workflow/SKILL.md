@@ -1,8 +1,13 @@
-# PR workflow rules — bb-homelab
+---
+name: pr-workflow
+description: PR workflow rules for bb-homelab. Branch naming (`<type>/<issue>-<slug>`), Conventional Commits, the strict 6-step merge gate (CI green + auto-reviewer posted + comments addressed + summary + explicit user approval + then merge), Q&A before each decision via AskUserQuestion, step-by-step execution, regular relecture checkpoints on multi-file work, post-merge cleanup sequence, PROJECT_LOG entry discipline. Apply when working with git branches, opening PRs, addressing review comments, or merging.
+---
+
+# PR workflow — bb-homelab
 
 Project-specific rules for branches, commits, pull requests, and the
-merge gate. These extend the agent-agnostic brief in
-[AGENTS.md](../../AGENTS.md) §4 and the global rules in
+merge gate. This skill extends the agent-agnostic brief in
+[AGENTS.md](../../../AGENTS.md) §4 and the global rules in
 `~/.claude/CLAUDE.md`.
 
 ## Branch naming
@@ -20,7 +25,7 @@ Examples:
 - `chore/69-version-agent-md`
 
 Never commit directly to `main` — branch protection forbids it
-(cf. [security-rules.md](security-rules.md)).
+(cf. [security-invariants](../../rules/security-invariants.md)).
 
 ## Conventional Commits
 
@@ -38,7 +43,7 @@ Examples:
 - `infra(claude): modularise rules + version .claude/rules`
 
 Commit messages are in English by convention (cf.
-[docs-rules.md](docs-rules.md) Category C).
+[docs-conventions](../../rules/docs-conventions.md) Category C).
 
 ## Merge gate — strict, non-negotiable
 
@@ -118,7 +123,7 @@ git log --oneline -3  # confirm merge SHA on main
 ## PROJECT_LOG entry
 
 Every merged PR gets a real-time dated entry in `PROJECT_LOG.md`. See
-[docs-rules.md](docs-rules.md) §PROJECT_LOG discipline for format and
+[docs-conventions](../../rules/docs-conventions.md) §PROJECT_LOG discipline for format and
 reviewer attribution convention.
 
 The PROJECT_LOG entry is typically a separate mini-PR opened
