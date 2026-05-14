@@ -18,8 +18,10 @@ global rules in `~/.claude/CLAUDE.md`.
 
 Exceptions are limited to:
 
-- This file and `CLAUDE.md` / `.claude/rules/` (Category B — agent
-  instructions, where naming tools is necessary by purpose)
+- This file and `CLAUDE.md` / `.claude/rules/` / `.claude/skills/`
+  (Category B — agent instructions, where naming tools is necessary
+  by purpose: workflow skills reference literal GitHub API field
+  values such as `user.login == "Copilot"` for review automation)
 - Factual narrative in PROJECT_LOG about historical incidents (e.g.
   "Copilot reviewer was set as required in PR #53") — these are
   history references, not authorship attributions
