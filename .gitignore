@@ -8,7 +8,18 @@ Thumbs.db
 node_modules/
 
 # IDE / agent local configs (user-specific)
-.claude/
+# .claude/ : ignore settings.json + settings.local.json (machine-local
+# permissions + personal overrides) but track the modular Claude config
+# under rules/, skills/, agents/, commands/.
+.claude/*
+!.claude/rules/
+!.claude/rules/**
+!.claude/skills/
+!.claude/skills/**
+!.claude/agents/
+!.claude/agents/**
+!.claude/commands/
+!.claude/commands/**
 .vscode/
 .codex
 
