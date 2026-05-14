@@ -635,3 +635,26 @@ was done and why, by date.
   (#10) and `SMART.md` (#11) full procedures.
 - **Closes**: #78 (and contributes to #66 done criteria #1, #3).
 - **Merge**: `41e0302`
+
+## 2026-05-14
+
+### PR #83 merged: modularise Claude rules + version .claude/rules
+
+- **What**: Phase 2 of Claude config modularisation. Move from a
+  44-line monolithic `CLAUDE.md` to a short navigation index + 4
+  modular rules under `.claude/rules/` (docs / infra / workflow-pr /
+  security). `.gitignore` switched to selective pattern: keeps
+  `settings.json` + `settings.local.json` gitignored but tracks
+  `rules/`, `skills/`, `agents/`, `commands/` subdirectories.
+- **Why**: single-file CLAUDE.md mixed multiple concerns (docs,
+  infra, workflow, security). Modular rules scale better and let
+  Claude Code load the relevant subset for a task. Selective gitignore
+  preserves machine-local permissions while sharing the policy.
+- **Review**:
+  - automated review (Should Have): incorrect claim that markdownlint
+    rule `MD042` catches broken local links — MD042 only checks empty
+    `[]()` syntax, not target resolution. Reworded in `f8be7bc` to
+    state actual MD042 behaviour and point at `markdown-link-check` /
+    `lychee` as the right tools.
+- **Closes**: #82
+- **Merge**: `18ac435`
