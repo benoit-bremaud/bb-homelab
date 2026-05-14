@@ -97,8 +97,14 @@ record dates + outcomes without reviewer names.
 ## Cross-references
 
 Use relative markdown links: `[AGENTS.md](../../AGENTS.md)`.
-Verify links resolve before committing — broken links are caught by
-`markdownlint` rule `MD042`.
+
+**markdownlint does not verify that local link targets resolve** —
+rule `MD042` (`no-empty-links`) only catches empty `[]()` link syntax,
+not whether `../../AGENTS.md` actually exists. Broken-link detection
+requires a dedicated tool like
+[`markdown-link-check`](https://github.com/tcort/markdown-link-check)
+or [`lychee`](https://github.com/lycheeverse/lychee). Until one is
+added to CI, verify links manually before commit.
 
 For external links, prefer full URLs over redirects to avoid silent
 breakage when the redirect target changes.
