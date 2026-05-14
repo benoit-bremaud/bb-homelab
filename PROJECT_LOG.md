@@ -686,8 +686,11 @@ was done and why, by date.
 
 - **What**: Phase 3 of Claude config rollout. Four slash-command
   workflow skills under `.claude/skills/` with
-  `disable-model-invocation: true` (explicit user invocation only,
-  because each has side-effects):
+  `disable-model-invocation: true` so the model never auto-triggers
+  them — most have side-effects (push / merge / deploy / scaffold);
+  `audit-status` is read-only but kept explicit so the model
+  doesn't auto-run a multi-command snapshot on every ambiguous
+  status question:
   - `/audit-status` — read-only project snapshot (branch, working
     tree, last commits, open PRs, hardware blockers, dette).
   - `/pr-cycle <issue>` — full 7-phase PR workflow from issue to
