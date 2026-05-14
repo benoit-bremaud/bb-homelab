@@ -1,8 +1,13 @@
-# Infrastructure rules — bb-homelab
+---
+name: infra-patterns
+description: Infrastructure patterns for bb-homelab. Defines shell script standards (`set -euo pipefail`, idempotent, lock-out-proof), Docker compose patterns (pinned images, shared external network `bb-homelab-proxy`, hardened images), fstab convention (UUID + nofail, `/mnt/<role>/<service>/` layout), systemd defaults, and SSH-to-Pi conventions. Apply when authoring or reviewing shell scripts, `docker-compose.yml`, fstab edits, or anything that interacts with the Pi infrastructure.
+---
 
-Project-specific rules for shell scripts, Docker compose, fstab,
-systemd, and SSH interactions in this repo. These extend the
-agent-agnostic brief in [AGENTS.md](../../AGENTS.md) and the global
+# Infrastructure patterns — bb-homelab
+
+Project-specific patterns for shell scripts, Docker compose, fstab,
+systemd, and SSH interactions in this repo. This skill extends the
+agent-agnostic brief in [AGENTS.md](../../../AGENTS.md) and the global
 rules in `~/.claude/CLAUDE.md`.
 
 ## Shell scripts
@@ -47,7 +52,7 @@ Per-service `docker-compose.yml` files in `services/<name>/`.
   so a bump is a deliberate `.env` change, never a silent `:latest` pull.
 - **Named volumes for persistence**: `volumes: { name: bb-homelab-<service>-data }`.
 - **External shared network for inter-service routing**:
-  `bb-homelab-proxy` (cf. [ADR 0002](../../docs/decisions/0002-caddy-reverse-proxy.md)).
+  `bb-homelab-proxy` (cf. [ADR 0002](../../../docs/decisions/0002-caddy-reverse-proxy.md)).
   - Created once on host: `docker network create bb-homelab-proxy`.
   - Backend services join via `external: true` in their compose.
   - Caddy reaches them by service name as hostname (e.g. `n8n:5678`).
@@ -58,7 +63,7 @@ Per-service `docker-compose.yml` files in `services/<name>/`.
 
 ## fstab convention (storage layer)
 
-Reference: [`storage/INVENTORY.md`](../../storage/INVENTORY.md).
+Reference: [`storage/INVENTORY.md`](../../../storage/INVENTORY.md).
 
 - **Mount via UUID**, never `/dev/sdX` (which changes across reboots).
 - **Always use `nofail`** option — boot continues even if disk

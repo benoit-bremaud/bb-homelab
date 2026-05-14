@@ -9,36 +9,62 @@ index pointing to the authoritative briefs.
 1. [AGENTS.md](AGENTS.md) — **agent-agnostic onboarding brief** (project
    purpose, 6-layer DIP architecture, document hierarchy, workflow rules,
    CI checks, common commands, security invariants). Read this first.
-2. [`.claude/rules/`](.claude/rules/) — **modular Claude-specific rules**:
-   - [docs-rules.md](.claude/rules/docs-rules.md) — language conventions
-     (FR/EN by category), markdownlint config, ADR pattern, PROJECT_LOG
-     discipline.
-   - [infra-rules.md](.claude/rules/infra-rules.md) — shell scripts,
-     Docker compose patterns, fstab UUID + nofail, systemd, SSH to Pi.
-   - [workflow-pr-rules.md](.claude/rules/workflow-pr-rules.md) —
-     branch naming, Conventional Commits, merge gate, Q&A before
-     decisions, step-by-step execution, post-merge cleanup.
-   - [security-rules.md](.claude/rules/security-rules.md) — AI
-     attribution policy (strict), secrets handling, private-first repo,
-     risky actions, token rotation procedure.
+2. [`.claude/rules/`](.claude/rules/) — **path-scoped or session-start
+   rules** (loaded conditionally or at session start, per Claude Code
+   conventions):
+   - [`docs-conventions.md`](.claude/rules/docs-conventions.md) — loads
+     when Claude reads any `**/*.md` file. Language conventions (FR/EN
+     by category), markdownlint config + known false positives, ADR
+     pattern, PROJECT_LOG discipline.
+   - [`security-invariants.md`](.claude/rules/security-invariants.md) —
+     loads at session start (no `paths:`, always relevant). AI
+     attribution policy (strict), secrets handling, private-first
+     repo, branch protection, risky actions, token rotation.
+3. [`.claude/skills/`](.claude/skills/) — **behaviour-scoped skills**
+   (loaded by Claude when the description matches the task, or invoked
+   via `/skill-name`):
+   - [`infra-patterns`](.claude/skills/infra-patterns/SKILL.md) —
+     shell scripts, Docker compose patterns, fstab UUID + nofail,
+     systemd, SSH to Pi.
+   - [`pr-workflow`](.claude/skills/pr-workflow/SKILL.md) — branch
+     naming, Conventional Commits, merge gate, Q&A before decisions,
+     step-by-step execution, post-merge cleanup.
 
-When this file, AGENTS.md, and a rule disagree, the order of
-precedence is: specific rule > AGENTS.md > this file > global
+When this file, AGENTS.md, and a rule/skill disagree, the order of
+precedence is: specific rule/skill > AGENTS.md > this file > global
 `~/.claude/CLAUDE.md`.
+
+## Why rules vs skills (the split)
+
+Both are official Claude Code conventions; we use both:
+
+- **Rules** (`.claude/rules/<name>.md`) are good for guidance that
+  should load based on file paths (e.g. all `*.md` → docs conventions)
+  or that must always be in context (e.g. security policy at every
+  session start). Rules are pure guidance Claude reads.
+- **Skills** (`.claude/skills/<name>/SKILL.md`) are good for behavioural
+  patterns Claude judges relevant from a description, or for
+  workflows you can invoke with `/skill-name`. Skills can also bundle
+  scripts and templates next to the prompt.
+
+Our split:
+
+| Topic | Mechanism | Reason |
+|---|---|---|
+| docs-conventions | rule with `paths: ['**/*.md']` | Path-scoped to markdown files |
+| security-invariants | rule without `paths:` | Always loaded at session start |
+| infra-patterns | skill | Behaviour scope (shell + docker + Pi ops) hard to express as a single glob |
+| pr-workflow | skill | Behavioural (PR cycle, merge gate), not file-scoped |
 
 ## Claude Code specifics
 
 ### Harness permissions
 
-Pre-authorised commands for this repo are listed in the local Claude
-Code config file `.claude/settings.json` (gitignored — see
-`.gitignore`). It also grants access to the additional directories
-`services/n8n/` and `services/caddy/`. Extend that file (not ad-hoc
-prompts) when new repeating commands need to run without prompting.
-
-Personal overrides go in `.claude/settings.local.json` (also
-gitignored). The pattern lets one machine differ from another (e.g.
-testing a new permission locally without committing it).
+Pre-authorised commands for this repo live in `.claude/settings.json`
+(gitignored — see `.gitignore`). Personal overrides go in
+`.claude/settings.local.json` (also gitignored). Extend those files
+(not ad-hoc prompts) when new repeating commands need to run without
+prompting.
 
 ### Interaction conventions
 
@@ -50,20 +76,17 @@ testing a new permission locally without committing it).
   with ranked, clickable choices — never open-ended prose questions.
 - Plan before coding non-trivial changes. Present the plan, wait for
   approval, then implement.
-- **Never merge a PR without the full merge gate** described in
-  [workflow-pr-rules.md](.claude/rules/workflow-pr-rules.md) §Merge
-  gate.
+- **Never merge a PR without the full merge gate** described in the
+  `pr-workflow` skill.
 
-### Skills, subagents, commands
+### Future skills / agents / hooks
 
-Custom workflows live in:
-
-- `.claude/skills/<name>/SKILL.md` — invokable via Skill tool
-- `.claude/agents/<name>.md` — specialised subagents
-- `.claude/commands/<name>.md` — slash commands
-
-These are populated as the project grows; see the corresponding issue
-for the modularisation effort (#82).
+- `.claude/skills/<name>/SKILL.md` — for workflow skills (Phase 3 to
+  come: `audit-status`, `pr-cycle`, `restore-test-n8n`, `new-service`).
+- `.claude/agents/<name>.md` — subagents (Phase 4: `homelab-auditor`,
+  `docs-writer-fr`, `pr-reviewer`).
+- Hooks live inside `.claude/settings.json` under the `hooks` key
+  (Phase 5 — auto-format markdown, reminders after merges, etc.).
 
 ## Quick sanity checklist before pushing
 

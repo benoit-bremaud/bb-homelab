@@ -1,8 +1,10 @@
-# Security rules — bb-homelab
+# Security invariants — bb-homelab
 
-Project-specific security invariants. These extend the agent-agnostic
-brief in [AGENTS.md](../../AGENTS.md) §7 and the global rules in
-`~/.claude/CLAUDE.md`.
+Project-specific security invariants. This rule is loaded at every
+session start (no `paths:` frontmatter) because security applies
+everywhere, not just to specific file types. It extends the
+agent-agnostic brief in [AGENTS.md](../../AGENTS.md) §7 and the
+global rules in `~/.claude/CLAUDE.md`.
 
 ## AI attribution — STRICT
 
@@ -25,7 +27,7 @@ Exceptions are limited to:
 
 For PROJECT_LOG reviewer attributions, **always** use
 `automated review (X)` form. See
-[docs-rules.md](docs-rules.md) §PROJECT_LOG discipline.
+[docs-conventions](docs-conventions.md) §PROJECT_LOG discipline.
 
 ## Secrets — never in git
 

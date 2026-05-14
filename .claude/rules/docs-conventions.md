@@ -1,9 +1,15 @@
-# Documentation rules — bb-homelab
+---
+paths:
+  - "**/*.md"
+---
 
-Project-specific rules for any documentation work in this repo. These
-rules **extend** the agent-agnostic brief in [AGENTS.md](../../AGENTS.md)
-and the global rules in `~/.claude/CLAUDE.md`. When they conflict with
-each other, the order of precedence is: this file > AGENTS.md > global.
+# Documentation conventions — bb-homelab
+
+Project-specific conventions for any documentation work in this repo.
+This rule **extends** the agent-agnostic brief in
+[AGENTS.md](../../AGENTS.md) and the global rules in
+`~/.claude/CLAUDE.md`. When they conflict, the order of precedence is:
+this rule > AGENTS.md > global.
 
 ## Language convention
 
@@ -89,7 +95,7 @@ Reviewer attribution convention (since PR #74):
   `automated review (Re-review):`, `automated review (Disagree):`
 - **Never** use named AI tools (`codex (...)`, `Copilot (...)`,
   `GPT (...)`) — those are AI attribution violations per
-  [security-rules.md](security-rules.md).
+  [security-invariants](security-invariants.md).
 
 History tables (in `BACKUP.md`, etc.) are an exception — they may
 record dates + outcomes without reviewer names.
