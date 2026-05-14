@@ -658,3 +658,89 @@ was done and why, by date.
     `lychee` as the right tools.
 - **Closes**: #82
 - **Merge**: `18ac435`
+
+### PR #86 merged: refactor .claude/ to align with Claude Code conventions
+
+- **What**: Phase 7 conformity refactor per the official
+  [Claude Code docs](https://code.claude.com/docs/fr/claude-directory).
+  Adopt a **hybrid** split between rules and skills:
+  `docs-conventions` becomes a rule with `paths: ['**/*.md']` for
+  path-scoped loading; `security-invariants` stays a rule without
+  `paths:` (loads at session start); `infra-patterns` and
+  `pr-workflow` move to `.claude/skills/<name>/SKILL.md` with proper
+  YAML frontmatter (`name`, `description`). `CLAUDE.md` rewritten as
+  a short navigation index explaining the rules/skills split.
+- **Why**: PR #83 had introduced `.claude/rules/` as 4 plain markdown
+  files without frontmatter. After re-reading the official Claude
+  Code docs, both rules (path-scoped + always-on) and skills
+  (behaviour-scoped + workflow-scoped) are first-class mechanisms —
+  the split is by semantic, not by quality. Skills also need
+  frontmatter for autodiscovery. Retrofit each artefact to use the
+  mechanism that fits best.
+- **Review**: automated review COMMENTED with 0 inline comments —
+  mechanical refactor, no logic change.
+- **Closes**: #85
+- **Merge**: `ad24344`
+
+### PR #88 merged: add 4 workflow skills — audit-status, pr-cycle, restore-test-n8n, new-service
+
+- **What**: Phase 3 of Claude config rollout. Four slash-command
+  workflow skills under `.claude/skills/` with
+  `disable-model-invocation: true` so the model never auto-triggers
+  them — most have side-effects (push / merge / deploy / scaffold);
+  `audit-status` is read-only but kept explicit so the model
+  doesn't auto-run a multi-command snapshot on every ambiguous
+  status question:
+  - `/audit-status` — read-only project snapshot (branch, working
+    tree, last commits, open PRs, hardware blockers, dette).
+  - `/pr-cycle <issue>` — full 7-phase PR workflow from issue to
+    merge readiness + post-merge PROJECT_LOG mini-PR (with explicit
+    termination rule to prevent infinite Phase G recursion).
+  - `/restore-test-n8n` — validate n8n backup is restorable on the
+    Pi via an isolated test container (port 5679, separate volume,
+    prod encryption key reused). Zero risk to prod.
+  - `/new-service <name>` — scaffold a new Docker service under
+    `services/<name>/` (compose template, FR README, .env.example,
+    optional Caddy route).
+- **Why**: Phase 3 of the broader Claude Code conformity initiative
+  (Phase 2 = PR #83 modular rules; Phase 7 = PR #86 hybrid rules+
+  skills layout; Phase 3 = today, runnable workflows). With these
+  skills, repeated operations (PR cycle, n8n restore test, new
+  service scaffolding, status snapshots) get a canonical
+  step-by-step procedure that survives session boundaries instead
+  of being re-discovered each time.
+- **Review**:
+  - automated review (Must Have): pr-cycle Phase C CI monitor only
+    waited for completion, not success — a FAILURE/CANCELLED/
+    TIMED_OUT check would still exit the loop and let the workflow
+    declare merge-ready on a broken build. Added explicit
+    conclusion gate after the monitor (`9ddf87f`).
+  - automated review (Must Have): pr-cycle Phase G called `/pr-cycle`
+    recursively for the PROJECT_LOG mini-PR, which would itself
+    trigger another Phase G → infinite recursion. Added a
+    termination rule: if branch starts with `docs/project-log-pr`,
+    skip Phase G (`9ddf87f`).
+  - automated review (Should Have): restore-test-n8n step 1 looked
+    for archives under `~/backups/n8n` only, but the script default
+    is `/var/backups/n8n`. Now does multi-location detection:
+    `BACKUP_DIR` env override → `~/backups/n8n` → `/var/backups/n8n`
+    fallback (`9ddf87f`).
+  - automated review (Should Have, 6×): 5 occurrences of
+    `pr-workflow`/`infra-patterns` referred to as a "rule" but each
+    lives under `.claude/skills/`; renamed all to "skill". Pattern
+    Y wording in `new-service` Q&A item 2 contradicted the compose
+    template (bind mount vs named volume); reworded to scope
+    Pattern Y to `archive`/`media`/`backup` services only. Disk
+    space prereq in `restore-test-n8n` widened from `~5 MB` to
+    `~5-50 MB` per `services/n8n/BACKUP.md`. All in `41959fc`.
+  - automated review (Disagree): `Copilot` /
+    `copilot-pull-request-reviewer[bot]` references in pr-cycle were
+    flagged as AI-attribution violations, but they are literal
+    `user.login` values queried via the GitHub API for review
+    automation, not authorship attributions. Extended the
+    `security-invariants` exception list to include `.claude/skills/`
+    (Category B agent instructions, same rationale as the existing
+    `.claude/rules/` exception) to make this functional carve-out
+    explicit (`41959fc`).
+- **Closes**: #87
+- **Merge**: `f29bb14`
