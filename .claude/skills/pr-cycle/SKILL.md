@@ -18,7 +18,7 @@ Run this skill to execute the complete PR cycle for bb-homelab. The
 
 ## Phase A — Branch + first commit (~5 min)
 
-1. **Determine branch name** per `pr-workflow` rule:
+1. **Determine branch name** per the `pr-workflow` skill:
 
    ```text
    <type>/<issue-number>-<slug>
@@ -32,9 +32,9 @@ Run this skill to execute the complete PR cycle for bb-homelab. The
    git checkout -b <type>/<issue-number>-<slug>
    ```
 
-3. **Implement** — driven by user step-by-step (per `pr-workflow`
-   rule §Step-by-step execution). After every 2-4 files, pause for
-   a relecture checkpoint (per `pr-workflow` rule §Regular relecture).
+3. **Implement** — driven by user step-by-step (per the `pr-workflow`
+   skill §Step-by-step execution). After every 2-4 files, pause for
+   a relecture checkpoint (per the `pr-workflow` skill §Regular relecture).
 
 4. **Stage + commit** with Conventional Commits format:
 
@@ -140,7 +140,7 @@ Run this skill to execute the complete PR cycle for bb-homelab. The
 
 ## Phase E — Merge readiness + user approval
 
-1. **Verify all gate conditions** (per `pr-workflow` rule §Merge gate):
+1. **Verify all gate conditions** (per the `pr-workflow` skill §Merge gate):
     - All required CI checks green
     - Auto-reviewer posted (requested ≠ posted)
     - Every comment addressed
@@ -228,5 +228,5 @@ Run this skill to execute the complete PR cycle for bb-homelab. The
   procedure
 - `~/.claude/skills/vsea-merge-gate/SKILL.md` — equivalent for V-SEA
   repo (different project board, otherwise same gate)
-- `pr-workflow` rule (this repo) — the formal rules this skill
-  enforces
+- `pr-workflow` skill (this repo) — the canonical PR workflow rules
+  this skill operationalises

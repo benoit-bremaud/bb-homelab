@@ -22,7 +22,9 @@ and credentials intact.
 - SSH access to Pi as `benoit`
 - Prod n8n is running (we test alongside, no impact)
 - Prod `~/bb-homelab/services/n8n/.env` contains `N8N_ENCRYPTION_KEY`
-- Disk space for ~5 MB of test data in `~/n8n-restoretest/`
+- Disk space for ~5-50 MB of test data in `~/n8n-restoretest/`
+  (matches the snapshot-size range documented in
+  [`services/n8n/BACKUP.md`](../../../services/n8n/BACKUP.md))
 
 ## Canonical reference
 

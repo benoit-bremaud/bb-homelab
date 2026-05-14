@@ -7,7 +7,7 @@ disable-model-invocation: true
 # /new-service <name> — scaffold a new service
 
 Run this skill to bootstrap the boilerplate for adding a new Docker
-service to bb-homelab. Follows `infra-patterns` rules.
+service to bb-homelab. Follows the `infra-patterns` skill conventions.
 
 ## Q&A — clarify with user FIRST
 
@@ -16,8 +16,11 @@ Before writing any file, gather these via `AskUserQuestion`:
 1. **Service name** (e.g. `kuma`, `jellyfin`, `vaultwarden`)
    — kebab-case, becomes both the directory name and Caddy hostname.
 
-2. **Role** (`appdata` / `archive` / `media` / `backup` / other)
-   — determines `/mnt/<role>/<name>/` data location per Pattern Y.
+2. **Role** (`appdata` / `archive` / `media` / `backup`)
+   — `appdata` services keep a named Docker volume
+   (`bb-homelab-<name>-data`); `archive` / `media` / `backup`
+   services bind-mount to `/mnt/<role>/<service>/data` per
+   Pattern Y (cf. `infra-patterns` skill §Pattern Y).
 
 3. **Image + version** (pinned!)
    — e.g. `louislam/uptime-kuma:1.23.13`, never `:latest`.
@@ -174,7 +177,7 @@ Branch convention: `feat/<issue-number>-deploy-<name>`.
 
 ## Related
 
-- `pr-workflow` rule — branch + commit + merge gate
-- `infra-patterns` rule — Docker compose patterns
+- `pr-workflow` skill — branch + commit + merge gate
+- `infra-patterns` skill — Docker compose patterns
 - `docs-conventions` rule — README language + structure
 - `pr-cycle` skill — full PR workflow
