@@ -49,6 +49,19 @@ cp .env.example .env    # optional; phase 1 runs fine with defaults
 docker compose up -d
 ```
 
+> **Migrating a host that already ran Caddy on named volumes.** The
+> bootstrap above assumes a fresh deploy (this Pi never ran the old
+> named-volume layout, so there was nothing to migrate). On a host that
+> *did* run Caddy from `bb-homelab-caddy-data`, copy the data into the
+> bind-mount **before** the first `up`, otherwise Caddy generates a new
+> internal CA and every client must re-trust:
+>
+> ```bash
+> sudo mkdir -p /mnt/appdata/caddy/data /mnt/appdata/caddy/config
+> sudo cp -a "$(docker volume inspect bb-homelab-caddy-data --format '{{.Mountpoint}}')/." /mnt/appdata/caddy/data/
+> sudo cp -a "$(docker volume inspect bb-homelab-caddy-config --format '{{.Mountpoint}}')/." /mnt/appdata/caddy/config/
+> ```
+
 Then, on every client device that needs to reach a subdomain:
 
 ```bash
