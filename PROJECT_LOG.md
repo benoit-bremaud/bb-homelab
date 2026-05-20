@@ -744,3 +744,44 @@ was done and why, by date.
     explicit (`41959fc`).
 - **Closes**: #87
 - **Merge**: `f29bb14`
+
+## 2026-05-20
+
+### PR #94 merged: bind-mount n8n volume to /mnt/appdata/n8n
+
+- **What**: Migrate the n8n data directory from the SD-card Docker
+  named volume (`bb-homelab-n8n-data`) to a host bind-mount on the HDD
+  at `/mnt/appdata/n8n`, per Pattern Y for `appdata` services. The
+  migration had been started on 2026-05-14 and stalled mid-way: the
+  n8n container was removed (`docker compose down`) and data copied to
+  `/mnt/appdata/n8n` (uid 1000), but the compose was never repointed —
+  leaving n8n offline ~6 days with daily backup-cron failures. This PR
+  completed it forward: repointed the compose, brought n8n back online
+  (healthy, Impropedia workflow present, healthz 200), confirmed
+  backups resume. The `bb-homelab-proxy` external network had to be
+  created on the Pi — it was absent (Caddy, its usual creator, is not
+  yet deployed; the compose declares it `external`).
+- **Why**: MVP CORE done-criterion #5 (epic #66). The HDD is the
+  durable tier; the SD-card named volume was fragile and invisible in
+  `df`. The bind-mount makes the data explicit, on the HDD, and
+  trivially backed up.
+- **Review**:
+  - automated review (Must Have): a default bind-mount auto-creates
+    the source on the root filesystem when `/mnt/appdata` is not
+    mounted (HDD uses `nofail`), so a failed mount — including on
+    reboot auto-restart — would silently start n8n on an empty SQLite
+    DB. Switched to long-form bind with `create_host_path: false` so
+    the container fails to start instead; verified on the Pi
+    (`ba55070`).
+  - automated review (Should Have): compose comment hardcoded block
+    device `/dev/sda1`, but fstab mounts by UUID and the node can
+    change across boots. Replaced with HDD + UUID-mount reference
+    (`2887f55`).
+  - automated review (Should Have): documented the fresh-host
+    prerequisite (`mkdir -p` + `chown 1000:1000`) in README, pointing
+    to BACKUP.md (`2887f55`).
+- **Pending**: orphan SD volume `bb-homelab-n8n-data` left intact for
+  rollback; delete after a 7-day grace period (~2026-05-27) pending
+  continued green operation.
+- **Closes**: #93
+- **Merge**: `abdee00`
