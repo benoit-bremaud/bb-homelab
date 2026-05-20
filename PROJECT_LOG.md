@@ -785,3 +785,35 @@ was done and why, by date.
   continued green operation.
 - **Closes**: #93
 - **Merge**: `abdee00`
+
+### PR #97 merged: deploy Caddy on the Pi + bind-mount data to HDD
+
+- **What**: Deploy the Caddy reverse proxy on the Pi (configured in #14
+  / PR #72 but never run) and move its data to the HDD. Caddy now
+  terminates HTTPS for `n8n.bb-homelab.local` via its internal CA and
+  routes to the n8n container over the shared `bb-homelab-proxy`
+  network. Verified live: container up binding 80/443, internal CA root
+  generated under `/mnt/appdata/caddy/data`,
+  `https://n8n.bb-homelab.local/healthz` → HTTP 200 through Caddy, and
+  HTTP 200 with no `-k` from the laptop after installing the CA
+  system-wide + the `/etc/hosts` entry. Completes MVP-core
+  done-criterion #7 (epic #66).
+- **Why**: single HTTPS entry point for tailnet traffic to every
+  backend service; prerequisite for the monitoring stack and
+  brasse-bouillon / Postgres. Caddy data (internal CA root) on the HDD
+  for the same durability reason as n8n (#93).
+- **Review**:
+  - automated review (Should Have): named→bind switch has no migration
+    path, so a host that already ran Caddy would orphan its data and
+    regenerate a CA. Verified moot here (this Pi never ran the
+    named-volume layout); added a README migration note for the
+    already-deployed case, e.g. future VPS migration #30 (`a290d21`).
+  - automated review (Should Have, 2×): the `create_host_path: false`
+    fail-fast claim was overstated (only fails when the source is
+    absent, not when a dir was created on the rootfs while unmounted)
+    and the bootstrap `mkdir` lacked a mount check. Reworded the claim
+    and added a `mountpoint -q /mnt/appdata` guard before `mkdir`
+    (`7f9f8bb`). Code-enforced start-time guard deferred — services
+    start via `docker compose up`, same decision as #93.
+- **Closes**: #96
+- **Merge**: `5009e48`
