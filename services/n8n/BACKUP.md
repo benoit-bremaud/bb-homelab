@@ -103,21 +103,26 @@ sudo install -o "$USER" -g "$USER" -m 644 /dev/null /var/log/n8n-backup.log
 
 Restore to the same Pi, same n8n version, same `N8N_ENCRYPTION_KEY`.
 
+> **Precondition**: the HDD must be mounted at `/mnt/appdata`
+> (`mountpoint -q /mnt/appdata`). The compose uses
+> `create_host_path: false`, so n8n will refuse to start if the
+> bind-mount source is missing — restore into the mounted disk.
+
 ```bash
-# 1. Stop the stack (do NOT delete the volume).
+# 1. Stop the stack (do NOT delete the data directory).
 cd services/n8n
 docker compose down
 
 # 2. Pick the archive you want to restore.
 ARCHIVE=/var/backups/n8n/n8n-2026-04-15_030000.tar.gz
 
-# 3. Find the host path of the volume.
-VOL_PATH=$(docker volume inspect bb-homelab-n8n-data --format '{{ .Mountpoint }}')
+# 3. The data lives at a fixed host bind-mount path (issue #93).
+VOL_PATH=/mnt/appdata/n8n
 echo "${VOL_PATH}"
 
-# 4. Wipe + extract in place (requires sudo because the volume is
-#    owned by the container's uid). The find form deletes dotfiles
-#    too — n8n's volume contains hidden state (e.g. .cache, .npmrc)
+# 4. Wipe + extract in place (requires sudo because the directory is
+#    owned by the container's uid 1000). The find form deletes dotfiles
+#    too — n8n's data dir contains hidden state (e.g. .cache, .npmrc)
 #    that a plain `rm -rf .../*` would silently leave behind.
 sudo find "${VOL_PATH:?}" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
 sudo tar -xzf "${ARCHIVE}" -C "${VOL_PATH}"
@@ -140,10 +145,17 @@ Same flow as above, plus two prerequisites before step 1:
    your password manager. An empty or wrong key means every encrypted
    credential in the archive is unusable.
 
-2. `docker compose up -d` must be run **at least once** with the
-   correct `.env` before the restore so the named volume
-   (`bb-homelab-n8n-data`) exists. You can then immediately
-   `docker compose down` and proceed with steps 2-5.
+2. The bind-mount target directory must exist and be owned by uid 1000
+   before the restore:
+
+   ```bash
+   sudo mkdir -p /mnt/appdata/n8n
+   sudo chown 1000:1000 /mnt/appdata/n8n
+   ```
+
+   You can then proceed with steps 2-5 above (no need to start the
+   stack first — the bind-mount path is created by hand, unlike a
+   named volume which Docker only materialises on first `up`).
 
 ## Verifying an archive is restorable
 

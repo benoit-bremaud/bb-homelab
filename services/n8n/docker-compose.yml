@@ -29,7 +29,24 @@ services:
       - N8N_VERSION_NOTIFICATIONS_ENABLED=false
       # Default credentials prompt on first start (set via UI).
     volumes:
-      - n8n_data:/home/node/.n8n
+      # Host bind-mount on the HDD (Pattern Y for `appdata` services).
+      # Migrated from the SD-card Docker named volume (issue #93). The
+      # data lives at /mnt/appdata/n8n on the HDD (UUID-mounted per
+      # fstab); explicit host path makes it visible in `df` and
+      # trivially backed up.
+      #
+      # create_host_path: false is a fail-fast guard. The HDD is mounted
+      # with `nofail` (fstab), so a failed mount lets the Pi boot WITHOUT
+      # /mnt/appdata. With default bind semantics Docker would then
+      # auto-create /mnt/appdata/n8n on the root filesystem and n8n would
+      # silently start on an empty SQLite DB (data divergence). Refusing
+      # to create the source path means the container fails to start
+      # instead — including on reboot auto-restart, the riskiest moment.
+      - type: bind
+        source: /mnt/appdata/n8n
+        target: /home/node/.n8n
+        bind:
+          create_host_path: false
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:5678/healthz || exit 1"]
       interval: 30s
@@ -78,7 +95,3 @@ networks:
     # (see services/caddy/README.md and ADR 0002).
     name: bb-homelab-proxy
     external: true
-
-volumes:
-  n8n_data:
-    name: bb-homelab-n8n-data
