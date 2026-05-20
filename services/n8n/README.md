@@ -27,7 +27,10 @@ homelab needs in one clone.
   **Precondition**: the HDD must be mounted at `/mnt/appdata` before
   `docker compose up`. The compose declares `create_host_path: false`,
   so if the disk is not mounted n8n fails to start (loud) rather than
-  silently auto-creating an empty data dir on the SD card.
+  silently auto-creating an empty data dir on the SD card. On a fresh
+  host, create the directory first (`sudo mkdir -p /mnt/appdata/n8n &&
+  sudo chown 1000:1000 /mnt/appdata/n8n`) — see
+  [BACKUP.md](BACKUP.md) "Restore — different host".
 
 See [BACKUP.md](BACKUP.md) for the backup & restore procedure (manual
 run, cron schedule, volume migration across hosts, restore verification).
