@@ -21,8 +21,15 @@ independent by design — see [ADR 0002](../../docs/decisions/0002-caddy-reverse
   survive container restarts** or Caddy regenerates a brand new root CA
   and every client device's trust anchor becomes stale — hence the
   durable HDD rather than the SD card. The compose declares
-  `create_host_path: false`, so if the HDD is not mounted Caddy fails
-  to start (loud) rather than silently regenerating a CA on the SD card.
+  `create_host_path: false`: if the bind source is missing Docker
+  refuses to start Caddy instead of auto-creating it on the root
+  filesystem. This catches the common "HDD failed to mount" case
+  (the source dir lives on the HDD, so it's absent when the disk is
+  not mounted) — but it is **not** a full guarantee: if the dirs were
+  ever created on the rootfs while the disk was unmounted, Docker would
+  bind those instead. The real invariant is "`/mnt/appdata` is
+  mounted"; verify it with `mountpoint -q /mnt/appdata` before starting
+  the stack (see Bootstrap).
 - **Bind-mount `/mnt/appdata/caddy/config`** — Caddy's runtime-managed
   state.
 
@@ -39,8 +46,11 @@ docker network create bb-homelab-proxy
 #    re-up the stack:
 cd services/n8n && docker compose up -d && cd -
 
-# 3. Create the bind-mount target dirs on the HDD (once per host).
-#    Required because the compose uses create_host_path: false.
+# 3. Verify the HDD is actually mounted, THEN create the bind-mount
+#    target dirs. The guard matters: `mkdir -p` on an unmounted
+#    /mnt/appdata would create the dirs on the root filesystem (SD
+#    card), which create_host_path: false would then happily bind.
+mountpoint -q /mnt/appdata || { echo "ERROR: /mnt/appdata not mounted"; exit 1; }
 sudo mkdir -p /mnt/appdata/caddy/data /mnt/appdata/caddy/config
 
 # 4. Start Caddy.
@@ -57,6 +67,7 @@ docker compose up -d
 > internal CA and every client must re-trust:
 >
 > ```bash
+> mountpoint -q /mnt/appdata || { echo "ERROR: /mnt/appdata not mounted"; exit 1; }
 > sudo mkdir -p /mnt/appdata/caddy/data /mnt/appdata/caddy/config
 > sudo cp -a "$(docker volume inspect bb-homelab-caddy-data --format '{{.Mountpoint}}')/." /mnt/appdata/caddy/data/
 > sudo cp -a "$(docker volume inspect bb-homelab-caddy-config --format '{{.Mountpoint}}')/." /mnt/appdata/caddy/config/
