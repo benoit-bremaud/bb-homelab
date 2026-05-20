@@ -19,8 +19,11 @@ homelab needs in one clone.
 - **cloudflared** — Cloudflare tunnel exposing n8n as a public HTTPS
   URL without any port forwarding. Ephemeral `*.trycloudflare.com`
   today; named tunnel when a domain is bought (decision #28).
-- **volume `bb-homelab-n8n-data`** — persists n8n's SQLite DB,
-  encrypted credentials, workflow JSONs. Backup target.
+- **bind-mount `/mnt/appdata/n8n`** — host directory on the HDD that
+  persists n8n's SQLite DB, encrypted credentials, workflow JSONs.
+  Backup target. Migrated from the SD-card Docker named volume
+  `bb-homelab-n8n-data` (issue #93) to follow Pattern Y
+  (`/mnt/<role>/<service>/` for `appdata` services).
 
 See [BACKUP.md](BACKUP.md) for the backup & restore procedure (manual
 run, cron schedule, volume migration across hosts, restore verification).
