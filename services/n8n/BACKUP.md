@@ -103,6 +103,11 @@ sudo install -o "$USER" -g "$USER" -m 644 /dev/null /var/log/n8n-backup.log
 
 Restore to the same Pi, same n8n version, same `N8N_ENCRYPTION_KEY`.
 
+> **Precondition**: the HDD must be mounted at `/mnt/appdata`
+> (`mountpoint -q /mnt/appdata`). The compose uses
+> `create_host_path: false`, so n8n will refuse to start if the
+> bind-mount source is missing — restore into the mounted disk.
+
 ```bash
 # 1. Stop the stack (do NOT delete the data directory).
 cd services/n8n

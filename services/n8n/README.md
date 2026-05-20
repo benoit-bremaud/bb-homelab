@@ -24,6 +24,10 @@ homelab needs in one clone.
   Backup target. Migrated from the SD-card Docker named volume
   `bb-homelab-n8n-data` (issue #93) to follow Pattern Y
   (`/mnt/<role>/<service>/` for `appdata` services).
+  **Precondition**: the HDD must be mounted at `/mnt/appdata` before
+  `docker compose up`. The compose declares `create_host_path: false`,
+  so if the disk is not mounted n8n fails to start (loud) rather than
+  silently auto-creating an empty data dir on the SD card.
 
 See [BACKUP.md](BACKUP.md) for the backup & restore procedure (manual
 run, cron schedule, volume migration across hosts, restore verification).
