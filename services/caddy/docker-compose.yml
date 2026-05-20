@@ -12,8 +12,24 @@ services:
       - "443:443/udp"  # HTTP/3 (QUIC)
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data          # certificates, ACME account, internal CA
-      - caddy_config:/config      # auto-managed runtime config
+      # Host bind-mounts on the HDD (Pattern Y, like n8n — issue #96).
+      # /data holds the internal CA root + issued certs: losing it forces
+      # every client device to re-trust, so it belongs on the durable HDD,
+      # not the SD card. create_host_path: false is a fail-fast guard —
+      # the HDD uses `nofail` in fstab, so a failed mount would otherwise
+      # let Docker auto-create the source on the root filesystem and Caddy
+      # would silently regenerate a brand-new CA. Refusing to create the
+      # path makes the container fail to start instead.
+      - type: bind
+        source: /mnt/appdata/caddy/data
+        target: /data            # certificates, ACME account, internal CA
+        bind:
+          create_host_path: false
+      - type: bind
+        source: /mnt/appdata/caddy/config
+        target: /config          # auto-managed runtime config
+        bind:
+          create_host_path: false
     networks:
       - proxy
 
@@ -26,9 +42,3 @@ networks:
     # torn down / upgraded independently without losing the shared bridge.
     name: bb-homelab-proxy
     external: true
-
-volumes:
-  caddy_data:
-    name: bb-homelab-caddy-data
-  caddy_config:
-    name: bb-homelab-caddy-config
