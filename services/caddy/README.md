@@ -16,11 +16,22 @@ independent by design — see [ADR 0002](../../docs/decisions/0002-caddy-reverse
 - **Shared Docker network `bb-homelab-proxy`** — external, created
   once on the host. Every backend service that Caddy needs to reach
   (n8n, future Kuma / Jellyfin / …) joins this network.
-- **Volume `bb-homelab-caddy-data`** — persists the internal CA root
-  and issued certificates. **Must survive container restarts** or
-  Caddy regenerates a brand new root CA and every client device's
-  trust anchor becomes stale.
-- **Volume `bb-homelab-caddy-config`** — Caddy's runtime-managed state.
+- **Bind-mount `/mnt/appdata/caddy/data`** — persists the internal CA
+  root and issued certificates on the HDD (Pattern Y, like n8n). **Must
+  survive container restarts** or Caddy regenerates a brand new root CA
+  and every client device's trust anchor becomes stale — hence the
+  durable HDD rather than the SD card. The compose declares
+  `create_host_path: false`: if the bind source is missing Docker
+  refuses to start Caddy instead of auto-creating it on the root
+  filesystem. This catches the common "HDD failed to mount" case
+  (the source dir lives on the HDD, so it's absent when the disk is
+  not mounted) — but it is **not** a full guarantee: if the dirs were
+  ever created on the rootfs while the disk was unmounted, Docker would
+  bind those instead. The real invariant is "`/mnt/appdata` is
+  mounted"; verify it with `mountpoint -q /mnt/appdata` before starting
+  the stack (see Bootstrap).
+- **Bind-mount `/mnt/appdata/caddy/config`** — Caddy's runtime-managed
+  state.
 
 ## Bootstrap
 
@@ -35,16 +46,37 @@ docker network create bb-homelab-proxy
 #    re-up the stack:
 cd services/n8n && docker compose up -d && cd -
 
-# 3. Start Caddy.
+# 3. Verify the HDD is actually mounted, THEN create the bind-mount
+#    target dirs. The guard matters: `mkdir -p` on an unmounted
+#    /mnt/appdata would create the dirs on the root filesystem (SD
+#    card), which create_host_path: false would then happily bind.
+mountpoint -q /mnt/appdata || { echo "ERROR: /mnt/appdata not mounted"; exit 1; }
+sudo mkdir -p /mnt/appdata/caddy/data /mnt/appdata/caddy/config
+
+# 4. Start Caddy.
 cd services/caddy
 cp .env.example .env    # optional; phase 1 runs fine with defaults
 docker compose up -d
 ```
 
+> **Migrating a host that already ran Caddy on named volumes.** The
+> bootstrap above assumes a fresh deploy (this Pi never ran the old
+> named-volume layout, so there was nothing to migrate). On a host that
+> *did* run Caddy from `bb-homelab-caddy-data`, copy the data into the
+> bind-mount **before** the first `up`, otherwise Caddy generates a new
+> internal CA and every client must re-trust:
+>
+> ```bash
+> mountpoint -q /mnt/appdata || { echo "ERROR: /mnt/appdata not mounted"; exit 1; }
+> sudo mkdir -p /mnt/appdata/caddy/data /mnt/appdata/caddy/config
+> sudo cp -a "$(docker volume inspect bb-homelab-caddy-data --format '{{.Mountpoint}}')/." /mnt/appdata/caddy/data/
+> sudo cp -a "$(docker volume inspect bb-homelab-caddy-config --format '{{.Mountpoint}}')/." /mnt/appdata/caddy/config/
+> ```
+
 Then, on every client device that needs to reach a subdomain:
 
 ```bash
-# 4. Point *.bb-homelab.local to the Pi's Tailscale IP. On Linux/macOS:
+# 5. Point *.bb-homelab.local to the Pi's Tailscale IP. On Linux/macOS:
 sudo sh -c 'cat >> /etc/hosts <<EOF
 100.121.134.61  n8n.bb-homelab.local
 # add future routes as services come online
