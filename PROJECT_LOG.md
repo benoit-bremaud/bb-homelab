@@ -796,7 +796,7 @@ was done and why, by date.
   generated under `/mnt/appdata/caddy/data`,
   `https://n8n.bb-homelab.local/healthz` → HTTP 200 through Caddy, and
   HTTP 200 with no `-k` from the laptop after installing the CA
-  system-wide + the `/etc/hosts` entry. Completes MVP-core
+  system-wide + the `/etc/hosts` entry. Completes MVP CORE
   done-criterion #7 (epic #66).
 - **Why**: single HTTPS entry point for tailnet traffic to every
   backend service; prerequisite for the monitoring stack and
