@@ -846,3 +846,29 @@ was done and why, by date.
     subdirs) is unified in a follow-up.
 - **Refs**: #49 (docs criteria done; physical mounts blocked by #47)
 - **Merge**: `22c4387`
+
+### PR #101 merged: unify new-service sub-path convention
+
+- **What**: Follow-up to the review on #100. The skill alignment in #99
+  (`27b8374`) had hardcoded a `/data` subdir, diverging from
+  `storage/LAYOUT.md` and from n8n (which mounts the service dir
+  directly; only Caddy uses `data`/`config` subdirs). Unify on
+  `/mnt/<role>/<service>/` as the per-service directory — mounted
+  directly for single-volume services, via subdirs for multi-volume —
+  across the `/new-service` skill and LAYOUT.md.
+- **Why**: keep the skill, the doc, and the two deployed services (n8n,
+  Caddy) describing one convention, so the next service scaffolds right.
+- **Review**:
+  - automated review (Should Have): the prose shorthand
+    `/mnt/appdata/caddy/data + /config` conflated host and container
+    paths; spelled out both host subdirs and their container targets
+    (`966f70e`).
+  - automated review (Should Have, 6×): harmonised the `<service>`
+    placeholder to `<name>`; softened the overstated
+    `create_host_path: false` "fail-fast" claim (it fails only when the
+    source is absent — the real invariant is `mountpoint -q /mnt/<role>`)
+    in both the Q&A
+    and the compose-template comment; added a Bootstrap note to create
+    multi-volume subdirs (`5271c78`, `78e479e`).
+- **Refs**: #49
+- **Merge**: `c5ac2f1`
