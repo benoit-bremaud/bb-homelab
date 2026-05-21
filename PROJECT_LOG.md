@@ -817,3 +817,28 @@ was done and why, by date.
     start via `docker compose up`, same decision as #93.
 - **Closes**: #96
 - **Merge**: `5009e48`
+
+## 2026-05-21
+
+### PR #99 merged: document the /mnt layout convention (Pattern Y)
+
+- **What**: Add `storage/LAYOUT.md` formalising the `/mnt` mount-point
+  convention — the four roles (`appdata` / `archive` / `media` /
+  `backup`), Pattern Y (one role per disk, no RAID/LVM), the current
+  integration state (only `/mnt/appdata` mounted; archive deferred;
+  media/backup blocked on #47), the "don't write to an unmounted
+  `/mnt/<role>`" invariant, and the fstab UUID + nofail convention.
+  Referenced from `storage/README.md` and `ARCHITECTURE.md` Layer 1.
+- **Why**: a stable, predictable `/mnt` layout every service, backup
+  script, and compose file can reference — avoids dead symlinks, broken
+  binds, ad-hoc paths. Written while Pattern Y is fresh from the n8n
+  (#93) and Caddy (#96) migrations.
+- **Review**:
+  - automated review (Should Have): the `/new-service` skill still told
+    `appdata` services to use a named Docker volume, contradicting the
+    bind-mount convention established by n8n/Caddy and documented in
+    LAYOUT.md. Updated the skill so every role bind-mounts to
+    `/mnt/<role>/<name>/data` with `create_host_path: false` — fixing
+    the drift rather than weakening the doc (`27b8374`).
+- **Refs**: #49 (docs criteria done; physical mounts blocked by #47)
+- **Merge**: `22c4387`
