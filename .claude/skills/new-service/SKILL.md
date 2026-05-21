@@ -17,12 +17,14 @@ Before writing any file, gather these via `AskUserQuestion`:
    — kebab-case, becomes both the directory name and Caddy hostname.
 
 2. **Role** (`appdata` / `archive` / `media` / `backup`)
-   — determines the data location. Every role bind-mounts to
-   `/mnt/<role>/<service>/data` on the HDD per Pattern Y, with
-   `create_host_path: false` (fail-fast if the disk is not mounted).
-   See [storage/LAYOUT.md](../../../storage/LAYOUT.md) and the
-   `infra-patterns` skill §Pattern Y. (Established by n8n and Caddy,
-   which both bind-mount under `/mnt/appdata/`.)
+   — determines the data location. Every role bind-mounts under the
+   per-service directory `/mnt/<role>/<service>/` on the HDD per
+   Pattern Y, with `create_host_path: false` (fail-fast if the disk is
+   not mounted). Mount the directory **directly** for a single-volume
+   service (e.g. n8n → `/mnt/appdata/n8n`) or via **subdirs** for a
+   multi-volume one (e.g. Caddy → `/mnt/appdata/caddy/data` +
+   `/config`). See [storage/LAYOUT.md](../../../storage/LAYOUT.md) and
+   the `infra-patterns` skill §Pattern Y.
 
 3. **Image + version** (pinned!)
    — e.g. `louislam/uptime-kuma:1.23.13`, never `:latest`.
@@ -32,8 +34,9 @@ Before writing any file, gather these via `AskUserQuestion`:
    — placeholders go in `.env.example`, never real values.
 
 5. **Persistent data location** (host path)
-   — convention: `/mnt/<role>/<name>/data` (bind-mount, created on
-   the HDD before first `up`).
+   — convention: `/mnt/<role>/<name>/` (bind-mount, created on the HDD
+   before first `up`; one or more subdirs if the service needs several
+   volumes).
 
 6. **Network needs**:
    - Just `bb-homelab-proxy` (typical web service)?
@@ -73,8 +76,12 @@ services:
       # Host bind-mount on the HDD (Pattern Y). create_host_path: false
       # fails fast if /mnt/<role> is not mounted instead of writing to
       # the SD card. Create the dir first: see storage/LAYOUT.md.
+      # Single-volume default below (mounts the service dir directly).
+      # For a multi-volume service, use subdirs instead, e.g.
+      #   source: /mnt/<role>/<name>/data   target: /data
+      #   source: /mnt/<role>/<name>/config target: /config
       - type: bind
-        source: /mnt/<role>/<name>/data
+        source: /mnt/<role>/<name>
         target: /<container-data-path>
         bind:
           create_host_path: false
@@ -110,7 +117,7 @@ values from Q&A.
 
 - Image : `<image>:<version>` (épinglée — bump déliberé via
   `.env`).
-- Données persistantes : bind-mount `/mnt/<role>/<name>/data` (HDD,
+- Données persistantes : bind-mount `/mnt/<role>/<name>/` (HDD,
   Pattern Y).
 - Réseau : `bb-homelab-proxy` (partagé avec Caddy).
 - URL interne : `https://<name>.bb-homelab.local` (via Caddy).
@@ -123,7 +130,7 @@ cp .env.example .env
 # Éditer .env pour remplir les valeurs
 # Créer la cible bind-mount sur le HDD (le disque doit être monté) :
 mountpoint -q /mnt/<role> || { echo "ERREUR : /mnt/<role> non monté"; exit 1; }
-sudo mkdir -p /mnt/<role>/<name>/data
+sudo mkdir -p /mnt/<role>/<name>
 docker compose up -d
 docker compose logs -f <name>
 ```

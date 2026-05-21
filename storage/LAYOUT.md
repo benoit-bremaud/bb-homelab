@@ -77,8 +77,10 @@ Procédure complète d'intégration d'un disque : voir
 
 ## Pour les nouveaux services
 
-Un service à état persistant choisit son rôle, puis bind-monte
-`/mnt/<role>/<service>/` (ex. `/mnt/appdata/n8n`, `/mnt/appdata/caddy`).
-Le skill `/new-service` applique cette convention par défaut. Ne jamais
-utiliser `./data` ni un volume nommé sur la carte SD pour des données
-qu'on veut durables.
+Un service à état persistant choisit son rôle ; son répertoire est
+`/mnt/<role>/<service>/`. On y bind-monte soit le **répertoire entier**
+pour un service mono-volume (ex. n8n → `/mnt/appdata/n8n`), soit des
+**sous-répertoires** pour un service multi-volumes (ex. Caddy →
+`/mnt/appdata/caddy/data` + `/config`). Le skill `/new-service`
+applique cette convention par défaut. Ne jamais utiliser `./data` ni un
+volume nommé sur la carte SD pour des données qu'on veut durables.
