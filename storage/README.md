@@ -8,6 +8,7 @@ that keep media libraries auto-detectable by Jellyfin.
 
 | Topic | File | Tracked in |
 |---|---|---|
+| `/mnt` layout convention (Pattern Y, roles) | `LAYOUT.md` | issue #49 |
 | External HDD mounting (fstab, by-uuid) | `MOUNT.md` | issue #10 |
 | SMART health monitoring script | `scripts/smart-check.sh` | issue #11 |
 | Media folder structure conventions | `MEDIA.md` | issue #13 |
