@@ -48,6 +48,7 @@ bb-homelab/
 │   └── ...
 │
 ├── storage/                        # Layer 1 — Storage
+│   ├── LAYOUT.md                    #   /mnt convention (Pattern Y, roles)
 │   └── (HDD mount procedures, SMART scripts, backup scripts)
 │
 └── docs/
