@@ -22,7 +22,8 @@ Before writing any file, gather these via `AskUserQuestion`:
    Pattern Y, with `create_host_path: false` (fail-fast if the disk is
    not mounted). Mount the directory **directly** for a single-volume
    service (e.g. n8n → `/mnt/appdata/n8n`) or via **subdirs** for a
-   multi-volume one (e.g. Caddy → `/mnt/appdata/caddy/data` +
+   multi-volume one (e.g. Caddy → host `/mnt/appdata/caddy/data` and
+   `/mnt/appdata/caddy/config`, mapped to container `/data` and
    `/config`). See [storage/LAYOUT.md](../../../storage/LAYOUT.md) and
    the `infra-patterns` skill §Pattern Y.
 
