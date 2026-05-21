@@ -863,10 +863,11 @@ was done and why, by date.
     `/mnt/appdata/caddy/data + /config` conflated host and container
     paths; spelled out both host subdirs and their container targets
     (`966f70e`).
-  - automated review (Should Have, ×6): harmonised the `<service>`
-    placeholder to `<name>`; softened the overstated `create_host_path:
-    false` "fail-fast" claim (it fails only when the source is absent —
-    the real invariant is `mountpoint -q /mnt/<role>`) in both the Q&A
+  - automated review (Should Have, 6×): harmonised the `<service>`
+    placeholder to `<name>`; softened the overstated
+    `create_host_path: false` "fail-fast" claim (it fails only when the
+    source is absent — the real invariant is `mountpoint -q /mnt/<role>`)
+    in both the Q&A
     and the compose-template comment; added a Bootstrap note to create
     multi-volume subdirs (`5271c78`, `78e479e`).
 - **Refs**: #49
