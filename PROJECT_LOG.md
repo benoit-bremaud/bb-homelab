@@ -837,8 +837,12 @@ was done and why, by date.
   - automated review (Should Have): the `/new-service` skill still told
     `appdata` services to use a named Docker volume, contradicting the
     bind-mount convention established by n8n/Caddy and documented in
-    LAYOUT.md. Updated the skill so every role bind-mounts to
-    `/mnt/<role>/<name>/data` with `create_host_path: false` — fixing
-    the drift rather than weakening the doc (`27b8374`).
+    LAYOUT.md. Updated the skill so every role bind-mounts under
+    `/mnt/<role>/<name>/data` with `create_host_path: false` (`27b8374`).
+    Caveat (flagged in review on the log mini-PR): that `data` sub-path
+    itself diverged from LAYOUT.md's `/mnt/<role>/<service>/` and from
+    n8n's actual layout (no `data` subdir — Caddy uses `data`/`config`).
+    The sub-path convention (service dir, mounted directly or via
+    subdirs) is unified in a follow-up.
 - **Refs**: #49 (docs criteria done; physical mounts blocked by #47)
 - **Merge**: `22c4387`
