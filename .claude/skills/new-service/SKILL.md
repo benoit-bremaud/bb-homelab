@@ -77,8 +77,10 @@ services:
       # (other env vars; secrets via .env)
     volumes:
       # Host bind-mount on the HDD (Pattern Y). create_host_path: false
-      # fails fast if /mnt/<role> is not mounted instead of writing to
-      # the SD card. Create the dir first: see storage/LAYOUT.md.
+      # makes Docker refuse to start if the source is absent (the common
+      # HDD-not-mounted case) instead of auto-creating it on the SD card;
+      # the real invariant is `mountpoint -q /mnt/<role>`. Create the dir
+      # first: see storage/LAYOUT.md.
       # Single-volume default below (mounts the service dir directly).
       # For a multi-volume service, use subdirs instead, e.g.
       #   source: /mnt/<role>/<name>/data   target: /data
