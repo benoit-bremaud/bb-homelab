@@ -18,9 +18,11 @@ Before writing any file, gather these via `AskUserQuestion`:
 
 2. **Role** (`appdata` / `archive` / `media` / `backup`)
    — determines the data location. Every role bind-mounts under the
-   per-service directory `/mnt/<role>/<service>/` on the HDD per
-   Pattern Y, with `create_host_path: false` (fail-fast if the disk is
-   not mounted). Mount the directory **directly** for a single-volume
+   per-service directory `/mnt/<role>/<name>/` on the HDD per
+   Pattern Y, with `create_host_path: false` (Docker refuses to start
+   if the bind source is absent — the common "HDD not mounted" case;
+   the real invariant is `mountpoint -q /mnt/<role>`, see LAYOUT.md).
+   Mount the directory **directly** for a single-volume
    service (e.g. n8n → `/mnt/appdata/n8n`) or via **subdirs** for a
    multi-volume one (e.g. Caddy → host `/mnt/appdata/caddy/data` and
    `/mnt/appdata/caddy/config`, mapped to container `/data` and
@@ -132,6 +134,9 @@ cp .env.example .env
 # Créer la cible bind-mount sur le HDD (le disque doit être monté) :
 mountpoint -q /mnt/<role> || { echo "ERREUR : /mnt/<role> non monté"; exit 1; }
 sudo mkdir -p /mnt/<role>/<name>
+# Service multi-volumes : créer aussi chaque sous-dossier monté
+# (sinon create_host_path: false fera échouer le démarrage), ex. :
+#   sudo mkdir -p /mnt/<role>/<name>/data /mnt/<role>/<name>/config
 docker compose up -d
 docker compose logs -f <name>
 ```
