@@ -872,3 +872,48 @@ was done and why, by date.
     multi-volume subdirs (`5271c78`, `78e479e`).
 - **Refs**: #49
 - **Merge**: `c5ac2f1`
+
+## 2026-05-23
+
+### PR #104 merged: UML deliverables for the Jellyfin media center
+
+- **What**: Added the UML deliverables for the media-center feature
+  under `docs/architecture/diagrams/jellyfin/` — use-case (viewer vs
+  admin goals grouped by domain), sequence (watch-from-projector,
+  making the Direct-Play-vs-transcode branch explicit), component
+  (three access paths: LAN `:8096` / tailnet / Caddy; Pattern Y
+  storage; the no-off-site-egress property).
+- **Why**: model-first per the UML-first rule — the diagrams are the
+  contract the deployment must satisfy. Modelled here in parallel with
+  the build; going forward conception precedes code.
+- **Notes**: `class`/`state`/`data-flow` intentionally omitted (no new
+  domain types, no critical state machine, no outbound PII). Branched
+  cleanly from `main` in a git worktree to avoid contaminating a
+  parallel chantier's uncommitted work in the shared tree.
+- **Refs**: #12
+- **Merge**: `e89d0fa`
+
+### PR #103 merged: deploy Jellyfin media server
+
+- **What**: Scaffolded the Jellyfin service (`services/jellyfin/`) —
+  pinned image `10.11.9` (multi-arch → arm64 on the Pi),
+  `config`/`cache`/`media` bind-mounts on the `appdata` role
+  (Pattern Y), port `8096` published for direct tailnet/LAN access,
+  shared `bb-homelab-proxy` network, `/health` healthcheck. Added
+  ADR 0003 (Jellyfin over Plex/Emby via a weighted decision matrix +
+  Direct-Play-first strategy for the Pi 5), the Caddy route
+  `jellyfin.bb-homelab.local`, and the service-index status.
+- **Why**: the media center is the P2 service after n8n (issue #12);
+  Jellyfin chosen for its all-open-source, no-account, no-cloud fit with
+  the tailnet-only homelab (decision #28).
+- **Decision**: the media library lives temporarily on the `appdata`
+  disk (read-only) because the media disk (Disque B, `/mnt/media`) is
+  not mounted yet (#47); migration path documented in ADR 0003.
+- **Review**: no automated review posted — the configured reviewer
+  could not be added via API (422, not a collaborator); waived per
+  CONTRIBUTING's non-blocking-review rule for a solo developer. CI was
+  green (5/5 required + Sonar) and `mergeStateStatus` CLEAN; #103 was
+  re-synced with `main` (strict mode) after #104 merged, then squash-
+  merged.
+- **Closes**: #12
+- **Merge**: `1bc321e`
