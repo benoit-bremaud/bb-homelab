@@ -22,3 +22,13 @@ n8n.bb-homelab.local {
 	tls internal
 	reverse_proxy n8n:5678
 }
+
+# ---- jellyfin ----
+# jellyfin.bb-homelab.local → Jellyfin media server on the shared proxy
+# network. Browsers that trust the internal CA use this hostname; TV /
+# mobile apps that cannot install the CA use the direct port instead
+# (http://bb-homelab:8096, published by services/jellyfin/).
+jellyfin.bb-homelab.local {
+	tls internal
+	reverse_proxy jellyfin:8096
+}
