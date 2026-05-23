@@ -1,0 +1,72 @@
+services:
+  jellyfin:
+    # Pinned by default. Bump via JELLYFIN_IMAGE_TAG in .env after
+    # testing. :latest avoided so a background pull cannot drag in a
+    # breaking change. Multi-arch manifest → the arm64 variant is
+    # pulled automatically on the Pi 5.
+    image: jellyfin/jellyfin:${JELLYFIN_IMAGE_TAG:-10.11.9}
+    container_name: bb-homelab-jellyfin
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ:-Europe/Paris}
+      # Advertised base URL so clients build correct absolute links
+      # when reaching Jellyfin through Caddy. Adjust in .env if needed.
+      - JELLYFIN_PublishedServerUrl=${JELLYFIN_PUBLISHED_URL:-https://jellyfin.bb-homelab.local}
+    ports:
+      # Published for direct tailnet/LAN access (http://bb-homelab:8096),
+      # required by issue #12 so phone/TV apps can point straight at the
+      # server without installing Caddy's internal CA. No public ingress:
+      # the Pi has no port-forwarding and is reachable on the tailnet/LAN
+      # only (decision #28). The Caddy route below is the nicer hostname
+      # path for browsers that already trust the internal CA.
+      - "8096:8096"
+    volumes:
+      # Pattern Y, role appdata. Multi-volume service → one subdir per
+      # volume under /mnt/appdata/jellyfin/. create_host_path: false
+      # makes Docker refuse to start if a source is absent (the common
+      # HDD-not-mounted case); the real invariant is
+      # `mountpoint -q /mnt/appdata`. Create the dirs first: see
+      # storage/LAYOUT.md and this folder's README.
+      - type: bind
+        source: /mnt/appdata/jellyfin/config
+        target: /config
+        bind:
+          create_host_path: false
+      - type: bind
+        source: /mnt/appdata/jellyfin/cache
+        target: /cache
+        bind:
+          create_host_path: false
+      # TEMPORARY media location. Pattern Y puts the media library on
+      # role `media` (/mnt/media, Disque B), but that disk is not mounted
+      # yet (issue #47). Until it arrives the library lives on Disque A
+      # under appdata, read-only on the container side (Jellyfin only
+      # reads media). Migration to /mnt/media is tracked in the README
+      # and ADR 0003.
+      - type: bind
+        source: /mnt/appdata/jellyfin/media
+        target: /media
+        read_only: true
+        bind:
+          create_host_path: false
+    networks:
+      # `proxy` is the shared external network on which Caddy reaches
+      # this service via DNS name `jellyfin:8096` (see services/caddy/).
+      - default
+      - proxy
+    healthcheck:
+      # Jellyfin exposes /health on 8096, returning 200 once ready. The
+      # official image ships curl. If a future image drops it, switch to
+      # a TCP probe.
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8096/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+networks:
+  default:
+    driver: bridge
+  proxy:
+    name: bb-homelab-proxy
+    external: true
