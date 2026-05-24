@@ -145,5 +145,5 @@ Cross-cutting decisions:
 - `home-infra-watchdog` repo — `wan-monitor` (to be relocated to the
   Pi), `radio-mode-monitor` (skeleton, future)
 - UML: `docs/architecture/diagrams/monitoring/` (component, data-flow)
-- Note: ADR number 0003 is reserved for the pending Jellyfin media
-  server decision (listed in the index, not yet written).
+- Note: ADR 0003 is the Jellyfin media server decision (merged via
+  #104); monitoring is numbered 0004 because 0003 was already taken.
