@@ -917,3 +917,39 @@ was done and why, by date.
   merged.
 - **Closes**: #12
 - **Merge**: `1bc321e`
+
+## 2026-05-24
+
+### PR #106 merged: deploy Uptime Kuma + monitoring architecture (Stack B, part 1)
+
+- **What**: Deployed Uptime Kuma (`services/uptime-kuma/` — pinned
+  `2.3.2`, HDD bind-mount Pattern Y, healthcheck), the Caddy route
+  `status.bb-homelab.local`, and captured the monitoring architecture in
+  **ADR 0004** (layered: active Uptime Kuma for service-down + external
+  Healthchecks.io dead-man's-switch for Pi-dead / WAN-down + planned
+  Pi 3 cross-watch; single fault-only Telegram channel) with UML
+  component + data-flow diagrams. A dedicated Telegram bot was wired into
+  Kuma (n8n + Caddy monitors); a real DOWN→alert was validated
+  end-to-end.
+- **Why**: a multi-service homelab needs proactive alerting; ADR 0004
+  maps each need (Pi-dead / service-down / WAN-down) to the monitoring
+  paradigm that can actually satisfy it (issue #44).
+- **Scope**: Beszel (originally bundled in #44) was **dropped** per
+  ADR 0004 in favour of an external Healthchecks.io dead-man's-switch
+  (Phase 2). This PR delivers the Uptime Kuma half.
+- **Review**: automated review posted 3 comments. Two addressed
+  (`1505c1b`): a stale "ADR 0003 reserved/not-yet-written" note (0003
+  exists post-rebase) and the data-flow edge direction (Uptime Kuma
+  probes actively, so `Kuma → services`). One **Disagree**: the French
+  `services/uptime-kuma/README.md` is intentional per docs-conventions
+  §Category A (which overrides AGENTS.md's general English rule); a real
+  AGENTS.md-vs-docs-conventions inconsistency was flagged for a separate
+  cleanup.
+- **Incident**: Uptime Kuma was first deployed from the unmerged
+  `feat/44`; the Pi's checkout of `main` (for the Jellyfin deploy)
+  reverted the Caddyfile and dropped the `status` route (TLS error on
+  `status.bb-homelab.local`). Restored via a temporary local Caddyfile
+  edit, then made permanent by this merge + `git pull` on the Pi. Lesson:
+  do not leave a deployed service relying on an unmerged branch.
+- **Refs**: #44
+- **Merge**: `d90a8d6`
