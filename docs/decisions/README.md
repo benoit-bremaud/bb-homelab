@@ -13,3 +13,4 @@ decision is reversed, write a new ADR that supersedes the previous one.
 - [0001 — DIP layering applied to infrastructure](0001-dip-layering.md)
 - [0002 — Caddy as the internal reverse proxy](0002-caddy-reverse-proxy.md)
 - [0003 — Jellyfin as the media server](0003-jellyfin-media-server.md)
+- [0004 — Monitoring architecture: layered active + passive](0004-monitoring-architecture.md)

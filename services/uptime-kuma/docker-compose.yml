@@ -1,0 +1,40 @@
+services:
+  uptime-kuma:
+    # Pinned by default. Bump via UPTIME_KUMA_IMAGE_TAG in .env after
+    # testing. :latest avoided so a background pull cannot drag in a
+    # breaking change.
+    image: louislam/uptime-kuma:${UPTIME_KUMA_IMAGE_TAG:-2.3.2}
+    container_name: bb-homelab-uptime-kuma
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ:-Europe/Paris}
+    volumes:
+      # Host bind-mount on the HDD (Pattern Y, role appdata). Single
+      # volume → the service dir is mounted directly. create_host_path:
+      # false makes Docker refuse to start if the source is absent (the
+      # common HDD-not-mounted case); the real invariant is
+      # `mountpoint -q /mnt/appdata`. Create the dir first: see
+      # storage/LAYOUT.md.
+      - type: bind
+        source: /mnt/appdata/uptime-kuma
+        target: /app/data
+        bind:
+          create_host_path: false
+    networks:
+      # `proxy` is the shared external network on which Caddy reaches
+      # this service via DNS name `uptime-kuma:3001` (see services/caddy/).
+      - default
+      - proxy
+    healthcheck:
+      # Built-in healthcheck shipped in the image.
+      test: ["CMD", "extra/healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+networks:
+  default:
+    driver: bridge
+  proxy:
+    name: bb-homelab-proxy
+    external: true

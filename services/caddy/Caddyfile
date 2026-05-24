@@ -32,3 +32,11 @@ jellyfin.bb-homelab.local {
 	tls internal
 	reverse_proxy jellyfin:8096
 }
+
+# ---- Uptime Kuma ----
+# status.bb-homelab.local → uptime-kuma container (Stack B monitoring,
+# issue #44). Reached over the shared bb-homelab-proxy network.
+status.bb-homelab.local {
+	tls internal
+	reverse_proxy uptime-kuma:3001
+}
