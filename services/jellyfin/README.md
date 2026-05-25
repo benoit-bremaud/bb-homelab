@@ -45,6 +45,9 @@ cp .env.example .env
 # échec au démarrage) :
 mountpoint -q /mnt/appdata || { echo "ERREUR : /mnt/appdata non monté"; exit 1; }
 sudo mkdir -p /mnt/appdata/jellyfin/{config,cache,media}
+# Rendre la médiathèque inscriptible par benoit (dépôt SFTP/scp sans sudo) ;
+# config/ et cache/ restent à root, utilisés par le conteneur.
+sudo chown -R benoit:benoit /mnt/appdata/jellyfin/media
 
 docker compose up -d
 docker compose logs -f jellyfin
@@ -54,27 +57,84 @@ Au premier démarrage, ouvrir `http://bb-homelab:8096` et suivre
 l'assistant : créer le compte admin, ajouter une bibliothèque pointant
 sur `/media`.
 
-## Ajouter / retirer des médias
+## Ajouter du contenu
 
-Tant que la médiathèque est sur le Disque A, copier les fichiers depuis
-ton poste vers le Pi, puis relancer un scan dans l'UI Jellyfin :
+> **Important — droits.** N'ajouter que du contenu dont on a les droits :
+> créations personnelles, captations de la troupe, films du domaine
+> public ou sous licence Creative Commons, fichiers achetés sans DRM. Les
+> achats sur les plateformes type Google TV / Netflix sont protégés par
+> DRM et ne sont **pas** importables ; contourner ce verrou est illégal.
 
-```bash
-# Depuis ton poste — copie un film dans la bibliothèque
-scp -r "Mon Film (2024)" benoit@bb-homelab:/mnt/appdata/jellyfin/media/films/
-```
+### Arborescence
 
-Organisation recommandée (conventions de nommage Jellyfin) :
+Deux bibliothèques distinctes, un dossier racine chacune (sinon Jellyfin
+mélange films et épisodes) :
 
 ```text
 /mnt/appdata/jellyfin/media/
 ├── films/
-│   └── Titre (Année)/Titre (Année).mkv
+│   └── Titre (Année).mkv                 # ou Titre (Année)/Titre (Année).mkv
 └── series/
-    └── Série/Season 01/Série S01E01.mkv
+    └── Série (Année)/Season 01/Série S01E01.mkv
 ```
 
-Puis dans l'UI : **Tableau de bord → Bibliothèques → Analyser**.
+### Réglage des bibliothèques (une seule fois)
+
+Depuis le navigateur d'un poste du LAN (`http://bb-homelab:8096`,
+compte admin) :
+
+1. **Tableau de bord → Bibliothèques → Movies → Gérer** : retirer le
+   dossier `/media`, ajouter `/media/films`, enregistrer.
+2. **Ajouter une médiathèque** : type *Shows*, nom *Séries*, dossier
+   `/media/series`.
+
+### Règles de nommage (conventions Jellyfin)
+
+- **Film** : `Titre (Année).ext` — ex. `Inception (2010).mkv`. L'année
+  entre parenthèses lève les ambiguïtés.
+- **Série** : `Série (Année)/Season 01/Série S01E01.ext` — le marqueur
+  `SxxEyy` est l'élément reconnu ; les *specials* vont dans `Season 00`.
+- **Sous-titres** : même nom que la vidéo + langue, à côté du fichier —
+  ex. `Inception (2010).fr.srt`.
+- Accents et espaces acceptés. Privilégier H.264/AAC en MP4/MKV pour le
+  Direct Play (cf. section transcodage).
+
+### Déposer les fichiers sur le Pi
+
+Le dépôt se fait **côté serveur** (l'interface web Jellyfin ne sert pas à
+téléverser). Deux méthodes :
+
+```bash
+# A. Glisser-déposer (graphique) — dans l'explorateur de fichiers :
+#    « Se connecter à un serveur » →
+#    sftp://benoit@bb-homelab/mnt/appdata/jellyfin/media/
+#    puis déposer dans films/ ou series/.
+
+# B. Ligne de commande (depuis le poste) :
+scp "/chemin/mon_film.mkv" \
+  "benoit@bb-homelab:/mnt/appdata/jellyfin/media/films/Titre (Année).mkv"
+
+# Série : créer l'arbo saison d'abord
+ssh benoit@bb-homelab 'mkdir -p "/mnt/appdata/jellyfin/media/series/Ma Série (2020)/Season 01"'
+scp "/chemin/ep1.mkv" \
+  "benoit@bb-homelab:/mnt/appdata/jellyfin/media/series/Ma Série (2020)/Season 01/Ma Série S01E01.mkv"
+```
+
+> Le dossier `media/` appartient à `benoit` (cf. le `chown` du bootstrap),
+> donc dépôt sans `sudo`. À terme, un partage Samba pourra exposer ce
+> dossier comme un lecteur réseau.
+
+### Scanner & vérifier
+
+1. Dans l'UI : **Tableau de bord → Bibliothèques → ⋮ → Analyser** (un
+   scan automatique a aussi lieu, les dossiers étant surveillés en
+   temps réel).
+2. Affiche, résumé, année, casting sont récupérés tout seuls de
+   TheMovieDb (films **et** séries, fournisseur par défaut ; TheTVDB en
+   option), et mis en cache dans `/config`.
+3. Mal reconnu ? Sur la fiche → **⋮ → Identifier** (recherche manuelle ou
+   ID TMDb collé). Contenu perso sans fiche en ligne → **Éditer les
+   métadonnées** pour saisir titre / affiche / résumé à la main.
 
 ## Lecture & transcodage (Pi 5)
 
