@@ -45,6 +45,9 @@ cp .env.example .env
 # échec au démarrage) :
 mountpoint -q /mnt/appdata || { echo "ERREUR : /mnt/appdata non monté"; exit 1; }
 sudo mkdir -p /mnt/appdata/jellyfin/{config,cache,media}
+# Rendre la médiathèque inscriptible par benoit (dépôt SFTP/scp sans sudo) ;
+# config/ et cache/ restent à root, utilisés par le conteneur.
+sudo chown -R benoit:benoit /mnt/appdata/jellyfin/media
 
 docker compose up -d
 docker compose logs -f jellyfin
@@ -77,7 +80,7 @@ mélange films et épisodes) :
 
 ### Réglage des bibliothèques (une seule fois)
 
-Depuis le navigateur d'un poste du LAN (`http://192.168.1.216:8096`,
+Depuis le navigateur d'un poste du LAN (`http://bb-homelab:8096`,
 compte admin) :
 
 1. **Tableau de bord → Bibliothèques → Movies → Gérer** : retirer le
@@ -117,8 +120,9 @@ scp "/chemin/ep1.mkv" \
   "benoit@bb-homelab:/mnt/appdata/jellyfin/media/series/Ma Série (2020)/Season 01/Ma Série S01E01.mkv"
 ```
 
-> Le dossier `media/` appartient à `benoit` (dépôt sans `sudo`). À terme,
-> un partage Samba pourra exposer ce dossier comme un lecteur réseau.
+> Le dossier `media/` appartient à `benoit` (cf. le `chown` du bootstrap),
+> donc dépôt sans `sudo`. À terme, un partage Samba pourra exposer ce
+> dossier comme un lecteur réseau.
 
 ### Scanner & vérifier
 
@@ -126,7 +130,8 @@ scp "/chemin/ep1.mkv" \
    scan automatique a aussi lieu, les dossiers étant surveillés en
    temps réel).
 2. Affiche, résumé, année, casting sont récupérés tout seuls de
-   TheMovieDb (films) / TheTVDB (séries), et mis en cache dans `/config`.
+   TheMovieDb (films **et** séries, fournisseur par défaut ; TheTVDB en
+   option), et mis en cache dans `/config`.
 3. Mal reconnu ? Sur la fiche → **⋮ → Identifier** (recherche manuelle ou
    ID TMDb collé). Contenu perso sans fiche en ligne → **Éditer les
    métadonnées** pour saisir titre / affiche / résumé à la main.
