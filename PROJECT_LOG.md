@@ -979,13 +979,17 @@ was done and why, by date.
 - **Refs**: #12
 - **Merge**: `47a34e3`
 
-### Jellyfin brought live on the Pi
+### Jellyfin went live on the Pi
 
 - **What**: Deployed Jellyfin on the Pi from the #103 recipe — container
-  `healthy`, port `8096` reachable on the LAN (`192.168.1.216`) and the
-  tailnet; first-run wizard completed (admin account, Movies library on
-  `/media`); a Creative-Commons test file was indexed with auto-fetched
-  metadata, validating the end-to-end pipeline.
+  `healthy`, port `8096` reachable on the LAN (`192.168.1.216`, DHCP) and
+  the tailnet; first-run wizard completed (admin account, one initial
+  Movies library on `/media`); a Creative Commons test file was indexed
+  with auto-fetched metadata, validating the end-to-end pipeline.
+- **Libraries**: at go-live a single Movies library pointed at `/media`
+  (the file sat in `/media/films`, found by the recursive scan). The
+  two-library split (Movies → `/media/films`, Séries → `/media/series`)
+  is the documented #108 setup, to apply when series are added.
 - **Operational note**: `/mnt/appdata/jellyfin/media` was `chown`-ed to
   `benoit` so files can be dropped over SFTP/scp without `sudo` (the #103
   bootstrap created it root-owned). This step is now reflected in the
