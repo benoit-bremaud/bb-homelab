@@ -953,3 +953,47 @@ was done and why, by date.
   do not leave a deployed service relying on an unmerged branch.
 - **Refs**: #44
 - **Merge**: `d90a8d6`
+
+## 2026-05-25
+
+### PR #108 merged: detail the Jellyfin add-content procedure
+
+- **What**: Expanded `services/jellyfin/README.md` with a full "Ajouter
+  du contenu" procedure — films/series tree, one-time split of the two
+  libraries (Movies → `/media/films`, Séries → `/media/series`, so the
+  scanner does not mix them), naming rules (`Titre (Année)`, `SxxEyy`,
+  sidecar subtitles), server-side deposit (SFTP via the file manager or
+  `scp`; the web UI does not upload), then scan + Identify for mismatches.
+- **Why**: clarify the mental model — Jellyfin reads files already in the
+  media folder and auto-fetches metadata from a correctly-named file —
+  so content can be added autonomously without guesswork.
+- **Review**: automated review posted 3 comments, all addressed
+  (`9dc6e84`) + replied inline. `automated review (Should Have)`: the
+  hardcoded LAN IP was replaced with `http://bb-homelab:8096` (consistent
+  with the bootstrap section, no DHCP fragility). `automated review
+  (Should Have)`: a permissions inconsistency — the bootstrap creates
+  `media/` via `sudo mkdir` (root-owned), so SFTP/scp as `benoit` would
+  fail; added an explicit `chown` step and pointed the upload note to it.
+  `automated review (Should Have)`: the default series metadata provider
+  is TheMovieDb (not TheTVDB, which is optional) — reworded accordingly.
+- **Refs**: #12
+- **Merge**: `47a34e3`
+
+### Jellyfin went live on the Pi
+
+- **What**: Deployed Jellyfin on the Pi from the #103 recipe — container
+  `healthy`, port `8096` reachable on the LAN (`192.168.1.216`, DHCP) and
+  the tailnet; first-run wizard completed (admin account, one initial
+  Movies library on `/media`); a Creative Commons test file was indexed
+  with auto-fetched metadata, validating the end-to-end pipeline.
+- **Libraries**: at go-live a single Movies library pointed at `/media`
+  (the file sat in `/media/films`, found by the recursive scan). The
+  two-library split (Movies → `/media/films`, Séries → `/media/series`)
+  is the documented #108 setup, to apply when series are added.
+- **Operational note**: `/mnt/appdata/jellyfin/media` was `chown`-ed to
+  `benoit` so files can be dropped over SFTP/scp without `sudo` (the #103
+  bootstrap created it root-owned). This step is now reflected in the
+  README procedure (#108).
+- **Pending**: TV client login on the projector via Quick Connect (the
+  IR remote makes password entry impractical) — deferred.
+- **Refs**: #12
