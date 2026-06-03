@@ -997,3 +997,43 @@ was done and why, by date.
 - **Pending**: TV client login on the projector via Quick Connect (the
   IR remote makes password entry impractical) — deferred.
 - **Refs**: #12
+
+## 2026-06-04
+
+### PR #111 merged: scaffold the Vaultwarden service (password vault)
+
+- **What**: Scaffolded `services/vaultwarden/` (Bitwarden-compatible,
+  self-hosted password vault) on the existing homelab layers — pinned
+  image `vaultwarden/server:1.36.0`, no host port (Caddy reaches it as
+  `vaultwarden:80` on `bb-homelab-proxy`), bind-mount
+  `/mnt/appdata/vaultwarden` → `/data` with `create_host_path: false`,
+  Argon2 `ADMIN_TOKEN` with fail-fast, `/healthcheck.sh` healthcheck,
+  consistent-snapshot `backup.sh`, a tailnet-only Caddy route
+  (`vaultwarden.bb-homelab.local`, `tls internal`), `README` + `BACKUP`,
+  and ADR 0005.
+- **Why**: a private, self-hosted password vault reachable from the
+  Bitwarden apps, with nothing in a third-party cloud.
+- **Decision (ADR 0005)**: Vaultwarden over HashiCorp Vault (the right
+  tool for human password management, light on the Pi, consistent with
+  the `bw`-based secret conventions); tailnet-only (decision #28);
+  internal CA (ADR 0002); **install now but NOT a Tier-0 dependency**
+  until a unified off-site backup, a restore drill, the Uptime Kuma probe
+  and the dead-man's-switch are green (#19) — a break-glass copy stays
+  off-Pi until then.
+- **Review**: automated review posted 9 comments across two rounds — all
+  addressed + replied inline. Notable fixes: (security)
+  `SIGNUPS_DOMAINS_WHITELIST` overrides `SIGNUPS_ALLOWED=false`, so the
+  bootstrap "close" step now requires the whitelist to stay empty;
+  (backup) the DB snapshot is taken before the attachment/send blobs are
+  copied (no DB-vs-blob race), and `KEEP=0` disables rotation instead of
+  wiping every archive; (docs) status reworded as scaffold, admin-hash
+  command pinned to `1.36.0`, the sqlite3-absent pause fallback documented.
+- **Language**: service docs written in English (AGENTS.md §4 + the
+  2026-04-13 bootstrap decision). The standing AGENTS.md-vs-docs-
+  conventions inconsistency (a French "Category A" exception, already
+  flagged at #44 with `uptime-kuma`/`jellyfin` in French) remains open
+  for a separate cleanup.
+- **Scope**: repo scaffold only — the live deploy on the Pi follows; #25
+  stays open until go-live.
+- **Refs**: #25
+- **Merge**: `ae463ab`
