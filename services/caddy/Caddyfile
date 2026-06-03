@@ -40,3 +40,19 @@ status.bb-homelab.local {
 	tls internal
 	reverse_proxy uptime-kuma:3001
 }
+
+# ---- Vaultwarden ----
+# vaultwarden.bb-homelab.local → vaultwarden container (password manager,
+# issue #25). Reached over the shared bb-homelab-proxy network. A single
+# reverse_proxy is sufficient: since Vaultwarden 1.31 the WebSocket
+# (/notifications/hub) is served by Rocket on the same port 80, and Caddy
+# upgrades WebSocket connections automatically — no separate hub block.
+# X-Real-IP is forwarded so Vaultwarden logs the true tailnet client IP
+# (for its admin-panel rate-limiting / fail2ban) instead of Caddy's
+# container IP.
+vaultwarden.bb-homelab.local {
+	tls internal
+	reverse_proxy vaultwarden:80 {
+		header_up X-Real-IP {remote_host}
+	}
+}
