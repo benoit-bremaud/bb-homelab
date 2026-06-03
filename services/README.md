@@ -22,7 +22,7 @@ infrastructure (reverse proxy, Tailscale) which is bootstrapped first.
 | Uptime Kuma | `uptime-kuma/` | issue #20 | Planned |
 | Watchtower | `watchtower/` | issue #22 | Planned |
 | Pi-hole | `pihole/` | issue #24 | Nice-to-have |
-| Vaultwarden | `vaultwarden/` | issue #25 | Nice-to-have |
+| Vaultwarden | `vaultwarden/` | issue #25 | Scaffolded — install pending; NOT Tier-0 until backup proven (#19) |
 | Home Assistant | `home-assistant/` | issue #26 | Nice-to-have |
 
 ## Per-service folder conventions

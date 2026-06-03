@@ -1,0 +1,112 @@
+services:
+  # Vaultwarden — self-hosted, Bitwarden-compatible password manager.
+  # See services/vaultwarden/README.md for the full design rationale
+  # (tailnet-only access, Argon2 admin token, break-glass strategy, and
+  # the NOT-Tier-0 gating until backup + monitoring are proven — #25).
+  vaultwarden:
+    # Pinned by default. Bump deliberately via VW_IMAGE_TAG in .env and
+    # test before rolling out. :latest is avoided because a background
+    # `docker compose pull` could drag a breaking change into the service
+    # that holds every other password. Multi-arch manifest → arm64 on the Pi.
+    image: vaultwarden/server:${VW_IMAGE_TAG:-1.36.0}
+    container_name: bb-homelab-vaultwarden
+    restart: unless-stopped
+    # No host port published. Unlike n8n (which binds 127.0.0.1 for
+    # cloudflared), Vaultwarden is reached ONLY by Caddy over the shared
+    # bb-homelab-proxy network as `vaultwarden:80`. Smallest possible
+    # attack surface for the box that stores every password.
+    environment:
+      # Public origin. MUST match the Caddy hostname exactly (scheme +
+      # host) or the Web Vault, push, and WebAuthn/2FA origins break.
+      - DOMAIN=${VW_DOMAIN:-https://vaultwarden.bb-homelab.local}
+      # Open registration is OFF. Bootstrap the single account via a brief
+      # SIGNUPS_ALLOWED=true window (see README "Bootstrap"), then leave it
+      # false forever. No invite path is exposed.
+      - SIGNUPS_ALLOWED=${VW_SIGNUPS_ALLOWED:-false}
+      # Leave EMPTY. A non-empty whitelist lets those domains self-register
+      # even when SIGNUPS_ALLOWED=false (it OVERRIDES it) — setting it would
+      # silently keep registration open after the bootstrap window.
+      - SIGNUPS_DOMAINS_WHITELIST=${VW_SIGNUPS_DOMAINS_WHITELIST:-}
+      # Invitations require the admin panel; never auto-accepted.
+      - INVITATIONS_ALLOWED=false
+      # Admin panel is enabled ONLY because ADMIN_TOKEN is set, and the
+      # token is an Argon2 PHC hash (not plaintext) so the .env at rest
+      # never holds a usable credential. Fail fast if missing: an empty
+      # ADMIN_TOKEN silently DISABLES the admin panel. In .env, wrap the PHC
+      # hash in SINGLE QUOTES with single '$' (single-quoted .env values are
+      # literal, so Compose does not interpolate the '$...' segments).
+      - "ADMIN_TOKEN=${VW_ADMIN_TOKEN:?VW_ADMIN_TOKEN must be set in .env -- generate an Argon2 PHC hash with 'docker run --rm -it vaultwarden/server:1.36.0 /vaultwarden hash' and wrap it in single quotes in .env}"
+      # Internal listen port = 80 on the proxy bridge. Rocket also serves
+      # the integrated WebSocket (/notifications/hub) on this same port
+      # since v1.31 — no separate :3012, no special Caddy block.
+      # NOTE: 80 is privileged (<1024); this works because the stock image
+      # runs as root. If a `user:` override is ever added, switch this to a
+      # non-privileged port (e.g. 8080), repoint the Caddy route, and chown
+      # /mnt/appdata/vaultwarden to that uid:gid.
+      - ROCKET_PORT=80
+      - ROCKET_ADDRESS=0.0.0.0
+      # Mobile push relay. OFF by default: enabling it routes device push
+      # tokens through Bitwarden's relay (a third party). Turn on later
+      # only if you want phone push and accept that trade-off; then set
+      # the installation id/key from https://bitwarden.com/host.
+      - PUSH_ENABLED=${VW_PUSH_ENABLED:-false}
+      - PUSH_INSTALLATION_ID=${VW_PUSH_INSTALLATION_ID:-}
+      - PUSH_INSTALLATION_KEY=${VW_PUSH_INSTALLATION_KEY:-}
+      - TZ=${TZ:-Europe/Paris}
+      # Keep the SD-card journal small; raise to info/debug when
+      # troubleshooting. EXTENDED_LOGGING adds timestamps + targets.
+      - LOG_LEVEL=${VW_LOG_LEVEL:-warn}
+      - EXTENDED_LOGGING=true
+      # SMTP intentionally unset: no mail server in the homelab yet.
+      # Consequence — no email-based 2FA / hints, and the admin must
+      # manually confirm any invited user. Acceptable for a single-user
+      # (later small-family) instance. Documented in the README.
+    volumes:
+      # Host bind-mount on the HDD (Pattern Y, role `appdata`), like n8n /
+      # caddy / kuma. /data holds the ENTIRE vault state:
+      #   db.sqlite3         — accounts + *encrypted* vault items, org keys
+      #   rsa_key.pem/.der   — JWT signing keys (sessions, push, invites)
+      #   attachments/       — encrypted file attachments
+      #   sends/             — Bitwarden Send blobs
+      #   config.json        — settings written via the /admin panel
+      # These are the crown jewels: lose rsa_key and every session must
+      # re-auth; lose db.sqlite3 and the vault is gone.
+      #
+      # create_host_path: false is a fail-fast guard. The HDD uses `nofail`
+      # in fstab, so a failed mount lets the Pi boot WITHOUT /mnt/appdata.
+      # With default bind semantics Docker would auto-create
+      # /mnt/appdata/vaultwarden on the SD root and Vaultwarden would start
+      # on an EMPTY database — a silent "every vault vanished" event, worst
+      # of all on a reboot auto-restart. Refusing to create the source path
+      # makes the container fail loudly instead. The real invariant is
+      # `mountpoint -q /mnt/appdata` (see storage/LAYOUT.md).
+      - type: bind
+        source: /mnt/appdata/vaultwarden
+        target: /data
+        bind:
+          create_host_path: false
+    healthcheck:
+      # The image ships /healthcheck.sh — the maintainer-recommended probe
+      # (honours ROCKET_PORT/TLS, hits /alive internally). More robust than
+      # a hand-rolled curl.
+      test: ["CMD", "/healthcheck.sh"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      # `default` — local bridge (no host port, but keeps egress for push
+      # if it is ever enabled).
+      # `proxy` — shared external network; Caddy reaches this service as
+      # `vaultwarden:80` (see services/caddy/ + ADR 0002).
+      - default
+      - proxy
+
+networks:
+  default:
+    driver: bridge
+  proxy:
+    # Shared external network with services/caddy/. Created once on the
+    # host with: `docker network create bb-homelab-proxy`.
+    name: bb-homelab-proxy
+    external: true
