@@ -115,23 +115,29 @@ cleanup() {
 trap cleanup EXIT
 
 if [ "${HAS_SQLITE3}" = "true" ]; then
-  # Path A — sqlite3 present: stage inside the container, overwrite the DB
-  # with an atomic Online Backup API snapshot (WAL-safe, consistent under
-  # concurrent writes), drop the now-redundant sidecars, stream the archive
-  # via docker exec tar.
+  # Path A — sqlite3 present, no pause needed. Order is deliberate and
+  # matters for referential integrity:
+  #   1) snapshot the DB FIRST via the Online Backup API (WAL-safe,
+  #      consistent under concurrent writes) — the OLDEST artefact;
+  #   2) copy the rest of /data (attachments/, sends/, keys, config) AFTER,
+  #      excluding the live DB + sidecars (the step-1 snapshot is the one
+  #      that ships).
+  # Copying blobs first and snapshotting the DB last would race: a blob
+  # created in between would be referenced by the newer DB yet absent from
+  # the archive, making that item unrestorable. DB-first guarantees every
+  # blob the snapshot references is captured by the copy that follows.
   log "staging snapshot inside container (sqlite3: true)"
   docker exec "${CONTAINER}" sh -c "
     set -e
     rm -rf '${TMP_IN_CONTAINER}'
     mkdir -p '${TMP_IN_CONTAINER}'
-    cp -a ${DATA_DIR}/. '${TMP_IN_CONTAINER}/'
     sqlite3 ${DATA_DIR}/${DB} \".backup '${TMP_IN_CONTAINER}/${DB}'\"
-    rm -f \\
-      '${TMP_IN_CONTAINER}/${DB}-wal' \\
-      '${TMP_IN_CONTAINER}/${DB}-shm' \\
-      '${TMP_IN_CONTAINER}/${DB}-journal'
+    cd ${DATA_DIR}
+    find . -mindepth 1 -maxdepth 1 \\
+      ! -name '${DB}' ! -name '${DB}-wal' ! -name '${DB}-shm' ! -name '${DB}-journal' \\
+      -exec cp -a {} '${TMP_IN_CONTAINER}/' ';'
   "
-  log "SQLite: atomic .backup completed (WAL merged, sidecar files removed)"
+  log "SQLite: DB snapshot taken before blob copy (WAL merged, no blob race)"
   log "streaming archive to ${ARCHIVE}"
   docker exec "${CONTAINER}" tar -czf - -C "${TMP_IN_CONTAINER}" . > "${ARCHIVE}.part"
 else
