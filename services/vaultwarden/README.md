@@ -8,9 +8,11 @@ a third-party cloud.
 Reached **on the tailnet only** (no public ingress, decision #28), behind
 Caddy with the internal CA (ADR 0002).
 
-> **Status — NOT a Tier-0 dependency yet (issue #25).** This instance is
-> installed and usable, but the homelab has no unified, off-site,
-> restore-tested backup yet (`/mnt/backup` not mounted — issue #19).
+> **Status — scaffold; NOT a Tier-0 dependency (issue #25).** These files
+> scaffold the service; the live deploy on the Pi (see Bootstrap) is the
+> operator's next step. Once deployed it is usable, but the homelab has no
+> unified, off-site, restore-tested backup yet (`/mnt/backup` not mounted —
+> issue #19).
 > Until the four graduation criteria in [BACKUP.md](BACKUP.md) are green,
 > keep your existing password manager as the source of truth for your
 > most critical secrets, and rely on the break-glass copy described
@@ -62,7 +64,7 @@ sudo chmod 700 /mnt/appdata/vaultwarden
 # 3. Generate the Argon2 PHC admin-token hash (asks for the password
 #    twice). SAVE the PLAINTEXT password to your password manager NOW —
 #    it is the break-glass key to /admin and lives nowhere else.
-docker run --rm -it vaultwarden/server /vaultwarden hash
+docker run --rm -it vaultwarden/server:1.36.0 /vaultwarden hash
 
 # 4. Create .env and paste the hash into VW_ADMIN_TOKEN WRAPPED IN SINGLE
 #    QUOTES, keeping single '$'. Single-quoted .env values are literal, so
@@ -100,16 +102,19 @@ Registration is closed by default. Open a one-shot window, create your
 account, then slam the door:
 
 ```bash
-# a. Open signups, re-apply env (no data loss).
-#    Set VW_SIGNUPS_ALLOWED=true in .env (optionally
-#    VW_SIGNUPS_DOMAINS_WHITELIST = your email domain), then:
+# a. Open signups briefly, re-apply env (no data loss). Set
+#    VW_SIGNUPS_ALLOWED=true in .env, then:
 docker compose up -d
+#    Keep VW_SIGNUPS_DOMAINS_WHITELIST EMPTY: a non-empty whitelist lets
+#    those domains register even when SIGNUPS_ALLOWED=false (it overrides
+#    it), leaving the door open after step c.
 
 # b. Register your single account in the browser at
 #    https://vaultwarden.bb-homelab.local
 #    (strong master password → your password manager).
 
-# c. Close signups again: set VW_SIGNUPS_ALLOWED=false in .env, then:
+# c. Close signups again: set VW_SIGNUPS_ALLOWED=false in .env (and ensure
+#    VW_SIGNUPS_DOMAINS_WHITELIST is empty), then:
 docker compose up -d
 #    Verify the register page no longer offers account creation.
 

@@ -23,8 +23,9 @@ services:
       # SIGNUPS_ALLOWED=true window (see README "Bootstrap"), then leave it
       # false forever. No invite path is exposed.
       - SIGNUPS_ALLOWED=${VW_SIGNUPS_ALLOWED:-false}
-      # Belt-and-braces: even during the bootstrap window, restrict
-      # self-registration to our own email domain(s) if set.
+      # Leave EMPTY. A non-empty whitelist lets those domains self-register
+      # even when SIGNUPS_ALLOWED=false (it OVERRIDES it) — setting it would
+      # silently keep registration open after the bootstrap window.
       - SIGNUPS_DOMAINS_WHITELIST=${VW_SIGNUPS_DOMAINS_WHITELIST:-}
       # Invitations require the admin panel; never auto-accepted.
       - INVITATIONS_ALLOWED=false
@@ -34,7 +35,7 @@ services:
       # ADMIN_TOKEN silently DISABLES the admin panel. In .env, wrap the PHC
       # hash in SINGLE QUOTES with single '$' (single-quoted .env values are
       # literal, so Compose does not interpolate the '$...' segments).
-      - "ADMIN_TOKEN=${VW_ADMIN_TOKEN:?VW_ADMIN_TOKEN must be set in .env -- generate an Argon2 PHC hash with 'docker run --rm -it vaultwarden/server /vaultwarden hash' and wrap it in single quotes in .env}"
+      - "ADMIN_TOKEN=${VW_ADMIN_TOKEN:?VW_ADMIN_TOKEN must be set in .env -- generate an Argon2 PHC hash with 'docker run --rm -it vaultwarden/server:1.36.0 /vaultwarden hash' and wrap it in single quotes in .env}"
       # Internal listen port = 80 on the proxy bridge. Rocket also serves
       # the integrated WebSocket (/notifications/hub) on this same port
       # since v1.31 — no separate :3012, no special Caddy block.

@@ -21,7 +21,10 @@ container:
 The SQLite file is dumped via `sqlite3 ".backup"` so the copy is
 consistent even if Vaultwarden is writing at the moment of the snapshot.
 The DB snapshot is taken **before** the attachment/send blobs are copied,
-so every blob the snapshot references is captured (no DB-vs-blob race).
+so every blob the snapshot references is captured (no DB-vs-blob race). If
+`sqlite3` is absent from the image, the script falls back to briefly
+pausing the container (`docker pause`) for a WAL-inclusive consistent copy
+instead.
 
 ## What is NOT backed up
 

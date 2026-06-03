@@ -164,12 +164,19 @@ fi
 mv "${ARCHIVE}.part" "${ARCHIVE}"
 chmod 600 "${ARCHIVE}"
 
-log "rotation: keep last ${KEEP} archives"
-# shellcheck disable=SC2012  # ls is fine here; filenames are controlled.
-ls -1t "${BACKUP_DIR}"/vaultwarden-*.tar.gz 2>/dev/null | tail -n +"$((KEEP + 1))" | while read -r old; do
-  log "removing ${old}"
-  rm -f -- "${old}"
-done
+if [ "${KEEP}" -eq 0 ]; then
+  # KEEP=0 means "keep everything" (rotation disabled), NOT "delete all" —
+  # tail -n +1 would otherwise wipe every archive, including the one just
+  # written this run.
+  log "rotation: KEEP=0 -> disabled (keeping all archives)"
+else
+  log "rotation: keep last ${KEEP} archives"
+  # shellcheck disable=SC2012  # ls is fine here; filenames are controlled.
+  ls -1t "${BACKUP_DIR}"/vaultwarden-*.tar.gz 2>/dev/null | tail -n +"$((KEEP + 1))" | while read -r old; do
+    log "removing ${old}"
+    rm -f -- "${old}"
+  done
+fi
 
 SIZE="$(du -h "${ARCHIVE}" | cut -f1)"
 log "done: ${ARCHIVE} (${SIZE})"
