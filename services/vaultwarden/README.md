@@ -1,177 +1,171 @@
-# services/vaultwarden — gestionnaire de mots de passe (compatible Bitwarden)
+# services/vaultwarden — password manager (Bitwarden-compatible)
 
-Vaultwarden est un serveur léger, self-hosted, qui parle l'API Bitwarden.
-Il donne au homelab un coffre de mots de passe privé, accessible depuis
-les extensions navigateur et les apps mobiles Bitwarden, sans rien
-envoyer à un cloud tiers.
+Vaultwarden is a lightweight, self-hosted server that speaks the Bitwarden
+API. It gives the homelab a private password vault reachable from the
+Bitwarden browser extensions and mobile apps, without sending anything to
+a third-party cloud.
 
-Accès **sur le tailnet uniquement** (aucun ingress public, décision #28),
-derrière Caddy avec la CA interne (ADR 0002).
+Reached **on the tailnet only** (no public ingress, decision #28), behind
+Caddy with the internal CA (ADR 0002).
 
-> **Statut — PAS encore une dépendance Tier-0 (issue #25).** Cette
-> instance est installée et utilisable, mais le homelab n'a pas encore de
-> backup unifié, hors-site et testé en restauration (`/mnt/backup` non
-> monté — issue #19). Tant que les quatre critères de « graduation » de
-> [BACKUP.md](BACKUP.md) ne sont pas verts, garde ton gestionnaire de
-> mots de passe actuel comme source de vérité pour tes secrets les plus
-> critiques, et appuie-toi sur la copie break-glass décrite là-bas. Voir
-> l'ADR [0005](../../docs/decisions/0005-vaultwarden-deployment.md).
+> **Status — NOT a Tier-0 dependency yet (issue #25).** This instance is
+> installed and usable, but the homelab has no unified, off-site,
+> restore-tested backup yet (`/mnt/backup` not mounted — issue #19).
+> Until the four graduation criteria in [BACKUP.md](BACKUP.md) are green,
+> keep your existing password manager as the source of truth for your
+> most critical secrets, and rely on the break-glass copy described
+> there. See ADR [0005](../../docs/decisions/0005-vaultwarden-deployment.md).
 
 ## Stack
 
-- Image : `vaultwarden/server:1.36.0` (épinglée — bump délibéré via
-  `.env`). Manifeste multi-arch : l'ARM64 est tiré automatiquement sur le
-  Pi 5.
-- **Aucun port hôte publié** : Caddy l'atteint comme `vaultwarden:80` via
-  le réseau partagé `bb-homelab-proxy`. Surface d'attaque minimale pour
-  la machine qui stocke tous les mots de passe.
-- Données persistantes : bind-mount `/mnt/appdata/vaultwarden` (HDD,
-  Pattern Y, rôle `appdata`) → `/data` dans le conteneur. Persiste tout
-  l'état du coffre (`db.sqlite3`, `rsa_key.*`, `attachments/`, `sends/`,
-  `config.json`). **Pré-requis** : le HDD doit être monté sur
-  `/mnt/appdata` avant `docker compose up`. Le compose déclare
-  `create_host_path: false`, donc si le disque n'est pas monté
-  Vaultwarden refuse de démarrer (échec bruyant) au lieu de démarrer
-  silencieusement sur une DB vide.
-- Réseau : `bb-homelab-proxy` (partagé avec Caddy) + `default`.
-- URL interne : `https://vaultwarden.bb-homelab.local` (via Caddy).
+- Image: `vaultwarden/server:1.36.0` (pinned — bump deliberately via
+  `.env`). Multi-arch manifest: arm64 is pulled automatically on the Pi 5.
+- **No host port published**: Caddy reaches it as `vaultwarden:80` over
+  the shared `bb-homelab-proxy` network. Smallest attack surface for the
+  box that stores every password.
+- Persistent data: bind-mount `/mnt/appdata/vaultwarden` (HDD, Pattern Y,
+  role `appdata`) → `/data` in the container. Holds the entire vault
+  state (`db.sqlite3`, `rsa_key.*`, `attachments/`, `sends/`,
+  `config.json`). **Precondition**: the HDD must be mounted at
+  `/mnt/appdata` before `docker compose up`. The compose declares
+  `create_host_path: false`, so if the disk is not mounted Vaultwarden
+  fails to start (loud) rather than starting silently on an empty DB.
+- Network: `bb-homelab-proxy` (shared with Caddy) + `default`.
+- Internal URL: `https://vaultwarden.bb-homelab.local` (via Caddy).
 
-Voir [BACKUP.md](BACKUP.md) pour la procédure de sauvegarde &
-restauration et le gate break-glass / Tier-0.
+See [BACKUP.md](BACKUP.md) for the backup & restore procedure and the
+break-glass / Tier-0 graduation gate.
 
 ## Bootstrap
 
-Pré-requis : Docker + Compose v2 (`bootstrap/bootstrap.sh`), le HDD monté
-sur `/mnt/appdata`, le réseau proxy partagé présent, et la CA interne
-Caddy installée sur ton client (voir
+Pre-requisites: Docker + Compose v2 (`bootstrap/bootstrap.sh`), the HDD
+mounted at `/mnt/appdata`, the shared proxy network present, and the Caddy
+internal CA installed on your client (see
 [services/caddy/README.md](../caddy/README.md)).
 
-Sur le Pi (`ssh benoit@bb-homelab`) :
+On the Pi (`ssh benoit@bb-homelab`):
 
 ```bash
 cd services/vaultwarden
 
-# 1. Pré-vol : HDD monté + réseau proxy présent.
-mountpoint -q /mnt/appdata || { echo "ERREUR : /mnt/appdata non monté"; exit 1; }
+# 1. Pre-flight: HDD mounted + proxy network present.
+mountpoint -q /mnt/appdata || { echo "ABORT: /mnt/appdata not mounted"; exit 1; }
 docker network inspect bb-homelab-proxy >/dev/null 2>&1 \
   || docker network create bb-homelab-proxy
 
-# 2. Créer la cible du bind-mount sur le HDD (répertoire « crown jewels »).
-#    Vaultwarden tourne en root dans l'image stock, donc pas de chown
-#    nécessaire (contrairement à l'uid 1000 de n8n). Verrouiller le dir :
+# 2. Create the bind-mount target on the HDD (crown-jewels dir).
+#    Vaultwarden runs as root inside the stock image, so no chown is
+#    needed (unlike n8n's uid 1000). Lock the dir down:
 sudo mkdir -p /mnt/appdata/vaultwarden
 sudo chmod 700 /mnt/appdata/vaultwarden
 
-# 3. Générer le hash Argon2 PHC du token admin (demande le mot de passe
-#    deux fois). SAUVEGARDER le mot de passe EN CLAIR dans le gestionnaire
-#    de mots de passe MAINTENANT — c'est la clé break-glass de /admin et
-#    elle ne vit nulle part ailleurs.
+# 3. Generate the Argon2 PHC admin-token hash (asks for the password
+#    twice). SAVE the PLAINTEXT password to your password manager NOW —
+#    it is the break-glass key to /admin and lives nowhere else.
 docker run --rm -it vaultwarden/server /vaultwarden hash
 
-# 4. Créer .env, coller le hash dans VW_ADMIN_TOKEN ENTRE SIMPLES QUOTES,
-#    en gardant des '$' simples. Les valeurs .env entre simples quotes sont
-#    littérales → Compose n'interpole pas les segments '$...'. Ne PAS
-#    doubler les '$' (ça, c'est la règle des valeurs inline du compose.yml).
+# 4. Create .env and paste the hash into VW_ADMIN_TOKEN WRAPPED IN SINGLE
+#    QUOTES, keeping single '$'. Single-quoted .env values are literal, so
+#    Compose does not interpolate the '$...' segments. Do NOT double the
+#    '$' (that is the rule for inline compose.yml values, not for .env).
 cp .env.example .env
 ${EDITOR:-nano} .env
 chmod 600 .env
 
-# 5. Démarrer la stack et la regarder devenir healthy.
+# 5. Bring the stack up and watch it become healthy.
 docker compose up -d
 docker compose ps
-docker compose logs -f vaultwarden   # attendre "Rocket has launched" ; Ctrl-C
+docker compose logs -f vaultwarden   # wait for "Rocket has launched"; Ctrl-C
 ```
 
-La route Caddy (`vaultwarden.bb-homelab.local`) est livrée dans
-`services/caddy/Caddyfile` avec ce service. L'appliquer sans redémarrer
-Caddy :
+The Caddy route (`vaultwarden.bb-homelab.local`) ships in
+`services/caddy/Caddyfile` with this service. Apply it without restarting
+Caddy:
 
 ```bash
 docker exec bb-homelab-caddy caddy reload --config /etc/caddy/Caddyfile
 ```
 
-Sur chaque poste **client** (une fois, si pas déjà fait pour d'autres
-services), router le hostname vers l'IP Tailscale du Pi (cf.
-`services/caddy/README.md` pour la CA) :
+On each **client** (one-time, if not already done for other services),
+route the hostname to the Pi's Tailscale IP (see
+`services/caddy/README.md` for the CA):
 
 ```text
 100.121.134.61  vaultwarden.bb-homelab.local
 ```
 
-### Créer le compte unique (signup dance)
+### Create the single account (signup dance)
 
-L'inscription est fermée par défaut. Ouvrir une fenêtre ponctuelle, créer
-ton compte, puis refermer :
+Registration is closed by default. Open a one-shot window, create your
+account, then slam the door:
 
 ```bash
-# a. Ouvrir les inscriptions, ré-appliquer l'env (sans perte de données).
-#    Mettre VW_SIGNUPS_ALLOWED=true dans .env (optionnellement
-#    VW_SIGNUPS_DOMAINS_WHITELIST = ton domaine email), puis :
+# a. Open signups, re-apply env (no data loss).
+#    Set VW_SIGNUPS_ALLOWED=true in .env (optionally
+#    VW_SIGNUPS_DOMAINS_WHITELIST = your email domain), then:
 docker compose up -d
 
-# b. Enregistrer le compte unique dans le navigateur sur
+# b. Register your single account in the browser at
 #    https://vaultwarden.bb-homelab.local
-#    (mot de passe maître fort → gestionnaire de mots de passe).
+#    (strong master password → your password manager).
 
-# c. Refermer les inscriptions : remettre VW_SIGNUPS_ALLOWED=false, puis :
+# c. Close signups again: set VW_SIGNUPS_ALLOWED=false in .env, then:
 docker compose up -d
-#    Vérifier que la page d'inscription ne propose plus la création de compte.
+#    Verify the register page no longer offers account creation.
 
-# d. Confirmer que le panel admin marche avec le mot de passe EN CLAIR sur
+# d. Confirm the admin panel works with the PLAINTEXT password at
 #    https://vaultwarden.bb-homelab.local/admin
-#    (s'il le refuse, le hash n'est probablement pas entre simples quotes
-#    dans .env).
+#    (if it rejects it, the hash is probably not wrapped in single quotes
+#    in .env).
 ```
 
-Enfin, enregistrer une sonde Uptime Kuma sur `http://vaultwarden:80/alive`
-(moniteur HTTP « status / keyword » attendant un code 200 — **pas** un
-moniteur « JSON query » : `/alive` renvoie une simple chaîne timestamp,
-pas un objet JSON), et lancer le premier backup (voir [BACKUP.md](BACKUP.md)).
+Finally, register an Uptime Kuma probe against `http://vaultwarden:80/alive`
+(an HTTP "status / keyword" monitor expecting a 200 — **not** a "JSON
+query" monitor: `/alive` returns a bare quoted timestamp string, not a
+JSON object), and run the first backup (see [BACKUP.md](BACKUP.md)).
 
-## Variables d'environnement
+## Environment variables
 
-| Variable | Rôle |
+| Variable | Role |
 |---|---|
-| `VW_ADMIN_TOKEN` | **Hash Argon2 PHC** du mot de passe `/admin` (jamais en clair). Échec immédiat si vide. Mettre le hash entre simples quotes dans `.env` (`$` simples). Le clair ne vit que dans le gestionnaire de mots de passe. |
-| `VW_IMAGE_TAG` | Override du tag d'image (défaut `1.36.0`). Bump délibéré, testé d'abord. |
-| `VW_DOMAIN` | Origine publique (défaut `https://vaultwarden.bb-homelab.local`). Doit correspondre au hostname Caddy sinon WebAuthn/2FA et les liens cassent. |
-| `VW_SIGNUPS_ALLOWED` | Inscription ouverte (défaut `false`). `true` seulement pour l'amorçage ponctuel du compte. |
-| `VW_SIGNUPS_DOMAINS_WHITELIST` | Restreint l'auto-inscription à ces domaines email pendant la fenêtre d'amorçage. |
-| `VW_PUSH_ENABLED` | Push mobile via le relais Bitwarden (défaut `false`). L'activer route les tokens device via un tiers. |
-| `VW_PUSH_INSTALLATION_ID` / `_KEY` | Identifiants push depuis <https://bitwarden.com/host> (seulement si push activé). |
-| `TZ` | Fuseau horaire (défaut `Europe/Paris`). Variable conteneur/libc standard, pas un réglage Vaultwarden. |
-| `VW_LOG_LEVEL` | Verbosité des logs (défaut `warn` ; valeurs : `trace`/`debug`/`info`/`warn`/`error`/`off`). |
+| `VW_ADMIN_TOKEN` | **Argon2 PHC hash** of the `/admin` password (never plaintext). Fail-fast if empty. Wrap the hash in single quotes in `.env` (single `$`). Plaintext lives only in your password manager. |
+| `VW_IMAGE_TAG` | Image tag override (default `1.36.0`). Bump deliberately, test first. |
+| `VW_DOMAIN` | Public origin (default `https://vaultwarden.bb-homelab.local`). Must match the Caddy hostname or WebAuthn/2FA and links break. |
+| `VW_SIGNUPS_ALLOWED` | Open registration (default `false`). `true` only for the one-shot account bootstrap. |
+| `VW_SIGNUPS_DOMAINS_WHITELIST` | Restrict self-registration to these email domains during the bootstrap window. |
+| `VW_PUSH_ENABLED` | Mobile push via Bitwarden's relay (default `false`). Enabling routes device tokens through a third party. |
+| `VW_PUSH_INSTALLATION_ID` / `_KEY` | Push credentials from <https://bitwarden.com/host> (only if push enabled). |
+| `TZ` | Timezone (default `Europe/Paris`). Standard container/libc variable, not a Vaultwarden setting. |
+| `VW_LOG_LEVEL` | Log verbosity (default `warn`; values: `trace`/`debug`/`info`/`warn`/`error`/`off`). |
 
-Toutes les valeurs sensibles vivent dans `.env` (gitignoré). Ne jamais
-committer `.env`.
+All sensitive values live in `.env` (gitignored). Never commit `.env`.
 
-## Notes de sécurité
+## Security notes
 
-- **Tailnet uniquement.** Aucun port hôte ; joignable seulement via Caddy
-  sur le réseau Tailscale. Le coffre de mots de passe est le dernier
-  service qui devrait être exposé sur internet.
-- **Instance fermée.** `SIGNUPS_ALLOWED=false` et
-  `INVITATIONS_ALLOWED=false` après l'amorçage — pas d'auto-inscription,
-  pas de surface d'invitation.
-- **Le token admin au repos est un hash.** Le `.env` contient le hash
-  Argon2 PHC, pas un credential utilisable ; le clair ne vit que dans le
-  gestionnaire de mots de passe.
-- **Pas de SMTP (limitation connue).** Pas de serveur mail dans le
-  homelab pour l'instant, donc pas de 2FA / indice par email, et tout
-  utilisateur invité doit être confirmé manuellement depuis `/admin`.
-  Acceptable pour une instance mono-utilisateur (plus tard petite famille).
-- **Push désactivé par défaut** pour éviter de router les tokens push
-  device via le relais tiers Bitwarden.
+- **Tailnet-only.** No host port; reachable only via Caddy on the
+  Tailscale network. The password vault is the last service that should
+  ever face the public internet.
+- **Closed instance.** `SIGNUPS_ALLOWED=false` and
+  `INVITATIONS_ALLOWED=false` after bootstrap — no self-registration, no
+  invite surface.
+- **Admin token at rest is a hash.** The `.env` holds the Argon2 PHC
+  hash, not a usable credential; the plaintext lives only in your
+  password manager.
+- **No SMTP (known limitation).** No mail server in the homelab yet, so
+  there is no email-based 2FA / hint flow and any invited user must be
+  confirmed manually from `/admin`. Acceptable for a single-user (later
+  small-family) instance.
+- **Push is off by default** to avoid routing device push tokens through
+  Bitwarden's third-party relay.
 
 ## Refs
 
-- Issue #25 — déploiement de Vaultwarden.
+- Issue #25 — deploy Vaultwarden.
 - ADR [0005](../../docs/decisions/0005-vaultwarden-deployment.md) —
-  décision de déploiement (pourquoi Vaultwarden plutôt que HashiCorp
-  Vault, tailnet-only, CA interne, gating backup-avant-Tier-0).
-- [BACKUP.md](BACKUP.md) — sauvegarde, restauration, break-glass, gate de
-  graduation.
-- Issue #19 — backups hors-site (restic) de `BACKUP_DIR`.
-- Le repo séparé `bb-vault` standardise les conventions de gestion de
-  secrets sur le CLI `bw` et pointera plus tard `bw config server` vers
-  cette instance — suivi là-bas, pas ici.
+  deployment decision (Vaultwarden over HashiCorp Vault, tailnet-only,
+  internal CA, backup-before-Tier-0 gating).
+- [BACKUP.md](BACKUP.md) — backup, restore, break-glass, graduation gate.
+- Issue #19 — off-site backups (restic) of `BACKUP_DIR`.
+- The separate `bb-vault` repo standardises secret-management conventions
+  on the `bw` CLI and will later point `bw config server` at this
+  instance — tracked there, not here.

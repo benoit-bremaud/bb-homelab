@@ -1,93 +1,93 @@
-# Vaultwarden — Sauvegarde & Restauration
+# Vaultwarden — Backup & Restore
 
-Procédure pour sauvegarder le répertoire de données de Vaultwarden (base
-SQLite, clés de signature JWT, pièces jointes, sends, config admin) et le
-restaurer sur le même hôte ou un autre. Définit aussi la copie
-**break-glass** et le gate de passage en **Tier-0**.
+Procedure for backing up the Vaultwarden data directory (SQLite DB, JWT
+signing keys, attachments, sends, admin config) and restoring it on the
+same or a different host. Also defines the **break-glass** copy and the
+gate to promote this service to **Tier-0**.
 
-## Ce qui est sauvegardé
+## What is backed up
 
-L'archive contient un instantané complet de `/data` dans le conteneur en
-cours d'exécution :
+The archive contains a full snapshot of `/data` inside the running
+container:
 
-- `db.sqlite3` — comptes, items de coffre **chiffrés**, clés
-  d'organisation/collection, réglages.
-- `rsa_key.pem` / `rsa_key.der` — clés de signature JWT (sessions, push,
-  tokens d'invitation).
-- `attachments/` — pièces jointes chiffrées.
-- `sends/` — blobs Bitwarden Send.
-- `config.json` — réglages écrits via le panel `/admin`.
+- `db.sqlite3` — accounts, **encrypted** vault items, org/collection
+  keys, settings.
+- `rsa_key.pem` / `rsa_key.der` — JWT signing keys (sessions, push,
+  invite tokens).
+- `attachments/` — encrypted file attachments.
+- `sends/` — Bitwarden Send blobs.
+- `config.json` — settings written via the `/admin` panel.
 
-Le fichier SQLite est dumpé via `sqlite3 ".backup"` pour que la copie
-soit cohérente même si Vaultwarden écrit au moment de l'instantané.
+The SQLite file is dumped via `sqlite3 ".backup"` so the copy is
+consistent even if Vaultwarden is writing at the moment of the snapshot.
+The DB snapshot is taken **before** the attachment/send blobs are copied,
+so every blob the snapshot references is captured (no DB-vs-blob race).
 
-## Ce qui n'est PAS sauvegardé
+## What is NOT backed up
 
-- **Ton mot de passe maître.** Les items du coffre restent chiffrés avec
-  lui ; l'archive seule ne peut pas les déchiffrer. C'est voulu (le
-  backup n'est pas un coffre en clair) — mais ça implique qu'une
-  restauration n'est utile qu'à qui connaît encore le mot de passe
-  maître. Garde-le dans un second gestionnaire de mots de passe.
-- **`VW_ADMIN_TOKEN`.** Il vit dans `services/vaultwarden/.env` (hors de
-  `/data`), donc il n'est pas dans l'archive. Garde son **clair** dans
-  ton gestionnaire de mots de passe.
+- **Your master password.** Vault items stay encrypted with it; the
+  archive alone cannot decrypt them. This is good — the backup is not a
+  plaintext vault — but it means a restore is only useful to someone who
+  still knows the master password. Keep it in a second password manager.
+- **`VW_ADMIN_TOKEN`.** It lives in `services/vaultwarden/.env` (not under
+  `/data`), so it is not in the archive. Keep its **plaintext** in your
+  password manager.
 
-Si tu perds le mot de passe maître, les items chiffrés sont
-irrécupérables. Aucun backup n'y change rien.
+If you lose the master password, the encrypted items are unrecoverable.
+No backup can fix that.
 
-## Copie break-glass — à garder hors-Pi
+## Break-glass copy — keep these off-Pi
 
-Tant que Vaultwarden n'est **pas encore Tier-0** (voir le gate ci-dessous),
-ne lui fais pas confiance comme unique détenteur d'un secret critique.
-Garde une copie d'urgence de trois choses, hors du Pi, jamais en clair :
+While Vaultwarden is **not yet Tier-0** (see gate below), do not trust it
+as the sole holder of any critical secret. Keep an emergency copy of
+three things, off the Pi, never in plaintext:
 
-1. **Un export chiffré du coffre** — dans le Web Vault : *Tools → Export
-   Vault → format protégé par mot de passe (chiffré)*. C'est la copie
-   récupérable par l'utilisateur qui **ne dépend pas** du serveur, de la
-   `rsa_key`, ni du Pi vivant — importable dans n'importe quel
-   Bitwarden / Vaultwarden.
-2. **Le clair de `VW_ADMIN_TOKEN`** — dans ton gestionnaire de mots de
-   passe, pour que `/admin` reste récupérable même si `.env` est perdu.
-3. **Une copie de `rsa_key.pem` + `config.json`** (depuis une archive de
-   backup) — permet de restaurer l'identité exacte du serveur, pas
-   seulement les données.
+1. **An encrypted Vault export** — in the Web Vault: *Tools → Export
+   Vault → password-protected (encrypted) format*. This is the
+   user-recoverable copy that does **not** depend on the server, the
+   `rsa_key`, or the Pi being alive — import it into any Bitwarden /
+   Vaultwarden.
+2. **The `VW_ADMIN_TOKEN` plaintext** — in your existing password
+   manager, so `/admin` is recoverable even if `.env` is lost.
+3. **A copy of `rsa_key.pem` + `config.json`** (from a backup archive) —
+   lets you restore the exact server identity, not just the data.
 
-Stocke (1) et (3) dans un emplacement chiffré (le coffre-fort de fichiers
-de ton gestionnaire, ou un blob chiffré `age`/`restic` sur le laptop) —
-jamais en clair, jamais uniquement sur la carte SD du Pi.
+Store (1) and (3) in an encrypted location (your password manager's
+secure-file store, or an `age`/`restic`-encrypted blob on the laptop) —
+never plaintext, never only on the Pi's SD card.
 
-## Graduation vers Tier-0 (les quatre verts)
+## Graduation to Tier-0 (all four green)
 
-Ne promouvoir Vaultwarden en dépendance Tier-0 que lorsque :
+Promote Vaultwarden to a Tier-0 dependency only when:
 
-1. **Backup unifié hors-site** — `restic` de `BACKUP_DIR` vers Backblaze
-   B2 / Hetzner Storage Box, avec le Disque C monté en `/mnt/backup`
-   (issues #19 / #47). Stratégie 3-2-1, local conservé en plus du distant.
-2. **Restore drill réussi** — une restauration end-to-end (extraction →
-   `PRAGMA integrity_check` → démarrage d'une instance jetable →
-   connexion) effectuée et documentée.
-3. **Sonde Uptime Kuma verte** — sonde HTTP sur `/alive`, branchée au
-   canal Telegram fault-only (ADR 0004).
-4. **Dead-man's-switch vert** — Healthchecks.io couvre le Pi (ADR 0004).
+1. **Unified off-site backup** — `restic` of `BACKUP_DIR` to Backblaze
+   B2 / Hetzner Storage Box, with Disk C mounted as `/mnt/backup`
+   (issues #19 / #47). 3-2-1, local kept alongside remote.
+2. **Restore drill passed** — an end-to-end restore (extract →
+   `PRAGMA integrity_check` → bring up a throwaway instance → log in)
+   performed and documented.
+3. **Uptime Kuma probe green** — HTTP probe on `/alive`, wired to the
+   fault-only Telegram channel (ADR 0004).
+4. **Dead-man's-switch green** — Healthchecks.io covers the Pi (ADR
+   0004).
 
-D'ici là, ton gestionnaire de mots de passe actuel reste la source de
-vérité pour les secrets les plus critiques.
+Until then, your existing password manager stays the source of truth for
+the most critical secrets.
 
-## Backup — exécution manuelle
+## Backup — manual run
 
 ```bash
 cd services/vaultwarden
 ./scripts/backup.sh
 ```
 
-Comportement par défaut :
+Default behaviour:
 
-- Écrit dans `/var/backups/vaultwarden/vaultwarden-AAAA-MM-JJ_HHMMSS.tar.gz`
-- Garde les 7 dernières archives, supprime les plus anciennes.
-- L'archive est `chmod 600` (lisible seulement par l'utilisateur qui a
-  lancé le script).
+- Writes to `/var/backups/vaultwarden/vaultwarden-YYYY-MM-DD_HHMMSS.tar.gz`
+- Keeps the last 7 archives, deletes older ones.
+- Archive is `chmod 600` (readable only by the user who ran the script).
 
-Overrides :
+Overrides:
 
 ```bash
 BACKUP_DIR=/mnt/backup/vaultwarden \
@@ -95,134 +95,131 @@ KEEP=14 \
 ./scripts/backup.sh
 ```
 
-Utiliser l'override `BACKUP_DIR` une fois le stockage de backup dédié
-(HDD C, voir issues #19 / #47) en place — bascule proprement de
-l'emplacement SD temporaire vers le HDD sans éditer le script.
+Use the `BACKUP_DIR` override once dedicated backup storage (HDD C, see
+issues #19 / #47) is in place — switch cleanly from the temporary SD
+location to the HDD without editing the script.
 
-La première exécution a besoin d'un `/var/backups/vaultwarden`
-inscriptible. En utilisateur non-root, le créer une fois :
+First run needs a writable `/var/backups/vaultwarden`. If running as a
+non-root user, create it once:
 
 ```bash
 sudo install -d -o "$USER" -g "$USER" -m 700 /var/backups/vaultwarden
 ```
 
-## Backup — planifié via cron
+## Backup — scheduled via cron
 
-Éditer la crontab de l'utilisateur qui possède Docker (probablement
-`benoit`) :
+Edit the crontab of the user that owns Docker (likely `benoit`):
 
 ```bash
 crontab -e
 ```
 
-Ajouter une exécution nocturne à 03h05 — décalée de cinq minutes après le
-job n8n (03h00) pour éviter la contention HDD. Le log va à côté des
-archives, dans un répertoire que l'utilisateur possède déjà :
+Add a nightly run at 03:05 local time — staggered five minutes after the
+n8n job (03:00) to avoid HDD contention. The log goes next to the
+archives, in a directory the user already owns:
 
 ```cron
 5 3 * * *  /home/benoit/bb-homelab/services/vaultwarden/scripts/backup.sh >> /var/backups/vaultwarden/backup.log 2>&1
 ```
 
-Vérifier avec :
+Verify with:
 
 ```bash
 crontab -l | grep backup.sh
-# Attendre une nuit, puis :
+# Wait one night, then:
 ls -lt /var/backups/vaultwarden/
 tail -n 20 /var/backups/vaultwarden/backup.log
 ```
 
-## Restauration — même hôte
+## Restore — same host
 
-Restauration sur le même Pi, même version de Vaultwarden.
+Restore to the same Pi, same Vaultwarden version.
 
-> **Pré-requis** : le HDD doit être monté sur `/mnt/appdata`
-> (`mountpoint -q /mnt/appdata`). Le compose utilise
-> `create_host_path: false`, donc Vaultwarden refuse de démarrer si la
-> source du bind-mount manque — restaurer dans le disque monté.
+> **Precondition**: the HDD must be mounted at `/mnt/appdata`
+> (`mountpoint -q /mnt/appdata`). The compose uses
+> `create_host_path: false`, so Vaultwarden refuses to start if the
+> bind-mount source is missing — restore into the mounted disk.
 
 ```bash
-# 1. Arrêter la stack (NE PAS supprimer le répertoire de données encore).
+# 1. Stop the stack (do NOT delete the data directory yet).
 cd services/vaultwarden
 docker compose down
 
-# 2. Choisir l'archive à restaurer.
+# 2. Pick the archive to restore.
 ARCHIVE=/var/backups/vaultwarden/vaultwarden-2026-06-03_030500.tar.gz
 
-# 3. Les données vivent à un chemin de bind-mount hôte fixe.
+# 3. The data lives at a fixed host bind-mount path.
 VOL_PATH=/mnt/appdata/vaultwarden
 echo "${VOL_PATH}"
 
-# 4. Vider + extraire sur place (sudo : le dir appartient au root du
-#    conteneur). La forme find supprime aussi les dotfiles.
+# 4. Wipe + extract in place (sudo: the dir is owned by the container's
+#    root). The find form deletes dotfiles too.
 sudo find "${VOL_PATH:?}" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
 sudo tar -xzf "${ARCHIVE}" -C "${VOL_PATH}"
 
-# 5. Redémarrer la stack.
+# 5. Bring the stack back up.
 docker compose up -d
 
-# 6. Confirmer : ouvrir https://vaultwarden.bb-homelab.local et se
-#    connecter. Si le Web Vault charge mais les sessions sont invalides,
-#    la rsa_key de l'archive diffère de celle qui tournait — re-logger
-#    tous les appareils.
+# 6. Confirm: open https://vaultwarden.bb-homelab.local and log in. If the
+#    Web Vault loads but sessions are invalid, the rsa_key in the archive
+#    differs from the running one — re-log all devices.
 ```
 
-## Restauration — autre hôte (ou Pi neuf)
+## Restore — different host (or fresh Pi)
 
-Même flux que ci-dessus, plus deux pré-requis avant l'étape 1 :
+Same flow as above, plus two prerequisites before step 1:
 
-1. `services/vaultwarden/.env` doit exister avec le **même**
-   `VW_ADMIN_TOKEN` voulu pour `/admin` (récupérer le clair depuis le
-   gestionnaire et re-hasher, ou réutiliser le hash stocké). Les items du
-   coffre eux-mêmes sont déchiffrés côté client avec le mot de passe
-   maître, indépendamment de `.env`.
+1. `services/vaultwarden/.env` must exist with the **same**
+   `VW_ADMIN_TOKEN` you want for `/admin` (pull the plaintext from your
+   password manager and re-hash, or reuse the stored hash). The vault
+   items themselves are decrypted client-side with the master password,
+   independent of `.env`.
 
-2. Le répertoire cible du bind-mount doit exister avant la restauration :
+2. The bind-mount target directory must exist before the restore:
 
    ```bash
    sudo mkdir -p /mnt/appdata/vaultwarden
    sudo chmod 700 /mnt/appdata/vaultwarden
    ```
 
-   Puis suivre les étapes 2-5 ci-dessus (pas besoin de démarrer la stack
-   d'abord — le chemin du bind-mount est créé à la main).
+   Then proceed with steps 2-5 above (no need to start the stack first —
+   the bind-mount path is created by hand).
 
-## Vérifier qu'une archive est restaurable
+## Verifying an archive is restorable
 
-Périodiquement (avant une mise à niveau de l'OS du Pi, une migration de
-volume vers le HDD, etc.), vérifier une restauration end-to-end sur un
-emplacement jetable :
+Periodically (before a Pi OS upgrade, a volume migration to HDD, etc.)
+verify a restore end-to-end on a throwaway location:
 
 ```bash
 mkdir -p /tmp/vw-restore-test
 tar -xzf "$(ls -1t /var/backups/vaultwarden/*.tar.gz | head -n1)" \
   -C /tmp/vw-restore-test
 sqlite3 /tmp/vw-restore-test/db.sqlite3 'PRAGMA integrity_check;'
-# Attendu : "ok"
-ls /tmp/vw-restore-test/rsa_key.pem && echo "rsa_key présente"
+# Expected: "ok"
+ls /tmp/vw-restore-test/rsa_key.pem && echo "rsa_key present"
 rm -rf /tmp/vw-restore-test
 ```
 
-Un `integrity_check` en échec signifie que l'archive est corrompue —
-ouvrir un incident et garder l'archive précédente comme copie de travail.
+A failed `integrity_check` means the archive is corrupt — raise an
+incident and keep the previous archive as the working copy.
 
-## Rotation & stockage
+## Rotation & storage
 
-- Actuel : 7 instantanés quotidiens sur SD (`/var/backups/vaultwarden/`).
-  Un petit coffre mono-utilisateur compresse à quelques Mo ; 7 × quelques
-  Mo sur SD, c'est négligeable.
-- Cible (une fois le HDD C en place) : déplacer `BACKUP_DIR` vers
-  `/mnt/backup/vaultwarden/`, étendre `KEEP` à 14 ou 30.
-- Cible (une fois le hors-site en place, issue #19) : ajouter un second
-  job qui `restic` le `BACKUP_DIR` local vers Backblaze B2 / Hetzner
-  Storage Box. Ne pas remplacer les backups locaux par le distant —
-  garder les deux (3-2-1). C'est le critère 1 du gate Tier-0 ci-dessus.
+- Current: 7 daily snapshots on SD (`/var/backups/vaultwarden/`). A small
+  single-user vault compresses to a few MB; 7 × a few MB on SD is
+  negligible.
+- Target (once HDD C is in): move `BACKUP_DIR` to
+  `/mnt/backup/vaultwarden/`, extend `KEEP` to 14 or 30.
+- Target (once off-site is in, issue #19): add a second job that
+  `restic` the local `BACKUP_DIR` to Backblaze B2 / Hetzner Storage Box.
+  Do not replace local backups with remote — keep both (3-2-1). This is
+  criterion 1 of the Tier-0 gate above.
 
 ## Refs
 
-- Issue #25 — déploiement de Vaultwarden.
-- Issue #19 — backups hors-site (restic) de `BACKUP_DIR`.
+- Issue #25 — Vaultwarden deployment.
+- Issue #19 — off-site backups (restic) of `BACKUP_DIR`.
 - ADR [0004](../../docs/decisions/0004-monitoring-architecture.md) —
-  monitoring (sonde Uptime Kuma, dead-man's-switch Healthchecks.io).
+  monitoring (Uptime Kuma probe, Healthchecks.io dead-man's-switch).
 - ADR [0005](../../docs/decisions/0005-vaultwarden-deployment.md) —
-  déploiement Vaultwarden + gating backup-avant-Tier-0.
+  Vaultwarden deployment + backup-before-Tier-0 gating.
