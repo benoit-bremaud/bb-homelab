@@ -1020,19 +1020,26 @@ was done and why, by date.
   until a unified off-site backup, a restore drill, the Uptime Kuma probe
   and the dead-man's-switch are green (#19) — a break-glass copy stays
   off-Pi until then.
-- **Review**: automated review posted 9 comments across two rounds — all
-  addressed + replied inline. Notable fixes: (security)
-  `SIGNUPS_DOMAINS_WHITELIST` overrides `SIGNUPS_ALLOWED=false`, so the
-  bootstrap "close" step now requires the whitelist to stay empty;
-  (backup) the DB snapshot is taken before the attachment/send blobs are
-  copied (no DB-vs-blob race), and `KEEP=0` disables rotation instead of
-  wiping every archive; (docs) status reworded as scaffold, admin-hash
-  command pinned to `1.36.0`, the sqlite3-absent pause fallback documented.
-- **Language**: service docs written in English (AGENTS.md §4 + the
-  2026-04-13 bootstrap decision). The standing AGENTS.md-vs-docs-
-  conventions inconsistency (a French "Category A" exception, already
-  flagged at #44 with `uptime-kuma`/`jellyfin` in French) remains open
-  for a separate cleanup.
+- **Review**: automated review posted 9 comments across two rounds, all
+  addressed (`b118c0c`, `836f60e`, `2bd60da`) + replied inline.
+  `automated review (Must Have)`: `SIGNUPS_DOMAINS_WHITELIST` overrides
+  `SIGNUPS_ALLOWED=false`, so the bootstrap "close" step now requires the
+  whitelist to stay empty. `automated review (Should Have)`: the backup DB
+  snapshot is taken before the attachment/send blobs are copied (no
+  DB-vs-blob race). `automated review (Should Have)`: `KEEP=0` now disables
+  rotation instead of wiping every archive, including the one just written.
+  `automated review (Should Have)`: the README status was reworded as
+  scaffold, not "installed and usable". `automated review (Should Have)`:
+  the admin-hash command was pinned to `vaultwarden/server:1.36.0`.
+  `automated review (Should Have)`: `BACKUP.md` documents the
+  sqlite3-absent pause fallback.
+- **Language (to correct)**: per `.claude/rules/docs-conventions.md`
+  (which takes precedence over AGENTS.md), Category-A human-facing docs —
+  `services/*/README.md` and ADRs — are **French**. During review the
+  service docs were switched to English on an AGENTS.md §4 reading that
+  misses this authoritative rule; the `README` and ADR 0005 language is to
+  be corrected to French in a follow-up. `PROJECT_LOG.md` itself is
+  Category C (English), so this entry stays English.
 - **Scope**: repo scaffold only — the live deploy on the Pi follows; #25
   stays open until go-live.
 - **Refs**: #25
