@@ -1121,7 +1121,7 @@ was done and why, by date.
   practice; mobile pairing remains, so #25 stays open.
 - **Merge**: `169512c`
 
-### Vaultwarden clients paired, monitored, and restore-drilled
+### Vaultwarden clients paired, monitored, and backup-verified
 
 - **What**: Onboarded the Firefox extension end to end — imported the
   Caddy internal CA into Firefox's own store, pointed the extension at the
@@ -1133,16 +1133,22 @@ was done and why, by date.
   accepted status 200-299, 60 s interval, `BB Infra Alerts` Telegram
   notification attached). Verified `Up`, `200 - OK`, ~3 ms response. This
   closes Tier-0 gate criterion 3.
-- **Restore drill**: ran a non-destructive end-to-end drill — extracted
-  the latest archive to `/tmp`, `PRAGMA integrity_check` → `ok`, expected
-  rows present (1 user, 1 device, `rsa_key.pem`), then cleaned up.
-  `sqlite3` is absent from the host, so the check ran via `python3`. A
-  manual `backup.sh` then captured the first vault item and re-verified
-  (`ciphers: 1`, integrity `ok`). This closes Tier-0 gate criterion 2.
-- **Tier-0 gate**: now 2/4 — criteria 2 (restore drill) and 3 (Kuma probe)
-  are green. Remaining: criterion 1 (unified off-site backup, #19) and
-  criterion 4 (Healthchecks.io dead-man's-switch), confirmed not yet wired
-  (no `hc-ping` in the backup path).
+- **Backup verification**: ran the non-destructive *"verifying an archive
+  is restorable"* check from `BACKUP.md` — extracted the latest archive to
+  `/tmp`, `PRAGMA integrity_check` → `ok`, expected rows present (1 user,
+  1 device, `rsa_key.pem`), then cleaned up (`sqlite3` is absent from the
+  host, so the check ran via `python3`). A manual `backup.sh` then captured
+  the first vault item and re-verified (`ciphers: 1`, integrity `ok`).
+  This is **not** the full Tier-0 restore drill: `BACKUP.md` defines that
+  as `extract → integrity_check → bring up a throwaway instance → log in`,
+  and the throwaway-instance + login step has not been run — so criterion 2
+  stays open.
+- **Tier-0 gate**: 1/4 — only criterion 3 (Uptime Kuma probe) is green.
+  Criterion 2 (restore drill) is partially advanced (archive integrity
+  verified; the throwaway-instance + login step remains). Remaining:
+  criterion 1 (unified off-site backup, #19), criterion 2's full drill,
+  and criterion 4 (Healthchecks.io dead-man's-switch — confirmed not yet
+  wired, no `hc-ping` in the backup path).
 - **Status**: live, monitored, and usable on the tailnet via the Firefox
   extension — still **not Tier-0** (ADR 0005 gate). The existing password
   manager stays the source of truth.
