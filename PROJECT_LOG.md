@@ -1044,3 +1044,51 @@ was done and why, by date.
   stays open until go-live.
 - **Refs**: #25
 - **Merge**: `ae463ab`
+
+### PR #113 merged: correct README + ADR 0005 to French
+
+- **What**: Switched `services/vaultwarden/README.md` and ADR 0005 from
+  English to French, per `.claude/rules/docs-conventions.md` (Category-A
+  human-facing docs are French; that rule takes precedence over
+  AGENTS.md). Closes the "Language (to correct)" follow-up flagged in the
+  PR #111 entry above.
+- **Refs**: #25
+- **Merge**: `ab56d7a`
+
+### Vaultwarden went live on the Pi
+
+- **What**: Deployed Vaultwarden on the Pi from the merged scaffold — the
+  container is `healthy` and reachable only through Caddy over HTTPS
+  (`vaultwarden.bb-homelab.local`, `/alive` → 200, no host port). The
+  single account was created through a one-time signup window (set
+  `SIGNUPS_ALLOWED=true`, registered, then back to `false`; the domain
+  whitelist was kept empty so it cannot override the close). The Argon2
+  admin token and the account master password live only in an external
+  password manager (break-glass) — never on the Pi.
+- **Backup**: first consistent snapshot taken via the pause + `docker cp`
+  fallback (sqlite3 is absent from the stock image; the container resumed
+  cleanly), archive `chmod 600` containing `db.sqlite3` + `rsa_key.pem`.
+  A daily 03:05 user cron now runs `backup.sh` (`KEEP=7`) to
+  `~/vaultwarden-backups`. `PRAGMA integrity_check` is deferred to the
+  restore drill (no sqlite3 on the host) — a Tier-0 gate item anyway.
+- **Incident fixed in passing**: Caddy had been left attached to no
+  Docker network after the earlier outage restoration — the container
+  was running but orphaned from `bb-homelab-proxy`, so nothing listened
+  on host `:80`/`:443` and *every* service was unreachable from clients,
+  not just Vaultwarden. Root cause: the restoration `docker restart`-ed
+  Caddy instead of recreating it, and `restart` does not re-attach a lost
+  network. Fixed with `docker compose up -d --force-recreate`; Uptime
+  Kuma sent the `Caddy Up` recovery. n8n and Jellyfin ingress recovered
+  with it.
+- **Observation**: Caddy serves the web-vault assets uncompressed; over
+  the Pi's flaky DERP-relayed 5G uplink (~24 KB/s) the multi-MB web vault
+  times out. The lightweight Bitwarden clients (extension/app) are the
+  intended daily path; enabling `encode zstd gzip` on Caddy is a cheap
+  follow-up that also helps n8n and Jellyfin.
+- **Pending**: browser-extension and mobile pairing (deferred — needs the
+  internal CA on the client and a usable link); the Uptime Kuma probe on
+  `/alive`; off-site backup + restore drill (#19). #25 stays open until
+  client pairing is done.
+- **Status**: live and usable on the tailnet, but **not Tier-0** (ADR
+  0005 gate) — the existing password manager remains the source of truth.
+- **Refs**: #25, ADR 0005, #19
