@@ -12,9 +12,10 @@ one-time prerequisites: name resolution and trust of the internal CA.
 
 There are two distinct secrets, for two different things:
 
-- **Master password** — unlocks the **vault**. Zero-knowledge: it never
-  reaches the server, the stored data is only an encrypted blob, and it is
-  **unrecoverable** if lost (no backup can restore it). It lives **only**
+- **Master password** — unlocks the **vault**. The raw password never
+  leaves your device: the server only ever sees a derived authentication
+  hash and stores an encrypted blob it cannot decrypt. It is
+  **unrecoverable** if lost (no backup can restore it) and lives **only**
   in your external password manager.
 - **Admin token** — the server `/admin` panel. Stored at rest as an
   Argon2 hash in `.env` (never plaintext); the plaintext lives only in
@@ -57,15 +58,15 @@ The client must trust the Caddy internal CA (ADR 0002), otherwise TLS is
 refused. Export the CA root from Caddy on a machine with tailnet access:
 
 ```bash
-ssh benoit@<pi-tailscale-ip> \
+ssh benoit@bb-homelab \
   'docker exec bb-homelab-caddy cat /data/caddy/pki/authorities/local/root.crt' \
-  > ~/bb-homelab-ca.crt
+  > ~/bb-homelab-root.crt
 ```
 
 Verify it is the expected root:
 
 ```bash
-openssl x509 -in ~/bb-homelab-ca.crt -noout -subject -dates
+openssl x509 -in ~/bb-homelab-root.crt -noout -subject -dates
 # subject=CN = Caddy Local Authority - <year> ECC Root
 ```
 
@@ -73,7 +74,7 @@ Optional end-to-end sanity check — the whole chain (resolution + TLS via
 the CA + Caddy vhost) is healthy if this returns a timestamp string:
 
 ```bash
-curl -sf --cacert ~/bb-homelab-ca.crt \
+curl -sf --cacert ~/bb-homelab-root.crt \
   https://vaultwarden.bb-homelab.local/alive
 ```
 
@@ -87,7 +88,7 @@ where the extension is installed):
 1. **Import the CA**:
    - `≡` menu → Settings → Privacy & Security → scroll to Certificates →
      View Certificates…
-   - **Authorities** tab → Import… → choose `~/bb-homelab-ca.crt`
+   - **Authorities** tab → Import… → choose `~/bb-homelab-root.crt`
    - tick "Trust this CA to identify websites" → OK
 
 2. **Point the extension at the self-hosted server** (before logging in):
@@ -112,8 +113,8 @@ where the extension is installed):
   also install the CA there:
 
   ```bash
-  sudo cp ~/bb-homelab-ca.crt \
-    /usr/local/share/ca-certificates/bb-homelab-ca.crt
+  sudo cp ~/bb-homelab-root.crt \
+    /usr/local/share/ca-certificates/bb-homelab-root.crt
   sudo update-ca-certificates
   ```
 
@@ -133,10 +134,13 @@ where the extension is installed):
 Not onboarded yet. Two frictions specific to our tailnet-only + internal
 CA setup:
 
-1. **Name resolution** — there is no `/etc/hosts` on mobile. Tailscale
-   MagicDNS resolves the machine (`bb-homelab`) but **not** the Caddy
-   vhost (`vaultwarden.bb-homelab.local`), and the service publishes no
-   host port, so it cannot be reached by IP either.
+1. **Name resolution + TLS** — there is no `/etc/hosts` on mobile.
+   Tailscale MagicDNS resolves the machine (`bb-homelab`) but **not** the
+   Caddy vhost (`vaultwarden.bb-homelab.local`). Caddy does publish `:443`
+   on the host, but it only routes that vhost — and presents its
+   certificate — for the matching hostname, so reaching the Pi by IP does
+   not help: the name still has to resolve and the certificate has to
+   match.
 2. **CA trust** — the Caddy CA must be installed on the phone.
 
 Planned resolution: a split-DNS resolver on the tailnet (dnsmasq / CoreDNS,
