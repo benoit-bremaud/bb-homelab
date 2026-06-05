@@ -1092,3 +1092,58 @@ was done and why, by date.
 - **Status**: live and usable on the tailnet, but **not Tier-0** (ADR
   0005 gate) — the existing password manager remains the source of truth.
 - **Refs**: #25, ADR 0005, #19
+
+## 2026-06-05
+
+### PR #115 merged: Vaultwarden client onboarding guide (CLIENTS.md)
+
+- **What**: Added `services/vaultwarden/CLIENTS.md` — how to pair the
+  Bitwarden clients with the self-hosted instance: the master-vs-admin
+  password distinction, why the lightweight clients beat the Web Vault on
+  the relayed uplink, internal-CA trust + self-hosted server setup, the
+  Firefox extension flow (log in, never "Create account" cloud),
+  desktop/CLI, deferred mobile (split-DNS), and troubleshooting.
+- **Language**: English, consistent with its sibling `BACKUP.md`. Per
+  `.claude/rules/docs-conventions.md`, Category-A French covers
+  `services/*/README.md` and ADRs — not the other operational service
+  docs, which stay English.
+- **Review**: automated review posted 7 comments across two rounds, all
+  addressed (`a0d185d`) and replied inline; the re-review returned no
+  further comments. `automated review (Should Have)`: the master-password
+  wording was corrected — the raw password never leaves the device, but a
+  derived authentication hash does. `automated review (Should Have)`: the
+  mobile rationale was corrected — Caddy does publish `:443`, so the
+  blocker is hostname resolution + TLS match, not missing host ports.
+  `automated review (Should Have)`: the CA filename (`bb-homelab-root.crt`)
+  and the SSH host alias (`benoit@bb-homelab`) were aligned with
+  `services/caddy/README.md`.
+- **Refs**: #25 — the browser-extension acceptance criterion is now met in
+  practice; mobile pairing remains, so #25 stays open.
+- **Merge**: `169512c`
+
+### Vaultwarden clients paired, monitored, and restore-drilled
+
+- **What**: Onboarded the Firefox extension end to end — imported the
+  Caddy internal CA into Firefox's own store, pointed the extension at the
+  self-hosted server (`https://vaultwarden.bb-homelab.local`), and logged
+  in with the master password (not a cloud account). The browser-extension
+  acceptance criterion of #25 is now met in practice.
+- **Monitoring**: registered the Uptime Kuma probe on
+  `http://vaultwarden:80/alive` (plain HTTP over `bb-homelab-proxy`,
+  accepted status 200-299, 60 s interval, `BB Infra Alerts` Telegram
+  notification attached). Verified `Up`, `200 - OK`, ~3 ms response. This
+  closes Tier-0 gate criterion 3.
+- **Restore drill**: ran a non-destructive end-to-end drill — extracted
+  the latest archive to `/tmp`, `PRAGMA integrity_check` → `ok`, expected
+  rows present (1 user, 1 device, `rsa_key.pem`), then cleaned up.
+  `sqlite3` is absent from the host, so the check ran via `python3`. A
+  manual `backup.sh` then captured the first vault item and re-verified
+  (`ciphers: 1`, integrity `ok`). This closes Tier-0 gate criterion 2.
+- **Tier-0 gate**: now 2/4 — criteria 2 (restore drill) and 3 (Kuma probe)
+  are green. Remaining: criterion 1 (unified off-site backup, #19) and
+  criterion 4 (Healthchecks.io dead-man's-switch), confirmed not yet wired
+  (no `hc-ping` in the backup path).
+- **Status**: live, monitored, and usable on the tailnet via the Firefox
+  extension — still **not Tier-0** (ADR 0005 gate). The existing password
+  manager stays the source of truth.
+- **Refs**: #25, ADR 0005, ADR 0004, #19
