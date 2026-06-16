@@ -8,18 +8,32 @@ on:
     # not supported") on every PR and trips the merge gate. The check fires
     # automatically once a real ecosystem lands (e.g. brasse-bouillon, #15/#16).
     paths:
+      # npm / pnpm / yarn
       - "**/package.json"
       - "**/package-lock.json"
       - "**/yarn.lock"
       - "**/pnpm-lock.yaml"
+      # Python
       - "**/requirements.txt"
+      - "**/Pipfile"
       - "**/Pipfile.lock"
+      - "**/pyproject.toml"
+      - "**/poetry.lock"
+      # Go
       - "**/go.mod"
       - "**/go.sum"
+      # Ruby
+      - "**/Gemfile"
       - "**/Gemfile.lock"
+      # Java / Kotlin (Maven, Gradle)
       - "**/pom.xml"
       - "**/build.gradle"
+      - "**/build.gradle.kts"
+      # Rust
+      - "**/Cargo.toml"
       - "**/Cargo.lock"
+      # PHP
+      - "**/composer.json"
       - "**/composer.lock"
 
 permissions:
