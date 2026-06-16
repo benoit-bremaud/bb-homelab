@@ -45,13 +45,15 @@ For PROJECT_LOG reviewer attributions, **always** use
 
 ## Public repository (since 2026-06-16)
 
-`bb-homelab` is **public**. The Public Release Checklist below was
-satisfied before the flip (see PROJECT_LOG 2026-06-16; `gitleaks` on
-full history returned 0 leaks). It stays here as the satisfied record and
-the bar any future history rewrite must clear — and because the
-consequence is now permanent: every commit is world-readable the instant
-it is pushed, so a leaked secret is public immediately (rotate first,
-then scrub).
+`bb-homelab` is **public**. The security subset of the Public Release
+Checklist below was satisfied before the flip (see PROJECT_LOG
+2026-06-16; `gitleaks` on full history returned 0 leaks). The canonical
+checklist lives in [CONTRIBUTING.md](../../CONTRIBUTING.md) (it adds a
+SonarQube Quality-Gate item); this list stays here as the satisfied
+security record and the bar any future history rewrite must clear — and
+because the consequence is now permanent: every commit is world-readable
+the instant it is pushed, so a leaked secret is public immediately
+(rotate first, then scrub).
 
 1. `gitleaks detect --source . --verbose` passes on full git history ✅
 2. No secrets in any tracked file (anything ever committed is

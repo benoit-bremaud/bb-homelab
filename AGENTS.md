@@ -121,7 +121,7 @@ There is no top-level `Makefile`, `package.json`, or build system — each servi
 
 ## 7. Security invariants
 
-- **Public repository (since 2026-06-16).** The Public Release Checklist (gitleaks on full history, no secrets in tracked files, rotated credentials, CI secret detection) in CONTRIBUTING.md was satisfied before the flip. Every commit is now world-readable: a leaked secret is public immediately, so rotate-then-scrub is mandatory if one slips in.
+- **Public repository (since 2026-06-16).** The Public Release Checklist in CONTRIBUTING.md (the source of truth) was satisfied before the flip. Every commit is now world-readable: a leaked secret is public immediately, so rotate-then-scrub is mandatory if one slips in.
 - **No secrets in git.** `.env` and `.env.*` are gitignored. `.env.example` carries placeholders only. Credentials for n8n workflows live in the n8n UI, not in `.env`.
 - **No AI attribution anywhere in tracked files.** No `Co-Authored-By` AI lines, no "generated with …" in PR bodies, commit messages, README, or comments. This applies to every agent — including this one.
 - Never force-push to `main` or `master`. Never commit `.env`, `*.pem`, `*.key`, `*.crt`.

@@ -67,7 +67,7 @@ once the Quality Gate has proven stable across several PRs.
   satisfied before the flip. Keep it green — a secret committed now is
   world-readable instantly (rotate first, then scrub).
 
-## Public release checklist (completed 2026-06-16)
+## Public Release Checklist (completed 2026-06-16)
 
 - [x] `gitleaks detect --source . --verbose` passes on full history
 - [x] No secrets in any tracked file (tokens, keys, IDs, passwords)
