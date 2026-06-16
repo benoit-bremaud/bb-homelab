@@ -56,3 +56,14 @@ vaultwarden.bb-homelab.local {
 		header_up X-Real-IP {remote_host}
 	}
 }
+
+# ---- Health check ----
+# Plain-HTTP liveness endpoint for the Docker healthcheck (see
+# docker-compose.yml). Scoped to the `localhost` host on HTTP only, so it
+# never collides with the *.bb-homelab.local sites above and needs no TLS —
+# the in-container probe cannot verify the internal CA. Returns 200.
+http://localhost {
+	handle /healthz {
+		respond 200
+	}
+}
