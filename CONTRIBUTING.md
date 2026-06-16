@@ -63,16 +63,18 @@ once the Quality Gate has proven stable across several PRs.
   passwords, chat IDs, or instance IDs.
 - All credentials live either in n8n encrypted credentials (protected by
   `N8N_ENCRYPTION_KEY`) or in your password manager.
-- Before flipping the repo to public visibility, run the checklist below.
+- The repo is **public since 2026-06-16**; the checklist below was
+  satisfied before the flip. Keep it green — a secret committed now is
+  world-readable instantly (rotate first, then scrub).
 
-## Public release checklist
+## Public Release Checklist (completed 2026-06-16)
 
-- [ ] `gitleaks detect --source . --verbose` passes on full history
-- [ ] No secrets in any tracked file (tokens, keys, IDs, passwords)
-- [ ] `.env.example` files have placeholder values only
-- [ ] All development secrets rotated
-- [ ] CI includes secret detection job
-- [ ] SonarQube Cloud Quality Gate passes on `main`
+- [x] `gitleaks detect --source . --verbose` passes on full history
+- [x] No secrets in any tracked file (tokens, keys, IDs, passwords)
+- [x] `.env.example` files have placeholder values only
+- [x] All development secrets rotated
+- [x] CI includes secret detection job
+- [x] SonarQube Cloud Quality Gate passes on `main`
 
 ## File organisation
 

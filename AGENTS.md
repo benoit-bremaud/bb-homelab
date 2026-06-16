@@ -8,7 +8,7 @@ Shared instructions for any AI coding agent (or human contributor) working in th
 
 `bb-homelab` is a self-hosted homelab running on a Raspberry Pi 5, designed to remain hardware-agnostic. It orchestrates containerised services (n8n today; Jellyfin, reverse proxy, monitoring planned) with a strong security and reproducibility posture.
 
-- Repo visibility: **private**. Do not assume public-release invariants yet — the public checklist in [CONTRIBUTING.md](CONTRIBUTING.md) must pass first.
+- Repo visibility: **public** (since 2026-06-16). The Public Release Checklist in [CONTRIBUTING.md](CONTRIBUTING.md) was satisfied before the flip; treat every commit as world-readable — a leaked secret is public the instant it is pushed.
 - License: CC BY-SA 4.0 (see [LICENSE](LICENSE)).
 
 ## 2. Authoritative documents (read these, in order)
@@ -121,7 +121,7 @@ There is no top-level `Makefile`, `package.json`, or build system — each servi
 
 ## 7. Security invariants
 
-- **Private-first.** Do not flip visibility to public. The checklist (gitleaks on full history, no secrets in tracked files, rotated credentials, CI secret detection) lives in CONTRIBUTING.md and must pass first.
+- **Public repository (since 2026-06-16).** The Public Release Checklist in CONTRIBUTING.md (the source of truth) was satisfied before the flip. Every commit is now world-readable: a leaked secret is public immediately, so rotate-then-scrub is mandatory if one slips in.
 - **No secrets in git.** `.env` and `.env.*` are gitignored. `.env.example` carries placeholders only. Credentials for n8n workflows live in the n8n UI, not in `.env`.
 - **No AI attribution anywhere in tracked files.** No `Co-Authored-By` AI lines, no "generated with …" in PR bodies, commit messages, README, or comments. This applies to every agent — including this one.
 - Never force-push to `main` or `master`. Never commit `.env`, `*.pem`, `*.key`, `*.crt`.

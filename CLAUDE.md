@@ -18,8 +18,9 @@ index pointing to the authoritative briefs.
      pattern, PROJECT_LOG discipline.
    - [`security-invariants.md`](.claude/rules/security-invariants.md) —
      loads at session start (no `paths:`, always relevant). AI
-     attribution policy (strict), secrets handling, private-first
-     repo, branch protection, risky actions, token rotation.
+     attribution policy (strict), secrets handling, repo
+     visibility (public), branch protection, risky actions, token
+     rotation.
 3. [`.claude/skills/`](.claude/skills/) — **behaviour-scoped skills**
    (loaded by Claude when the description matches the task, or invoked
    via `/skill-name`):

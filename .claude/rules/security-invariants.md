@@ -43,18 +43,25 @@ For PROJECT_LOG reviewer attributions, **always** use
   2. The user's password manager (canonical source of truth).
   Losing it = losing every credential n8n holds.
 
-## Private-first repository
+## Public repository (since 2026-06-16)
 
-`bb-homelab` is **private**. Do not flip to public until **all five**
-items below pass:
+`bb-homelab` is **public**. The security subset of the Public Release
+Checklist below was satisfied before the flip (see PROJECT_LOG
+2026-06-16; `gitleaks` on full history returned 0 leaks). The canonical
+checklist lives in [CONTRIBUTING.md](../../CONTRIBUTING.md) (it adds a
+SonarQube Quality-Gate item); this list stays here as the satisfied
+security record and the bar any future history rewrite must clear — and
+because the consequence is now permanent: every commit is world-readable
+the instant it is pushed, so a leaked secret is public immediately
+(rotate first, then scrub).
 
-1. `gitleaks detect --source . --verbose` passes on full git history
+1. `gitleaks detect --source . --verbose` passes on full git history ✅
 2. No secrets in any tracked file (anything ever committed is
-   forever in history — secrets must have been rotated)
-3. `.env.example` files have placeholder values only
+   forever in history — secrets must have been rotated) ✅
+3. `.env.example` files have placeholder values only ✅
 4. All development secrets rotated (bot tokens, OAuth credentials,
-   API keys)
-5. CI includes secret detection job (gitleaks workflow ✅ since PR #33)
+   API keys) ✅ (none were ever committed)
+5. CI includes secret detection job (gitleaks workflow since PR #33) ✅
 
 ## Branch protection
 

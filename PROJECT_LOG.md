@@ -1153,3 +1153,60 @@ was done and why, by date.
   extension — still **not Tier-0** (ADR 0005 gate). The existing password
   manager stays the source of truth.
 - **Refs**: #25, ADR 0005, ADR 0004, #19
+
+## 2026-06-16
+
+### PR #118 merged: Docker healthcheck for Caddy
+
+- **What**: Added a healthcheck to the Caddy service
+  (`services/caddy/docker-compose.yml`) — probes a new plain-HTTP
+  `/healthz` route (a `localhost`-only site in the Caddyfile) every 30 s
+  (timeout 5 s, 5 retries, `start_period` 10 s). Caddy was the last
+  homelab service without a liveness probe, despite being the frontal
+  reverse proxy (80/443) for every tailnet-facing service.
+- **Why**: a dead/wedged proxy now surfaces in `docker ps` and to Uptime
+  Kuma. Chose a dedicated `/healthz` route over the admin API —
+  deterministic, tests the port-80 data plane, independent of the admin
+  endpoint. No `depends_on` to the backends (separate compose projects on
+  the external `bb-homelab-proxy` network; `depends_on` does not cross
+  projects).
+- **Also**: corrected `services/caddy/README.md` Security notes, which
+  wrongly claimed *"Admin API disabled (`admin off`)"* — the admin API
+  listens on `localhost:2019` (required by `caddy reload`).
+- **Verification**: `caddy validate` plus a throwaway-container run proved
+  `/healthz` returns 200, the probe command exits 0 (`wget` is the BusyBox
+  applet shipped in the Alpine image), and the existing
+  `*.bb-homelab.local` HTTP→HTTPS redirects still work. Pi verification
+  (`docker compose up -d` → `healthy`) pending a maintenance window.
+- **Review**: `automated review (Disagree)`: a reviewer flagged `wget` as
+  missing from `caddy:2.8.4`; refuted inline with proof it is the BusyBox
+  `wget` applet (`/usr/bin/wget` → `/bin/busybox`), same probe family as
+  n8n's healthcheck.
+- **Scope**: Caddy only; `start_period` for n8n + uptime-kuma deferred to
+  a follow-up.
+- **Refs**: #117
+- **Merge**: `b8ecd54` (squash).
+
+### Repository flipped to public visibility
+
+- **What**: Changed `bb-homelab` from private to public
+  (`gh repo edit --visibility public`). Trigger was a GitHub Actions
+  billing hold (failed payment / spending limit) that blocked CI on PR
+  #118; public repos get unlimited free Actions.
+- **Public Release Checklist**: ran the full gate before flipping —
+  `gitleaks detect` on full history (73 commits) returned **0 leaks**; no
+  secrets / certs / keys / tokens / bot-tokens in any tracked file; only
+  `.env.example` files ever tracked (no real `.env` in history); gitleaks
+  CI present. All checklist items satisfied.
+- **Residual disclosure (accepted)**: non-routable IPs remain in tracked
+  files and history — the tailnet IP (CGNAT `100.64.0.0/10`, reachable
+  only from the tailnet) and LAN IPs (`192.168.1.x`, RFC1918). A
+  forward-only scrub was rejected as cosmetic (history retains them) and a
+  history rewrite as disproportionate for non-routable addresses.
+- **Free alternatives considered**: resolving the billing hold (private
+  repos include 2 000 free Actions min/month) and a self-hosted runner —
+  both keep the repo private; the maintainer chose public.
+- **Follow-up**: invariant docs synced to public visibility (PR #119);
+  reverting to private remains possible (`gh repo edit --visibility
+  private`) but does not un-expose already-public history.
+- **Refs**: #118, #119
