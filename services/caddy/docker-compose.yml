@@ -32,6 +32,19 @@ services:
           create_host_path: false
     networks:
       - proxy
+    # Caddy is the frontal reverse proxy (80/443) for the whole homelab, so
+    # it gets a liveness probe like every backend. It hits the plain-HTTP
+    # /healthz route defined in the Caddyfile (a localhost-only site), proving
+    # the port-80 data plane is serving — more representative than pinging the
+    # admin API. wget ships in the Alpine/busybox caddy image (as for n8n).
+    # No depends_on to the backends: separate compose projects joined by the
+    # external bb-homelab-proxy network, and depends_on does not cross them.
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost/healthz || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
 networks:
   proxy:
