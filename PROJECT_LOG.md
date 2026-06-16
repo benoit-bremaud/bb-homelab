@@ -1185,7 +1185,7 @@ was done and why, by date.
 - **Scope**: Caddy only; `start_period` for n8n + uptime-kuma deferred to
   a follow-up.
 - **Refs**: #117
-- **Merge**: squash-merged.
+- **Merge**: `b8ecd54` (squash).
 
 ### Repository flipped to public visibility
 
@@ -1197,7 +1197,7 @@ was done and why, by date.
   `gitleaks detect` on full history (73 commits) returned **0 leaks**; no
   secrets / certs / keys / tokens / bot-tokens in any tracked file; only
   `.env.example` files ever tracked (no real `.env` in history); gitleaks
-  CI present. All five items satisfied.
+  CI present. All checklist items satisfied.
 - **Residual disclosure (accepted)**: non-routable IPs remain in tracked
   files and history — the tailnet IP (CGNAT `100.64.0.0/10`, reachable
   only from the tailnet) and LAN IPs (`192.168.1.x`, RFC1918). A

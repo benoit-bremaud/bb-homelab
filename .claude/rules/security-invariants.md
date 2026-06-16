@@ -45,8 +45,8 @@ For PROJECT_LOG reviewer attributions, **always** use
 
 ## Public repository (since 2026-06-16)
 
-`bb-homelab` is **public**. The five-item Public Release Checklist below
-was satisfied before the flip (see PROJECT_LOG 2026-06-16; `gitleaks` on
+`bb-homelab` is **public**. The Public Release Checklist below was
+satisfied before the flip (see PROJECT_LOG 2026-06-16; `gitleaks` on
 full history returned 0 leaks). It stays here as the satisfied record and
 the bar any future history rewrite must clear — and because the
 consequence is now permanent: every commit is world-readable the instant
@@ -59,7 +59,7 @@ then scrub).
 3. `.env.example` files have placeholder values only ✅
 4. All development secrets rotated (bot tokens, OAuth credentials,
    API keys) ✅ (none were ever committed)
-5. CI includes secret detection job (gitleaks workflow ✅ since PR #33) ✅
+5. CI includes secret detection job (gitleaks workflow since PR #33) ✅
 
 ## Branch protection
 
