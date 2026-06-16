@@ -177,8 +177,11 @@ internal CA root can then be uninstalled from every client device.
 
 ## Security notes
 
-- **Admin API disabled** (`admin off` in Caddyfile). The HTTP API is
-  not exposed on any interface; all changes go through the Caddyfile.
+- **Admin API enabled on `localhost:2019`, inside the container only.** It
+  is not published to any host port or to the `bb-homelab-proxy` network, and
+  `caddy reload` relies on it to apply Caddyfile changes without a restart.
+  The Docker healthcheck probes a plain-HTTP `/healthz` route (not the admin
+  API) — see `docker-compose.yml`.
 - **Caddy listens on host ports 80 + 443** (including UDP 443 for
   HTTP/3). Ensure the host firewall (UFW in `bootstrap/`) allows
   these from the tailnet CIDR but not from the internet. On a
