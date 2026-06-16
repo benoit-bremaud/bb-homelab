@@ -2,6 +2,39 @@ name: Dependency Review
 
 on:
   pull_request:
+    # Only review when an actual dependency manifest / lockfile changes.
+    # This repo is currently manifest-less (shell / docker / markdown), so
+    # without this filter dependency-review-action errors ("Dependency graph
+    # not supported") on every PR and trips the merge gate. The check fires
+    # automatically once a real ecosystem lands (e.g. brasse-bouillon, #15/#16).
+    paths:
+      # npm / pnpm / yarn
+      - "**/package.json"
+      - "**/package-lock.json"
+      - "**/yarn.lock"
+      - "**/pnpm-lock.yaml"
+      # Python
+      - "**/requirements.txt"
+      - "**/Pipfile"
+      - "**/Pipfile.lock"
+      - "**/pyproject.toml"
+      - "**/poetry.lock"
+      # Go
+      - "**/go.mod"
+      - "**/go.sum"
+      # Ruby
+      - "**/Gemfile"
+      - "**/Gemfile.lock"
+      # Java / Kotlin (Maven, Gradle)
+      - "**/pom.xml"
+      - "**/build.gradle"
+      - "**/build.gradle.kts"
+      # Rust
+      - "**/Cargo.toml"
+      - "**/Cargo.lock"
+      # PHP
+      - "**/composer.json"
+      - "**/composer.lock"
 
 permissions:
   contents: read
