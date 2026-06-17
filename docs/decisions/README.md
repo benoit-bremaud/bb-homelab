@@ -15,4 +15,4 @@ decision is reversed, write a new ADR that supersedes the previous one.
 - [0003 — Jellyfin as the media server](0003-jellyfin-media-server.md)
 - [0004 — Monitoring architecture: layered active + passive](0004-monitoring-architecture.md)
 - [0005 — Vaultwarden as the self-hosted password vault](0005-vaultwarden-deployment.md)
-- [0006 — Homepage comme tableau de bord d'accueil](0006-homepage-dashboard.md)
+- [0006 — Homepage as the landing dashboard](0006-homepage-dashboard.md)

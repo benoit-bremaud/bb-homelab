@@ -47,6 +47,13 @@ du Pi (cf. `services/caddy/README.md`) :
 100.121.134.61  home.bb-homelab.local
 ```
 
+Les tuiles du dashboard pointent aussi vers `n8n.bb-homelab.local`,
+`jellyfin.bb-homelab.local`, `vaultwarden.bb-homelab.local` et
+`status.bb-homelab.local`. Ces hostnames sont déjà dans le `/etc/hosts`
+du poste si l'on a suivi le README de chaque service ; sinon, les
+ajouter de la même façon (même IP Tailscale du Pi) pour que les liens
+résolvent.
+
 ## Configuration
 
 Le dashboard est entièrement piloté par les fichiers YAML versionnés
