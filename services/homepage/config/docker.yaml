@@ -1,0 +1,5 @@
+---
+# Unused at Level 1/2 — committed so Homepage does not write a skeleton
+# here (it only creates missing files, never overwrites). The Docker
+# integration (live container stats) is deferred to Level 3, pending a
+# future ADR on Docker-socket exposure. See ADR 0006.

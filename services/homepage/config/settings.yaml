@@ -1,0 +1,13 @@
+---
+# Homepage global settings. Config-as-code: this file is the source of
+# truth, versioned in git (see ADR 0006).
+title: bb-homelab
+theme: dark
+color: slate
+layout:
+  Services:
+    style: row
+    columns: 3
+  Monitoring:
+    style: row
+    columns: 3

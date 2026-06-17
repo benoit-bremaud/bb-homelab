@@ -1,0 +1,4 @@
+---
+# Bookmarks (optional). Empty at Level 1 — nothing rendered. Kept in git
+# so Homepage does not generate a skeleton here (it only creates missing
+# files, never overwrites). See ADR 0006.

@@ -1,0 +1,21 @@
+---
+# Service tiles (link launcher). Level 1 = links only; the Uptime Kuma
+# status widget is added in PR2 (Level 2). See ADR 0006.
+- Services:
+    - n8n:
+        href: https://n8n.bb-homelab.local
+        description: Orchestrateur de workflows
+        icon: n8n.png
+    - Jellyfin:
+        href: https://jellyfin.bb-homelab.local
+        description: Serveur multimédia
+        icon: jellyfin.png
+    - Vaultwarden:
+        href: https://vaultwarden.bb-homelab.local
+        description: Gestionnaire de mots de passe
+        icon: vaultwarden.png
+- Monitoring:
+    - Uptime Kuma:
+        href: https://status.bb-homelab.local
+        description: Supervision up/down des services
+        icon: uptime-kuma.png

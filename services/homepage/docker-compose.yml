@@ -1,0 +1,48 @@
+services:
+  homepage:
+    # Pinned by default. Bump via HOMEPAGE_IMAGE_TAG in .env after
+    # testing. :latest avoided so a background pull cannot drag in a
+    # breaking change. Multi-arch manifest -> arm64 variant on the Pi 5.
+    image: ghcr.io/gethomepage/homepage:${HOMEPAGE_IMAGE_TAG:-v1.13.2}
+    container_name: bb-homelab-homepage
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ:-Europe/Paris}
+      # Required since v1.0 to serve the dashboard via a non-localhost
+      # host (Host-header allowlist, Next.js middleware on /api/*).
+      # 127.0.0.1/localhost stay allowed internally, so the healthcheck
+      # below keeps working with this strict value.
+      - HOMEPAGE_ALLOWED_HOSTS=${HOMEPAGE_ALLOWED_HOSTS:-home.bb-homelab.local}
+      # stdout-only: no logs/ subdir is written into the git-tracked
+      # config bind-mount -> /app/config stays 100% config-as-code with
+      # zero runtime drift. Logs via `docker compose logs -f homepage`.
+      - LOG_TARGETS=stdout
+    volumes:
+      # Relative bind-mount of the in-repo config (config-as-code), like
+      # services/caddy/ mounts ./Caddyfile. Deliberately NOT on
+      # /mnt/appdata: Homepage has no runtime state at L1/L2, so its
+      # config is code, not appdata -- the dashboard boots even if the
+      # HDD is unmounted (documented departure from Pattern Y, ADR 0006).
+      # All 9 config files are committed so Homepage generates nothing.
+      - ./config:/app/config
+    networks:
+      # `proxy` is the shared external network on which Caddy reaches this
+      # service via DNS name `homepage:3000` (see services/caddy/).
+      - default
+      - proxy
+    healthcheck:
+      # Mirrors the image's baked-in probe: /api/healthcheck returns 200.
+      # Targets 127.0.0.1 (always host-allowed) so it coexists with the
+      # strict HOMEPAGE_ALLOWED_HOSTS. wget is busybox-provided.
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:3000/api/healthcheck || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+networks:
+  default:
+    driver: bridge
+  proxy:
+    name: bb-homelab-proxy
+    external: true
