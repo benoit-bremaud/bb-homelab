@@ -57,6 +57,16 @@ vaultwarden.bb-homelab.local {
 	}
 }
 
+# ---- Homepage (landing dashboard) ----
+# home.bb-homelab.local → homepage container (link launcher + status,
+# issue #125). Reached over the shared bb-homelab-proxy network. The
+# upstream is the compose SERVICE name `homepage` (like uptime-kuma:3001),
+# not the hostname `home`.
+home.bb-homelab.local {
+	tls internal
+	reverse_proxy homepage:3000
+}
+
 # ---- Health check ----
 # Plain-HTTP liveness endpoint for the Docker healthcheck (see
 # docker-compose.yml). Scoped to the `localhost` host on HTTP only, so it

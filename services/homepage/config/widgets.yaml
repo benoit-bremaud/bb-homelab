@@ -1,0 +1,10 @@
+---
+# Information header widgets. Minimal at Level 1: date/time only.
+# (resources/search can be added later — KISS.)
+- datetime:
+    text_size: xl
+    locale: fr
+    format:
+      dateStyle: long
+      timeStyle: short
+      hourCycle: h23
