@@ -3,6 +3,7 @@
 # (resources/search can be added later — KISS.)
 - datetime:
     text_size: xl
+    locale: fr
     format:
       dateStyle: long
       timeStyle: short
