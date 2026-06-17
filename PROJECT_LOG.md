@@ -1210,3 +1210,74 @@ was done and why, by date.
   reverting to private remains possible (`gh repo edit --visibility
   private`) but does not un-expose already-public history.
 - **Refs**: #118, #119
+
+## 2026-06-17
+
+### PR #126 merged: Homepage Level 1 link-launcher dashboard + ADR 0006
+
+- **What**: Added `services/homepage/` — Homepage (gethomepage, pinned
+  `v1.13.2`, multi-arch arm64) as the homelab's single entry point.
+  Level 1 = a link launcher with tiles for n8n, Jellyfin, Vaultwarden
+  and Uptime Kuma (French descriptions, dashboard-icons) plus a French
+  date/time header. Config-as-code lives in-repo at
+  `services/homepage/config/` via a relative bind (`./config`), **not**
+  `/mnt/appdata`: Homepage has no runtime state at L1/L2, so its config
+  is code. `LOG_TARGETS=stdout` and all 9 config files are committed so
+  Homepage writes nothing into the git-tracked dir at startup (it only
+  creates missing files, never overwrites). Caddy route
+  `home.bb-homelab.local` → `homepage:3000` (`tls internal`,
+  tailnet-only).
+- **Why**: 5 services existed with no landing page; an aggregator pays
+  off once several services exist (#125). Homepage was the only tool
+  combining config-as-code in git AND a native Uptime Kuma widget (the
+  monitoring source of truth, ADR 0004).
+- **Decision (ADR 0006)**: Homepage over Glance / Dashy / Homarr on a
+  weighted matrix (Homepage 90/100 vs Glance 86, Dashy 81, Homarr 74).
+  Config is code — a deliberate, documented Pattern-Y departure (no
+  `/mnt/appdata`, boots even HDD-unmounted). Roadmap: L1 now, L2 Uptime
+  Kuma status widget next PR, L3 live Docker stats deferred to a future
+  Docker-socket-exposure ADR.
+- **Review**: automated review posted several comments; all addressed
+  and replied inline.
+  - `automated review (Should Have)`: the ADR index title was switched
+    to English to match every existing entry (incl. the French ADR
+    0005, whose index title is English); the ADR body stays French.
+  - `automated review (Should Have)`: the README now notes the tiles
+    also link to `n8n` / `jellyfin` / `vaultwarden` / `status`
+    hostnames, which must already resolve in the client `/etc/hosts`.
+  - `automated review (Disagree)`: the ADR body stays **French** —
+    `.claude/rules/docs-conventions.md` classifies ADRs as Category A
+    (French), which took precedence over AGENTS.md when ADR 0005 was
+    switched EN→FR in PR #113. ADRs 0001–0004 are legacy pre-convention
+    English.
+- **Verification (pre-merge)**: `docker compose config`, `caddy
+  validate`, `yamllint`, `markdownlint`, `gitleaks` all clean; a
+  throwaway container rendered the L1 dashboard correctly (French
+  datetime, tiles + icons).
+- **Closes**: #125
+- **Merge**: `3e58f0c` (squash)
+
+### Homepage deployed on the Pi (Level 1 live)
+
+- **What**: Pulled `main` on the Pi, `docker compose up -d` in
+  `services/homepage/` (image pulled; `bb-homelab-homepage` healthy on
+  `bb-homelab-proxy`, no host port — Caddy fronts it), then recreated
+  Caddy to load the new route. `home.bb-homelab.local` returns HTTP 200
+  and the four existing routes are unaffected (n8n 200, status 302,
+  jellyfin 302, vaultwarden 200). `git status` on the Pi stayed clean —
+  config-as-code (Approach A) confirmed in production, no skeleton/log
+  drift.
+- **Caddyfile bind-mount gotcha (root cause logged)**: the new route did
+  **not** activate on `caddy reload`. Caddy bind-mounts the Caddyfile as
+  a **single file**, which binds the inode; `git pull` replaced the file
+  (new inode), so the container kept serving the old inode and `reload`
+  reported `config is unchanged` (host inode vs in-container inode
+  differed). Fixed with `docker compose up -d --force-recreate` of Caddy
+  (~3-5 s proxy blip; the backend services themselves were untouched). A
+  durable fix — mount a directory so `reload` survives a `git pull` — is
+  tracked in **#127**.
+- **Client access**: add `100.121.134.61  home.bb-homelab.local` to each
+  client `/etc/hosts` (same pattern as the other services); the internal
+  CA is already trusted, so `https://home.bb-homelab.local` opens without
+  a warning.
+- **Refs**: #125, #127, ADR 0006, ADR 0002
