@@ -38,6 +38,10 @@
 #   ./backup.sh                   # default: /var/backups/vaultwarden, keep 7
 #   BACKUP_DIR=/mnt/backup/vaultwarden \
 #   KEEP=14 ./backup.sh           # override destination + retention
+#   KUMA_PUSH_URL=https://… ./backup.sh
+#                                 # optional: ping an Uptime Kuma Push monitor
+#                                 # on success only (issue #133); keep the URL
+#                                 # out of git, it carries the monitor token
 #                                 # (use once HDD C lands — issue #19)
 
 set -euo pipefail
@@ -180,3 +184,14 @@ fi
 
 SIZE="$(du -h "${ARCHIVE}" | cut -f1)"
 log "done: ${ARCHIVE} (${SIZE})"
+
+# Success-only heartbeat: a failed run exits earlier (set -e / die) and sends
+# nothing, so the Push monitor turns DOWN after its heartbeat window. A failed
+# ping must not fail a good backup, hence the warning instead of an error.
+if [ -n "${KUMA_PUSH_URL:-}" ]; then
+  if curl -fsS -m 10 -o /dev/null "${KUMA_PUSH_URL%%\?*}?status=up&msg=OK&ping=" ; then
+    log "heartbeat sent to Uptime Kuma"
+  else
+    log "warning: heartbeat to Uptime Kuma failed (backup itself is fine)"
+  fi
+fi

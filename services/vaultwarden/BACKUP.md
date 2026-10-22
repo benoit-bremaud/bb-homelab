@@ -134,6 +134,31 @@ ls -lt /var/backups/vaultwarden/
 tail -n 20 /var/backups/vaultwarden/backup.log
 ```
 
+
+## Failure alert — Uptime Kuma Push monitor
+
+A failed run sends nothing; a good run pings a Push monitor, which turns
+DOWN and alerts on Telegram after 25 h of silence (issue #133, diagrams in
+[docs/architecture/diagrams/backup/](../../docs/architecture/diagrams/backup/01-sequence.md)).
+
+1. In Uptime Kuma: **Add New Monitor → Push**, name `backup-vaultwarden`,
+   heartbeat interval `90000` s (25 h), notification `bb-homelab-alerts`.
+2. Store the push URL outside git, readable by `benoit` only:
+
+   ```bash
+   install -d -m 700 ~/.config/bb-homelab
+   (umask 077; printf '%s' '<push URL>' > ~/.config/bb-homelab/kuma-push-vaultwarden)
+   ```
+
+3. Pass it from the crontab line:
+
+   ```cron
+   5 3 * * *  KUMA_PUSH_URL="$(cat /home/benoit/.config/bb-homelab/kuma-push-vaultwarden)" BACKUP_DIR=/home/benoit/vaultwarden-backups /home/benoit/bb-homelab/services/vaultwarden/scripts/backup.sh >> /home/benoit/vaultwarden-backups/backup.log 2>&1
+   ```
+
+The archives are then pulled off the Pi every night, see
+[storage/OFFPI-COPY.md](../../storage/OFFPI-COPY.md).
+
 ## Restore — same host
 
 Restore to the same Pi, same Vaultwarden version.

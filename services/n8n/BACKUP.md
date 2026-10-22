@@ -99,6 +99,31 @@ silently produces nothing:
 sudo install -o "$USER" -g "$USER" -m 644 /dev/null /var/log/n8n-backup.log
 ```
 
+
+## Failure alert — Uptime Kuma Push monitor
+
+A failed run sends nothing; a good run pings a Push monitor, which turns
+DOWN and alerts on Telegram after 25 h of silence (issue #133, diagrams in
+[docs/architecture/diagrams/backup/](../../docs/architecture/diagrams/backup/01-sequence.md)).
+
+1. In Uptime Kuma: **Add New Monitor → Push**, name `backup-n8n`,
+   heartbeat interval `90000` s (25 h), notification `bb-homelab-alerts`.
+2. Store the push URL outside git, readable by `benoit` only:
+
+   ```bash
+   install -d -m 700 ~/.config/bb-homelab
+   (umask 077; printf '%s' '<push URL>' > ~/.config/bb-homelab/kuma-push-n8n)
+   ```
+
+3. Pass it from the crontab line:
+
+   ```cron
+   0 3 * * *  KUMA_PUSH_URL="$(cat /home/benoit/.config/bb-homelab/kuma-push-n8n)" BACKUP_DIR=/home/benoit/backups/n8n /home/benoit/bb-homelab/services/n8n/scripts/backup.sh >> /home/benoit/backups/n8n/backup.log 2>&1
+   ```
+
+The archives are then pulled off the Pi every night, see
+[storage/OFFPI-COPY.md](../../storage/OFFPI-COPY.md).
+
 ## Restore — same host
 
 Restore to the same Pi, same n8n version, same `N8N_ENCRYPTION_KEY`.
