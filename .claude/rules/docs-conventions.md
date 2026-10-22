@@ -8,8 +8,14 @@ paths:
 Project-specific conventions for any documentation work in this repo.
 This rule **extends** the agent-agnostic brief in
 [AGENTS.md](../../AGENTS.md) and the global rules in
-`~/.claude/CLAUDE.md`. When they conflict, the order of precedence is:
-this rule > AGENTS.md > global.
+`~/.claude/CLAUDE.md` and `~/.agent-rules/common.md`. When they
+conflict, the order of precedence is the one stated in `CLAUDE.md`
+(rule/skill > `AGENTS.md` > `CLAUDE.md` > global).
+Documented deviations from the global rules: documentation is split
+FR/EN by category below (the global rule says English only), and the
+repository is public (the global rule says private after the first
+production deployment). Never change the visibility without an
+explicit owner request.
 
 ## Language convention
 
@@ -21,10 +27,13 @@ rules:
   - `bootstrap/*.md`, `network/*.md`, `services/*/README.md`,
     `storage/*.md`
   - ADRs in `docs/decisions/`
+  - `docs/architecture/**`, except the review artefacts below
 - **Category B — agent-facing : English**
   - `AGENTS.md` (read by any AI tooling), `CLAUDE.md`
   - The modular rules in this `.claude/rules/` directory
 - **Category C — workflow / audit artifacts : English**
+  - `docs/architecture/review-local.md` and the `report.md` files under
+    `docs/architecture/qa/` (generated in English by `/review-local`)
   - `CONTRIBUTING.md` (referenced from AGENTS.md, kept in sync with EN
     commit conventions)
   - `PROJECT_LOG.md` (references EN commit messages and PR titles;
@@ -94,7 +103,7 @@ Reviewer attribution convention (since PR #74):
 - Use `automated review (Must Have):`, `automated review (Should Have):`,
   `automated review (Re-review):`, `automated review (Disagree):`
 - **Never** use named AI tools (`codex (...)`, `Copilot (...)`,
-  `GPT (...)`) — those are AI attribution violations per
+  `GPT (...)`) — documentation stays free of AI tool names per
   [security-invariants](security-invariants.md).
 
 History tables (in `BACKUP.md`, etc.) are an exception — they may

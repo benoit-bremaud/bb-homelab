@@ -31,3 +31,6 @@ node_modules/
 # Homepage writes logs here only if LOG_TARGETS is set to file/both;
 # the service runs with LOG_TARGETS=stdout, so this is defensive.
 services/homepage/config/logs/
+
+# Local SonarQube scanner working directory
+.scannerwork/

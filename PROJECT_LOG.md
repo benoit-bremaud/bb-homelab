@@ -1281,3 +1281,44 @@ was done and why, by date.
   CA is already trusted, so `https://home.bb-homelab.local` opens without
   a warning.
 - **Refs**: #125, #127, ADR 0006, ADR 0002
+
+## 2026-10-22
+
+### Backlog review and alignment on the global rules
+
+- **What**: reviewed the open issues against the repo and the log.
+  #44 closed (Uptime Kuma delivered, Beszel dropped per ADR 0004);
+  checkboxes and status comments updated on #66, #67 and #25 (all stay
+  open: disks B and C wait on #47, mobile pairing and the Tier-0 gate
+  remain). Then aligned the repo rules and skills on the current
+  cross-agent rules (#129).
+- **Changes (#129)**: one stated order of precedence; pre-push gate and
+  five-step pre-merge gate, the verbatim merge-approval question, MCDA
+  before every choice, one chat per project and one task per chat, and
+  the memory compression pass added to the `pr-workflow` skill and to
+  `AGENTS.md`; QA evidence convention in `docs/architecture/qa/`; table
+  of applicable global skills in `CLAUDE.md`.
+- **Decision (AI attribution)**: policy moved from strict to allowed but
+  sober, on a weighted matrix (aligned-but-sober 405/500, strict 330,
+  allow-everywhere 350). A commit trailer and a PR footer are permitted;
+  docs and this log carry no AI tool names. Fallback: the strict policy.
+- **Deviations kept on purpose**: documentation split FR/EN by category;
+  the repo stays public; tests and doc coverage replaced by linters,
+  config validation and a README per service (no application code).
+- **Review**: local review before push (`docs/architecture/review-local.md`):
+  4 Must and 6 Should applied, 5 Nice left to the owner.
+  PR review round 1 (`automated review (Should Have)` x4, all verified
+  and validated one by one): the `.env*` secret gate now excludes the
+  `.env.example` templates; an evidence-only final commit no longer
+  re-runs the gate; review artefacts are Category C (English);
+  reviewer tool names removed from the review report.
+- **Decision (code quality)**: SonarCloud retired; the repo now uses the
+  shared local SonarQube instance (project `bb-homelab`, global analysis
+  token, first scan passed the quality gate). The CI token had started
+  returning 403. The cloud workflow is removed and the quality gate is a
+  local pre-merge step, as on brasse-bouillon (PR #1216). #65 is obsolete;
+  the `SONAR_TOKEN` Actions secret is deleted after merge and the old
+  cloud token revoked by the owner.
+- **Follow-ups**: #130 (Dependabot for compose images), #131 (non-root
+  and privileges audit), #90 (image scan), #127 (Caddyfile mount).
+- **Refs**: #129, #44, #66, #67, #25

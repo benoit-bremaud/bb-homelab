@@ -147,7 +147,7 @@ Run this skill to execute the complete PR cycle for bb-homelab. The
     - mergeStateStatus = `CLEAN`
 
 2. **Present merge-readiness summary** to user, e.g.:
-    > "CI green (5/5 required + Sonar). Copilot posted X comments — all
+    > "CI green (5/5 required), local SonarQube gate passed. Copilot posted X comments — all
     > addressed in `<sha>`. mergeStateStatus CLEAN. Ready to merge PR #<n>?"
 
 3. **WAIT for user's explicit textual approval**: "ok", "ok merge",

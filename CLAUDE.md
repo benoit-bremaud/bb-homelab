@@ -18,7 +18,7 @@ index pointing to the authoritative briefs.
      pattern, PROJECT_LOG discipline.
    - [`security-invariants.md`](.claude/rules/security-invariants.md) —
      loads at session start (no `paths:`, always relevant). AI
-     attribution policy (strict), secrets handling, repo
+     attribution policy (allowed, kept sober), secrets handling, repo
      visibility (public), branch protection, risky actions, token
      rotation.
 3. [`.claude/skills/`](.claude/skills/) — **behaviour-scoped skills**
@@ -31,9 +31,10 @@ index pointing to the authoritative briefs.
      naming, Conventional Commits, merge gate, Q&A before decisions,
      step-by-step execution, post-merge cleanup.
 
-When this file, AGENTS.md, and a rule/skill disagree, the order of
-precedence is: specific rule/skill > AGENTS.md > this file > global
-`~/.claude/CLAUDE.md`.
+Cross-agent rules (Q&A with MCDA matrix, pre-push and pre-merge gates,
+one chat per project) live in `~/.agent-rules/common.md`: read it first.
+
+When files disagree, the single order of precedence is: rule/skill > `AGENTS.md` > `CLAUDE.md` > `~/.agent-rules/common.md` > `~/.claude/CLAUDE.md`, except that a global *safety* rule (secrets, force-push, destructive actions, merge approval) is never weakened by a project file.
 
 ## Why rules vs skills (the split)
 
@@ -57,6 +58,30 @@ Our split:
 | infra-patterns | skill | Behaviour scope (shell + docker + Pi ops) hard to express as a single glob |
 | pr-workflow | skill | Behavioural (PR cycle, merge gate), not file-scoped |
 
+## Global skills that apply here
+
+Loaded on demand from `~/.claude/skills/`; the project rules above win
+on conflict.
+
+| Task | Skill |
+|---|---|
+| Any choice between several solutions | `mcda-decision` |
+| Pre-push and pre-merge gate | command `/review-local`, skill `qa-browser-check` |
+| Opening a PR, board, labels | `pr-create`, `github-projects-routing` (board `bb-homelab` #48) |
+| Handling review comments | `pr-review-procedure` |
+| Dockerfile / compose changes | `docker-hardening` |
+| CI security workflows | `security-ci-baseline` |
+| Tokens, accounts, SonarQube | `infra-accounts` |
+| New feature design (UML first) | `uml-diagram-new`, `architecture` |
+| `PROJECT_LOG.md` entries | `project-log-discipline` |
+| Release tags | `release-tag`, `semver-policy` |
+
+Known deviations from the global rules, on purpose: docs follow the
+FR/EN split in `docs-conventions.md`; the repo is public (never change
+the visibility without an explicit owner request); tests and doc
+coverage are replaced by linters, config validation and "every new
+service has a README", since the repo holds no application code.
+
 ## Claude Code specifics
 
 ### Harness permissions
@@ -76,7 +101,9 @@ prompting.
 - When asking the human a question, use the `AskUserQuestion` tool
   with ranked, clickable choices — never open-ended prose questions.
 - Plan before coding non-trivial changes. Present the plan, wait for
-  approval, then implement.
+  approval, then implement. Every multiple-choice question is preceded
+  by an MCDA matrix; the top score alone gets `(Recommandé)`.
+- One chat per project, one task per chat, named `#N <issue title>`.
 - **Never merge a PR without the full merge gate** described in the
   `pr-workflow` skill.
 
@@ -92,7 +119,8 @@ prompting.
 ## Quick sanity checklist before pushing
 
 1. `shellcheck` / `markdownlint-cli2` / `yamllint` pass locally.
-2. No `.env`, `*.pem`, `*.key`, `*.crt` staged.
+2. Local review of `origin/main...HEAD` done (`/review-local`).
+   No `.env`, `*.pem`, `*.key`, `*.crt` staged.
 3. Commit subject follows Conventional Commits.
 4. Branch is `<type>/<issue-number>-<slug>`, not `main`.
 5. PROJECT_LOG.md entry added if merging a PR.

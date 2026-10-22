@@ -1,6 +1,6 @@
 # AGENTS.md
 
-> **Optional personal extension**: the maintainer keeps a machine-local cross-agent rules file at `~/.agent-rules/common.md` (question & answer pattern with "need more explanation" option, language rules, decision traceability). It is **not** required to follow this repo — agents and contributors should treat the file below as fully self-contained. If the personal file is present in your environment, read it for additional context; otherwise proceed with this document alone.
+> **Cross-agent rules**: the maintainer keeps a machine-local single source of truth at `~/.agent-rules/common.md` (Q&A pattern with MCDA decision matrix, pre-push and pre-merge gates, one chat per project, language rules, decision traceability). Agents running on the maintainer's machine **must read it first**. Precedence, stated once: rule/skill > `AGENTS.md` > `CLAUDE.md` > `~/.agent-rules/common.md` > `~/.claude/CLAUDE.md`, except that a global *safety* rule (secrets, force-push, destructive actions, merge approval) is never weakened by a project file. Documented project deviations are listed in `CLAUDE.md`. The repo stays self-contained for outside contributors: the essentials are restated below, never copied wholesale.
 
 Shared instructions for any AI coding agent (or human contributor) working in this repository. This file is agent-agnostic by design: it depends on no specific tooling. If you are a new agent picking up this project, read this file first, then follow its links.
 
@@ -41,7 +41,18 @@ When adding something, ask: which layer does it belong to? If unclear, write an 
 - Branch from `main`: `<type>/<issue-number>-<slug>` (e.g. `feat/14-caddy-reverse-proxy`).
 - Never commit to `main` directly.
 - Conventional Commits: `<type>(<scope>): <short description>`.
-- All commit messages, code comments, and docs in **English**.
+- Commit messages and code comments in **English**; docs follow the FR/EN split in `.claude/rules/docs-conventions.md`.
+
+### Pre-push and pre-merge gates
+
+- **Before every push** (no trivial-diff exception): a local read-only review of `origin/main...HEAD`, findings classified Must / Should / Nice / Disagree, every Must Have fixed. Claude Code: command `/review-local`.
+- **Before every merge**, on the head SHA being merged, all green or no merge: (1) full checks — `shellcheck`, `markdownlint`, `yamllint`, `hadolint` (run in CI), plus `docker compose config` and `caddy validate` where touched (manual, not in CI); (2) coverage — N/A for pure infra/docs diffs, state it explicitly; doc coverage: every new service has a README; (3) local SonarQube gate (`sonar-scanner -Dsonar.qualitygate.wait=true`, project `bb-homelab`; the server is not reachable from CI); (4) `gitleaks` + manual diff read for secrets; (5) QA on the real artefact — see [docs/architecture/qa/](docs/architecture/qa/README.md).
+- **Merge-approval question** (exact wording, only after CI, the local SonarQube gate and every open comment are verified): « J'ai contrôlé, et je te confirme que toute la CI est verte, SonarQube est lui aussi content, et tous les commentaires ouverts dans l'onglet conversation dans GitHub ont bel et bien eu une réponse inline, dans ce cas m'autorises-tu à merger cette PR ? »
+
+### Chats and decisions
+
+- One open chat per project, one task per chat, named `#N <issue title>`; the next chat opens only when the current task is fully finished (PRs merged, Must/Should done, Nice filed as issues, `PROJECT_LOG.md` and memory updated).
+- Every choice between several solutions is preceded by an MCDA matrix (weights sum to 100, scores 0–5, totals /500) and asked with ranked clickable options, `(Recommandé)` on the top score only, plus a final « Approfondir l'analyse et expliquer » option.
 
 ### Pull requests
 
@@ -69,9 +80,9 @@ Then append a dated entry to [PROJECT_LOG.md](PROJECT_LOG.md) referencing the PR
 
 ## 5. CI checks
 
-Nine workflows live in [.github/workflows/](.github/workflows/). Actions are pinned by SHA.
+Eight workflows live in [.github/workflows/](.github/workflows/). Actions are pinned by SHA.
 
-Required on `main` (branch protection): `gitleaks`, `shellcheck`, `hadolint`, `markdownlint`, `yamllint`. Also run but not yet required: `sonarcloud`. Public-only (gated by visibility): `codeql`, `dependency-review`, `scorecard`.
+Required on `main` (branch protection): `gitleaks`, `shellcheck`, `hadolint`, `markdownlint`, `yamllint`. Public-only (gated by visibility): `codeql`, `dependency-review`, `scorecard`.
 
 Run locally before pushing:
 
@@ -123,7 +134,7 @@ There is no top-level `Makefile`, `package.json`, or build system — each servi
 
 - **Public repository (since 2026-06-16).** The Public Release Checklist in CONTRIBUTING.md (the source of truth) was satisfied before the flip. Every commit is now world-readable: a leaked secret is public immediately, so rotate-then-scrub is mandatory if one slips in.
 - **No secrets in git.** `.env` and `.env.*` are gitignored. `.env.example` carries placeholders only. Credentials for n8n workflows live in the n8n UI, not in `.env`.
-- **No AI attribution anywhere in tracked files.** No `Co-Authored-By` AI lines, no "generated with …" in PR bodies, commit messages, README, or comments. This applies to every agent — including this one.
+- **AI attribution: allowed, kept sober** (policy aligned on the global one, 2026-10-22). A `Co-Authored-By` trailer on commits and a "Generated with" footer on PR bodies are permitted. Docs, README, `PROJECT_LOG.md` and code comments carry no AI tool or brand names; reviewers appear as `automated review (X)`. Exceptions: see `.claude/rules/security-invariants.md`.
 - Never force-push to `main` or `master`. Never commit `.env`, `*.pem`, `*.key`, `*.crt`.
 
 ## 8. Image and tooling pins
