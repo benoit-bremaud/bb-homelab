@@ -40,7 +40,9 @@ cd services/n8n
 
 Default behaviour:
 
-- Writes to `/var/backups/n8n/n8n-YYYY-MM-DD_HHMMSS.tar.gz`
+- Writes to `/var/backups/n8n/n8n-YYYY-MM-DD_HHMMSS.tar.gz` (script default;
+  the Pi cron below sets `BACKUP_DIR=/home/benoit/backups/n8n`, which the rest of
+  this document uses)
 - Keeps the last 7 archives, deletes older ones.
 - Archive is `chmod 600` (readable only by the user who ran the script).
 
@@ -72,7 +74,7 @@ crontab -e
 ```
 
 Add a nightly run at 03:00 local time. The log goes next to the
-archives (`/var/backups/n8n/backup.log`) so it lives in a directory
+archives (`/home/benoit/backups/n8n/backup.log`) so it lives in a directory
 that the user already owns — no extra setup, no `/var/log` permission
 issue, and the log rotates with the backups when you change
 `BACKUP_DIR` later:
@@ -140,7 +142,7 @@ cd services/n8n
 docker compose down
 
 # 2. Pick the archive you want to restore.
-ARCHIVE=/var/backups/n8n/n8n-2026-04-15_030000.tar.gz
+ARCHIVE=/home/benoit/backups/n8n/n8n-2026-04-15_030000.tar.gz
 
 # 3. The data lives at a fixed host bind-mount path (issue #93).
 VOL_PATH=/mnt/appdata/n8n
@@ -190,7 +192,7 @@ verify a restore end-to-end on a throwaway location:
 
 ```bash
 mkdir -p /tmp/n8n-restore-test
-tar -xzf /var/backups/n8n/$(ls -1t /var/backups/n8n/ | head -n1) \
+tar -xzf /home/benoit/backups/n8n/$(ls -1t /home/benoit/backups/n8n/ | head -n1) \
   -C /tmp/n8n-restore-test
 sqlite3 /tmp/n8n-restore-test/database.sqlite 'PRAGMA integrity_check;'
 # Expected: "ok"
@@ -202,7 +204,7 @@ incident and keep the previous archive as the working copy.
 
 ## Rotation & storage
 
-- Current: 7 daily snapshots on SD (`/var/backups/n8n/`). Size per
+- Current: 7 daily snapshots on SD (`/home/benoit/backups/n8n/`). Size per
   snapshot ≈ size of `/home/node/.n8n/` compressed, typically 5-50 MB
   for a small homelab. 7 × 50 MB = 350 MB max on SD — fine.
 - Target (once HDD C is in): move `BACKUP_DIR` to `/mnt/backup/n8n/`,

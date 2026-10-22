@@ -86,7 +86,9 @@ cd services/vaultwarden
 
 Default behaviour:
 
-- Writes to `/var/backups/vaultwarden/vaultwarden-YYYY-MM-DD_HHMMSS.tar.gz`
+- Writes to `/var/backups/vaultwarden/vaultwarden-YYYY-MM-DD_HHMMSS.tar.gz` (script default;
+  the Pi cron below sets `BACKUP_DIR=/home/benoit/vaultwarden-backups`, which the rest of
+  this document uses)
 - Keeps the last 7 archives, deletes older ones.
 - Archive is `chmod 600` (readable only by the user who ran the script).
 
@@ -175,7 +177,7 @@ cd services/vaultwarden
 docker compose down
 
 # 2. Pick the archive to restore.
-ARCHIVE=/var/backups/vaultwarden/vaultwarden-2026-06-03_030500.tar.gz
+ARCHIVE=/home/benoit/vaultwarden-backups/vaultwarden-2026-06-03_030500.tar.gz
 
 # 3. The data lives at a fixed host bind-mount path.
 VOL_PATH=/mnt/appdata/vaultwarden
@@ -221,7 +223,7 @@ verify a restore end-to-end on a throwaway location:
 
 ```bash
 mkdir -p /tmp/vw-restore-test
-tar -xzf "$(ls -1t /var/backups/vaultwarden/*.tar.gz | head -n1)" \
+tar -xzf "$(ls -1t /home/benoit/vaultwarden-backups/*.tar.gz | head -n1)" \
   -C /tmp/vw-restore-test
 sqlite3 /tmp/vw-restore-test/db.sqlite3 'PRAGMA integrity_check;'
 # Expected: "ok"
@@ -234,7 +236,7 @@ incident and keep the previous archive as the working copy.
 
 ## Rotation & storage
 
-- Current: 7 daily snapshots on SD (`/var/backups/vaultwarden/`). A small
+- Current: 7 daily snapshots on SD (`/home/benoit/vaultwarden-backups/`). A small
   single-user vault compresses to a few MB; 7 × a few MB on SD is
   negligible.
 - Target (once HDD C is in): move `BACKUP_DIR` to
