@@ -11,17 +11,20 @@
 - Verdict (round 1): fix Must Have first · Must 1 · Should 8 · Nice 6 ·
   Disagree 3 — **all Must and Should resolved before push**
 
-## Pre-push gate (head of branch)
+## Pre-merge gate (head SHA 419fa0e, after Codex rounds 1–2)
 
 | Step | Result |
 |---|---|
-| 1 Tests | ✅ `shellcheck` on the 3 scripts · ✅ `pull-backups.sh` run end to end from the PC (both sources, rc 0) · ✅ both Push monitors UP after a real nightly run (crontab live on the Pi) · no application test suite (infra repo, see CLAUDE.md deviation) |
+| 1 Tests | ✅ `shellcheck` on the 3 scripts · ✅ `markdownlint-cli2 '**/*.md'` 0 issues beyond MD060 · ✅ `systemd-analyze --user verify` on both units · YAML: CI `Lint YAML` green (local yamllint install broken) · no application test suite (infra repo, see CLAUDE.md deviation) |
 | 2 Coverage | n/a (no application code) · docs: every new artefact has its doc (`OFFPI-COPY.md`, both `BACKUP.md` sections, `storage/README.md` row) |
 | 3 SonarQube | ✅ `QUALITY GATE STATUS: PASSED` (local instance, project `bb-homelab`) |
-| 4 Secrets | ✅ gitleaks clean (`origin/main..HEAD`) · no tracked `.env` · diff read: push URLs live only in `~/.config/bb-homelab/` on the Pi, usage line uses a `<tailscale-ip>` placeholder |
-| 5 QA pass | skipped (`--push`) — evidence from the live test: `qa/2026-10-23-backup-alert/01-kuma-push-monitors-up.jpg` |
+| 4 Secrets | ✅ gitleaks clean (`--log-opts=--all`, public repo) · no tracked `.env` · diff read: push URLs live only in `~/.config/bb-homelab/` on the Pi, usage line uses a `<tailscale-ip>` placeholder |
+| 5 QA pass | ✅ full: Pi clone switched to the branch, both cron lines run as cron would → `n8n-2026-10-23_005600.tar.gz` (404K) and `vaultwarden-2026-10-23_005600.tar.gz` (32K), `heartbeat sent to Uptime Kuma` in both logs, Kuma heartbeats `UP / OK` at 22:56 UTC · `pull-backups.sh` from the PC rc 0, both archives landed in `600` · screenshots: `qa/2026-10-23-backup-alert/01-kuma-push-monitors-up.jpg`, `02-kuma-after-real-cron-run.jpg` |
 
-- Gate: **GREEN for push**. Merge gate re-run on the merge SHA.
+- Gate: **GREEN — merge authorised**. Bot reviews: Codex only (2 findings,
+  both fixed: `95e0f39`, `419fa0e`); CodeRabbit uninstalled by the owner
+  (paid), Copilot auto-review silent since PR #132 — owner decision
+  2026-10-23: proceed without them.
 
 ## 🔴 Must Have
 
