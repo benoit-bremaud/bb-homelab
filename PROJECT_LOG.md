@@ -1322,3 +1322,48 @@ was done and why, by date.
 - **Follow-ups**: #130 (Dependabot for compose images), #131 (non-root
   and privileges audit), #90 (image scan), #127 (Caddyfile mount).
 - **Refs**: #129, #44, #66, #67, #25
+
+## 2026-10-23
+
+### Homelab audit and recovery (outage since 2026-08-24)
+
+- **What**: every service had been down since 2026-08-24: the appdata
+  disk (`/mnt/appdata`, sda1) dropped off the USB bus, the containers
+  bound to it stopped, and the nightly backups failed every night for
+  two months without anyone knowing. SMART healthy, archive of the disk
+  taken before touching it, then the 10 containers brought back one by
+  one (Vaultwarden, Caddy, certificates, n8n, Uptime Kuma, Jellyfin…).
+  Tailscale re-authenticated on the Pi and on the dev PC.
+- **Lesson**: a backup that fails silently is not a backup. Led to #133
+  below.
+- **Refs**: #133, #47 (USB enclosures), ADR 0004
+
+### PR #135 merged: alert on failed nightly backup and pull archives off the Pi
+
+- **What**: `backup.sh` (n8n, Vaultwarden) sends a success-only heartbeat
+  to an Uptime Kuma Push monitor; 26 h of silence turns the monitor DOWN
+  and alerts on Telegram. The dev PC pulls the archives nightly through
+  `storage/scripts/pull-backups.sh` and a user systemd timer
+  (04:00–04:10, catch-up after boot, three bounded attempts, desktop
+  notification on failure). Docs: `storage/OFFPI-COPY.md`, a failure
+  alert section in both `BACKUP.md`, UML sequence + state diagrams,
+  QA evidence under `docs/architecture/qa/2026-10-23-backup-alert/`.
+- **Decisions**: the PC pulls (the Pi holds no credential for the PC);
+  heartbeat on success only; the push URL stays in
+  `~/.config/bb-homelab/` on the Pi, handed to curl on stdin; archives
+  already copied are never overwritten; no PC-side retention.
+- **Review**: local review round 1 (1 Must + 8 Should applied, 6 Nice
+  filed as #134). `automated review (Should Have)` x3, each verified and
+  fixed: bounded restarts with a single `OnFailure` notification
+  (`RestartMode=direct`), restore sections aligned on the real backup
+  directories, 26 h heartbeat window for the autumn DST night. Only one
+  automated reviewer is active since #132 (the second was removed by the
+  owner, the third no longer posts); owner decision: proceed with it.
+- **Gate**: linters, gitleaks on full history, local SonarQube passed,
+  full QA on the Pi (both cron lines run as cron would, archives
+  written, heartbeats received, pull from the PC rc 0).
+- **Deployed**: Pi crontab updated, both Push monitors live (93600 s),
+  Pi clone on `main`, PC timer enabled.
+- **Closes**: #133 · **Merge**: `b4cdcc5`
+- **Follow-ups**: #134 (Nice to Have), #19 (encrypted off-site copy),
+  full security audit and updates (next brick).
