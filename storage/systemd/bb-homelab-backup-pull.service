@@ -1,0 +1,16 @@
+[Unit]
+Description=Pull bb-homelab nightly backup archives from the Pi
+# Notified once, when the retries below are exhausted (RestartMode=direct
+# skips the intermediate failed states, so OnFailure= fires only then).
+OnFailure=bb-homelab-backup-pull-failed.service
+StartLimitIntervalSec=1h
+StartLimitBurst=3
+
+[Service]
+Type=oneshot
+ExecStart=%h/Documents/02_personal/bb-homelab/storage/scripts/pull-backups.sh
+# A catch-up run right after boot may start before Tailscale is up:
+# up to 3 attempts, 5 min apart.
+Restart=on-failure
+RestartSec=5min
+RestartMode=direct

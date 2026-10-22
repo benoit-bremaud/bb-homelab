@@ -40,7 +40,9 @@ cd services/n8n
 
 Default behaviour:
 
-- Writes to `/var/backups/n8n/n8n-YYYY-MM-DD_HHMMSS.tar.gz`
+- Writes to `/var/backups/n8n/n8n-YYYY-MM-DD_HHMMSS.tar.gz` (script default;
+  the Pi cron below sets `BACKUP_DIR=/home/benoit/backups/n8n`, which the rest of
+  this document uses)
 - Keeps the last 7 archives, deletes older ones.
 - Archive is `chmod 600` (readable only by the user who ran the script).
 
@@ -72,22 +74,27 @@ crontab -e
 ```
 
 Add a nightly run at 03:00 local time. The log goes next to the
-archives (`/var/backups/n8n/backup.log`) so it lives in a directory
+archives (`/home/benoit/backups/n8n/backup.log`) so it lives in a directory
 that the user already owns — no extra setup, no `/var/log` permission
 issue, and the log rotates with the backups when you change
 `BACKUP_DIR` later:
 
 ```cron
-0 3 * * *  /home/benoit/bb-homelab/services/n8n/scripts/backup.sh >> /var/backups/n8n/backup.log 2>&1
+0 3 * * *  KUMA_PUSH_URL="$(cat /home/benoit/.config/bb-homelab/kuma-push-n8n)" BACKUP_DIR=/home/benoit/backups/n8n /home/benoit/bb-homelab/services/n8n/scripts/backup.sh >> /home/benoit/backups/n8n/backup.log 2>&1
 ```
+
+`BACKUP_DIR` must exist before the first run (the `>>` redirect fails
+otherwise). It is also the folder `storage/scripts/pull-backups.sh` reads:
+changing it here means updating `SOURCES` there too. `KUMA_PUSH_URL` is the
+failure alert described below.
 
 Verify with:
 
 ```bash
 crontab -l | grep backup.sh
 # Wait one night, then:
-ls -lt /var/backups/n8n/
-tail -n 20 /var/backups/n8n/backup.log
+ls -lt /home/benoit/backups/n8n/
+tail -n 20 /home/benoit/backups/n8n/backup.log
 ```
 
 If you prefer to keep logs under `/var/log/`, pre-create the file
@@ -98,6 +105,28 @@ silently produces nothing:
 ```bash
 sudo install -o "$USER" -g "$USER" -m 644 /dev/null /var/log/n8n-backup.log
 ```
+
+## Failure alert — Uptime Kuma Push monitor
+
+A failed run sends nothing; a good run pings a Push monitor, which turns
+DOWN and alerts on Telegram after 26 h of silence (issue #133, diagrams in
+[docs/architecture/diagrams/backup/](../../docs/architecture/diagrams/backup/01-sequence.md)).
+
+1. In Uptime Kuma: **Add New Monitor → Push**, name `backup-n8n`,
+   heartbeat interval `93600` s (26 h: one night, plus 1 h for the
+   autumn DST change and 1 h of margin), retries `0`, notification
+   `bb-homelab-alerts`.
+2. Store the push URL outside git, readable by `benoit` only:
+
+   ```bash
+   install -d -m 700 ~/.config/bb-homelab
+   (umask 077; printf '%s' '<push URL>' > ~/.config/bb-homelab/kuma-push-n8n)
+   ```
+
+3. Pass it from the crontab line shown in the cron section above.
+
+The archives are then pulled off the Pi every night, see
+[storage/OFFPI-COPY.md](../../storage/OFFPI-COPY.md).
 
 ## Restore — same host
 
@@ -114,7 +143,7 @@ cd services/n8n
 docker compose down
 
 # 2. Pick the archive you want to restore.
-ARCHIVE=/var/backups/n8n/n8n-2026-04-15_030000.tar.gz
+ARCHIVE=/home/benoit/backups/n8n/n8n-2026-04-15_030000.tar.gz
 
 # 3. The data lives at a fixed host bind-mount path (issue #93).
 VOL_PATH=/mnt/appdata/n8n
@@ -164,7 +193,7 @@ verify a restore end-to-end on a throwaway location:
 
 ```bash
 mkdir -p /tmp/n8n-restore-test
-tar -xzf /var/backups/n8n/$(ls -1t /var/backups/n8n/ | head -n1) \
+tar -xzf /home/benoit/backups/n8n/$(ls -1t /home/benoit/backups/n8n/ | head -n1) \
   -C /tmp/n8n-restore-test
 sqlite3 /tmp/n8n-restore-test/database.sqlite 'PRAGMA integrity_check;'
 # Expected: "ok"
@@ -176,7 +205,7 @@ incident and keep the previous archive as the working copy.
 
 ## Rotation & storage
 
-- Current: 7 daily snapshots on SD (`/var/backups/n8n/`). Size per
+- Current: 7 daily snapshots on SD (`/home/benoit/backups/n8n/`). Size per
   snapshot ≈ size of `/home/node/.n8n/` compressed, typically 5-50 MB
   for a small homelab. 7 × 50 MB = 350 MB max on SD — fine.
 - Target (once HDD C is in): move `BACKUP_DIR` to `/mnt/backup/n8n/`,

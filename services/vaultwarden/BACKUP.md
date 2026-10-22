@@ -86,7 +86,9 @@ cd services/vaultwarden
 
 Default behaviour:
 
-- Writes to `/var/backups/vaultwarden/vaultwarden-YYYY-MM-DD_HHMMSS.tar.gz`
+- Writes to `/var/backups/vaultwarden/vaultwarden-YYYY-MM-DD_HHMMSS.tar.gz` (script default;
+  the Pi cron below sets `BACKUP_DIR=/home/benoit/vaultwarden-backups`, which the rest of
+  this document uses)
 - Keeps the last 7 archives, deletes older ones.
 - Archive is `chmod 600` (readable only by the user who ran the script).
 
@@ -122,17 +124,44 @@ n8n job (03:00) to avoid HDD contention. The log goes next to the
 archives, in a directory the user already owns:
 
 ```cron
-5 3 * * *  /home/benoit/bb-homelab/services/vaultwarden/scripts/backup.sh >> /var/backups/vaultwarden/backup.log 2>&1
+5 3 * * *  KUMA_PUSH_URL="$(cat /home/benoit/.config/bb-homelab/kuma-push-vaultwarden)" BACKUP_DIR=/home/benoit/vaultwarden-backups /home/benoit/bb-homelab/services/vaultwarden/scripts/backup.sh >> /home/benoit/vaultwarden-backups/backup.log 2>&1
 ```
+
+`BACKUP_DIR` must exist before the first run (the `>>` redirect fails
+otherwise). It is also the folder `storage/scripts/pull-backups.sh` reads:
+changing it here means updating `SOURCES` there too. `KUMA_PUSH_URL` is the
+failure alert described below.
 
 Verify with:
 
 ```bash
 crontab -l | grep backup.sh
 # Wait one night, then:
-ls -lt /var/backups/vaultwarden/
-tail -n 20 /var/backups/vaultwarden/backup.log
+ls -lt /home/benoit/vaultwarden-backups/
+tail -n 20 /home/benoit/vaultwarden-backups/backup.log
 ```
+
+## Failure alert — Uptime Kuma Push monitor
+
+A failed run sends nothing; a good run pings a Push monitor, which turns
+DOWN and alerts on Telegram after 26 h of silence (issue #133, diagrams in
+[docs/architecture/diagrams/backup/](../../docs/architecture/diagrams/backup/01-sequence.md)).
+
+1. In Uptime Kuma: **Add New Monitor → Push**, name `backup-vaultwarden`,
+   heartbeat interval `93600` s (26 h: one night, plus 1 h for the
+   autumn DST change and 1 h of margin), retries `0`, notification
+   `bb-homelab-alerts`.
+2. Store the push URL outside git, readable by `benoit` only:
+
+   ```bash
+   install -d -m 700 ~/.config/bb-homelab
+   (umask 077; printf '%s' '<push URL>' > ~/.config/bb-homelab/kuma-push-vaultwarden)
+   ```
+
+3. Pass it from the crontab line shown in the cron section above.
+
+The archives are then pulled off the Pi every night, see
+[storage/OFFPI-COPY.md](../../storage/OFFPI-COPY.md).
 
 ## Restore — same host
 
@@ -149,7 +178,7 @@ cd services/vaultwarden
 docker compose down
 
 # 2. Pick the archive to restore.
-ARCHIVE=/var/backups/vaultwarden/vaultwarden-2026-06-03_030500.tar.gz
+ARCHIVE=/home/benoit/vaultwarden-backups/vaultwarden-2026-06-03_030500.tar.gz
 
 # 3. The data lives at a fixed host bind-mount path.
 VOL_PATH=/mnt/appdata/vaultwarden
@@ -195,7 +224,7 @@ verify a restore end-to-end on a throwaway location:
 
 ```bash
 mkdir -p /tmp/vw-restore-test
-tar -xzf "$(ls -1t /var/backups/vaultwarden/*.tar.gz | head -n1)" \
+tar -xzf "$(ls -1t /home/benoit/vaultwarden-backups/*.tar.gz | head -n1)" \
   -C /tmp/vw-restore-test
 sqlite3 /tmp/vw-restore-test/db.sqlite3 'PRAGMA integrity_check;'
 # Expected: "ok"
@@ -208,7 +237,7 @@ incident and keep the previous archive as the working copy.
 
 ## Rotation & storage
 
-- Current: 7 daily snapshots on SD (`/var/backups/vaultwarden/`). A small
+- Current: 7 daily snapshots on SD (`/home/benoit/vaultwarden-backups/`). A small
   single-user vault compresses to a few MB; 7 × a few MB on SD is
   negligible.
 - Target (once HDD C is in): move `BACKUP_DIR` to

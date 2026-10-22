@@ -13,6 +13,7 @@ that keep media libraries auto-detectable by Jellyfin.
 | SMART health monitoring script | `scripts/smart-check.sh` | issue #11 |
 | Media folder structure conventions | `MEDIA.md` | issue #13 |
 | Nightly backup script | `scripts/nightly-backup.sh` | issue #18 |
+| Off-Pi copy to the dev PC (rsync pull) | `OFFPI-COPY.md` | issue #133 |
 | Off-site restic backup | `RESTIC.md` | issue #19 |
 | Disk redundancy decision | (ADR) | decision #27 |
 
