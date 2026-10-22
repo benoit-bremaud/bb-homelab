@@ -1344,7 +1344,7 @@ was done and why, by date.
   to an Uptime Kuma Push monitor; 26 h of silence turns the monitor DOWN
   and alerts on Telegram. The dev PC pulls the archives nightly through
   `storage/scripts/pull-backups.sh` and a user systemd timer
-  (04:00–04:10, catch-up after boot, three bounded retries, desktop
+  (04:00–04:10, catch-up after boot, three bounded attempts, desktop
   notification on failure). Docs: `storage/OFFPI-COPY.md`, a failure
   alert section in both `BACKUP.md`, UML sequence + state diagrams,
   QA evidence under `docs/architecture/qa/2026-10-23-backup-alert/`.
