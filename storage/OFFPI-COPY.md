@@ -18,7 +18,7 @@ dans [docs/architecture/diagrams/backup/](../docs/architecture/diagrams/backup/0
   la base chiffrée et `rsa_key.pem`.
 - Le timer tourne entre 04:00 et 04:10 ; si le PC était éteint, il rattrape
   la copie à son prochain démarrage (`Persistent=true`) et réessaie 5 min
-  plus tard si le Pi n'est pas encore joignable.
+  plus tard si le Pi n'est pas encore joignable (3 tentatives au plus).
 - Un échec de copie déclenche une notification sur le bureau du PC
   (`OnFailure`), pour ne pas retomber dans une panne silencieuse.
 
