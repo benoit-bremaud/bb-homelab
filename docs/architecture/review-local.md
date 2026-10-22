@@ -21,7 +21,7 @@
 ## 🔴 Must Have
 
 - `CLAUDE.md:21` `[docs]` · still says the security rule is "attribution policy (strict)" · change to "allowed, kept sober".
-- `CONTRIBUTING.md:43,45` `[docs]` · names Copilot in a Category C doc, against the new rule · reword to "an automated reviewer" and keep the UI path as a literal label or "code-review settings".
+- `CONTRIBUTING.md:43,45` `[docs]` · names a specific reviewer tool in a Category C doc, against the new rule · reword to "an automated reviewer" and keep the UI path as a literal label or "code-review settings".
 - `AGENTS.md:3`, `docs-conventions.md:11`, `CLAUDE.md:34-36` `[docs]` · precedence is stated three different ways · state one order once, mirror it.
 - `AGENTS.md:44` vs `docs-conventions.md:23-27` `[docs]` (pre-existing) · "docs in English" contradicts the FR/EN split · "commit messages and code comments in English; docs follow the FR/EN split".
 
@@ -38,13 +38,13 @@
 
 - `pr-workflow` description `[docs]` · "strict 6-step merge gate" now sits next to a pre-merge gate: add one sentence on how they chain.
 - `AGENTS.md` §4 `[docs]` · merge question copied in three places (AGENTS, skill, CONTRIBUTING summary) · keep the verbatim text in the skill only; add "if one fails, say which" for parity.
-- `pr-workflow` merge gate step 2 `[docs]` · "Copilot or codex" · "the automated reviewers".
+- `pr-workflow` merge gate step 2 `[docs]` · names two reviewer tools · "the automated reviewers".
 - `pr-workflow` post-merge `[docs]` · memory compression restated · link to the global source instead.
 - `qa/README.md` `[docs]` · step 1 has no command for checking relative links.
 
 ## ⚪ Disagree / Intentional
 
-- `pr-workflow:42` `[docs]` · `.codex` filename and "Copilot or codex" in a Category B skill · covered by the security-invariants exceptions.
+- `pr-workflow:42` `[docs]` · a literal artefact filename and reviewer tool names in a Category B skill · covered by the security-invariants exceptions.
 - "SonarCloud" vs "SonarQube" · the repo runs SonarCloud, the global rule says SonarQube · kept as is, both name the same gate.
 
 ## Per-dimension summary

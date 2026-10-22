@@ -1307,6 +1307,11 @@ was done and why, by date.
   config validation and a README per service (no application code).
 - **Review**: local review before push (`docs/architecture/review-local.md`):
   4 Must and 6 Should applied, 5 Nice left to the owner.
+  PR review round 1 (`automated review (Should Have)` x4, all verified
+  and validated one by one): the `.env*` secret gate now excludes the
+  `.env.example` templates; an evidence-only final commit no longer
+  re-runs the gate; review artefacts are Category C (English);
+  reviewer tool names removed from the review report.
 - **Follow-ups**: #130 (Dependabot for compose images), #131 (non-root
   and privileges audit), #90 (image scan), #127 (Caddyfile mount).
 - **Refs**: #129, #44, #66, #67, #25

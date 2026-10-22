@@ -27,11 +27,13 @@ rules:
   - `bootstrap/*.md`, `network/*.md`, `services/*/README.md`,
     `storage/*.md`
   - ADRs in `docs/decisions/`
-  - `docs/architecture/**` (QA procedure and `report.md` evidence)
+  - `docs/architecture/**`, except the review artefacts below
 - **Category B — agent-facing : English**
   - `AGENTS.md` (read by any AI tooling), `CLAUDE.md`
   - The modular rules in this `.claude/rules/` directory
 - **Category C — workflow / audit artifacts : English**
+  - `docs/architecture/review-local.md` and the `report.md` files under
+    `docs/architecture/qa/` (generated in English by `/review-local`)
   - `CONTRIBUTING.md` (referenced from AGENTS.md, kept in sync with EN
     commit conventions)
   - `PROJECT_LOG.md` (references EN commit messages and PR titles;

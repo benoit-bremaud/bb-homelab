@@ -71,7 +71,10 @@ not run, say so explicitly.
 ## Pre-merge gate — five steps, on the head SHA, all green
 
 Any new commit re-runs it. Record numbers and evidence in the review
-report.
+report. The only exception is a final evidence-only commit: if it touches
+nothing outside `docs/architecture/qa/**` and
+`docs/architecture/review-local.md`, it does not re-run the gate (any other
+file in it does).
 
 1. **Checks, full not partial**: `shellcheck`, `markdownlint-cli2`,
    `yamllint`, `hadolint` (run in CI), plus `docker compose config`
@@ -80,7 +83,9 @@ report.
    coverage: every new or changed service has an up-to-date README.
 3. **SonarCloud gate** passed on that SHA.
 4. **Secrets**: `gitleaks` (full history, the repo is public), no
-   tracked `.env*`, manual read of the diff for keys, tokens, IDs.
+   tracked `.env` or `.env.*` except the `.env.example` templates
+   (`git ls-files '.env*' '**/.env*' | grep -v '\.env\.example$'` must
+   print nothing), manual read of the diff for keys, tokens, IDs.
 5. **QA on the real artefact**: see
    [docs/architecture/qa/README.md](../../../docs/architecture/qa/README.md).
 
