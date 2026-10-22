@@ -1,0 +1,6 @@
+[Unit]
+Description=Desktop notification when the bb-homelab backup pull fails
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/notify-send --urgency=critical "bb-homelab backup pull failed" "journalctl --user -u bb-homelab-backup-pull.service"

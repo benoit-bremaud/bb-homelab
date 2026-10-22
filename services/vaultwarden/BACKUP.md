@@ -122,18 +122,22 @@ n8n job (03:00) to avoid HDD contention. The log goes next to the
 archives, in a directory the user already owns:
 
 ```cron
-5 3 * * *  /home/benoit/bb-homelab/services/vaultwarden/scripts/backup.sh >> /var/backups/vaultwarden/backup.log 2>&1
+5 3 * * *  KUMA_PUSH_URL="$(cat /home/benoit/.config/bb-homelab/kuma-push-vaultwarden)" BACKUP_DIR=/home/benoit/vaultwarden-backups /home/benoit/bb-homelab/services/vaultwarden/scripts/backup.sh >> /home/benoit/vaultwarden-backups/backup.log 2>&1
 ```
+
+`BACKUP_DIR` must exist before the first run (the `>>` redirect fails
+otherwise). It is also the folder `storage/scripts/pull-backups.sh` reads:
+changing it here means updating `SOURCES` there too. `KUMA_PUSH_URL` is the
+failure alert described below.
 
 Verify with:
 
 ```bash
 crontab -l | grep backup.sh
 # Wait one night, then:
-ls -lt /var/backups/vaultwarden/
-tail -n 20 /var/backups/vaultwarden/backup.log
+ls -lt /home/benoit/vaultwarden-backups/
+tail -n 20 /home/benoit/vaultwarden-backups/backup.log
 ```
-
 
 ## Failure alert — Uptime Kuma Push monitor
 
@@ -142,7 +146,8 @@ DOWN and alerts on Telegram after 25 h of silence (issue #133, diagrams in
 [docs/architecture/diagrams/backup/](../../docs/architecture/diagrams/backup/01-sequence.md)).
 
 1. In Uptime Kuma: **Add New Monitor → Push**, name `backup-vaultwarden`,
-   heartbeat interval `90000` s (25 h), notification `bb-homelab-alerts`.
+   heartbeat interval `90000` s (25 h), retries `0`, notification
+   `bb-homelab-alerts`.
 2. Store the push URL outside git, readable by `benoit` only:
 
    ```bash
@@ -150,11 +155,7 @@ DOWN and alerts on Telegram after 25 h of silence (issue #133, diagrams in
    (umask 077; printf '%s' '<push URL>' > ~/.config/bb-homelab/kuma-push-vaultwarden)
    ```
 
-3. Pass it from the crontab line:
-
-   ```cron
-   5 3 * * *  KUMA_PUSH_URL="$(cat /home/benoit/.config/bb-homelab/kuma-push-vaultwarden)" BACKUP_DIR=/home/benoit/vaultwarden-backups /home/benoit/bb-homelab/services/vaultwarden/scripts/backup.sh >> /home/benoit/vaultwarden-backups/backup.log 2>&1
-   ```
+3. Pass it from the crontab line shown in the cron section above.
 
 The archives are then pulled off the Pi every night, see
 [storage/OFFPI-COPY.md](../../storage/OFFPI-COPY.md).

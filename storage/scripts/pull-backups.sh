@@ -25,15 +25,28 @@ log() { printf '[pull-backups] %s\n' "$*"; }
 
 command -v rsync >/dev/null || { log "ERROR: rsync not found in PATH"; exit 1; }
 
+SSH_OPTS="ssh -o BatchMode=yes -o ConnectTimeout=15 -o ForwardAgent=no -o ClearAllForwardings=yes"
+
+# pull <src> <dst> <pattern> [extra rsync flags]
+pull() {
+  rsync -a --no-links --chmod=D700,F600 -e "${SSH_OPTS}" "${@:4}" \
+    --include="$3" --exclude='*' "${PI_HOST}:$1" "$2/"
+}
+
 umask 077
 mkdir -p "${DEST}" && chmod 700 "${DEST}"
+rc=0
 for entry in "${SOURCES[@]}"; do
   src="${entry%%:*}"
   dst="${DEST}/${entry##*:}"
   mkdir -p "${dst}"
   log "pulling ${PI_HOST}:${src} -> ${dst}"
-  rsync -a --chmod=D700,F600 -e "ssh -o BatchMode=yes -o ConnectTimeout=15" \
-    --include='*.tar.gz' --include='*.log' --exclude='*' \
-    "${PI_HOST}:${src}" "${dst}/"
+  # Archives are immutable once written: never let the Pi replace one.
+  # Logs are appended nightly, so they are refreshed.
+  if ! pull "${src}" "${dst}" '*.tar.gz' --ignore-existing \
+     || ! pull "${src}" "${dst}" '*.log'; then
+    log "ERROR: pull of ${src} failed"; rc=1
+  fi
 done
-log "done"
+if [ "${rc}" -eq 0 ]; then log "done"; else log "finished with errors"; fi
+exit "${rc}"

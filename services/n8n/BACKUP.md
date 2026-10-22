@@ -78,16 +78,21 @@ issue, and the log rotates with the backups when you change
 `BACKUP_DIR` later:
 
 ```cron
-0 3 * * *  /home/benoit/bb-homelab/services/n8n/scripts/backup.sh >> /var/backups/n8n/backup.log 2>&1
+0 3 * * *  KUMA_PUSH_URL="$(cat /home/benoit/.config/bb-homelab/kuma-push-n8n)" BACKUP_DIR=/home/benoit/backups/n8n /home/benoit/bb-homelab/services/n8n/scripts/backup.sh >> /home/benoit/backups/n8n/backup.log 2>&1
 ```
+
+`BACKUP_DIR` must exist before the first run (the `>>` redirect fails
+otherwise). It is also the folder `storage/scripts/pull-backups.sh` reads:
+changing it here means updating `SOURCES` there too. `KUMA_PUSH_URL` is the
+failure alert described below.
 
 Verify with:
 
 ```bash
 crontab -l | grep backup.sh
 # Wait one night, then:
-ls -lt /var/backups/n8n/
-tail -n 20 /var/backups/n8n/backup.log
+ls -lt /home/benoit/backups/n8n/
+tail -n 20 /home/benoit/backups/n8n/backup.log
 ```
 
 If you prefer to keep logs under `/var/log/`, pre-create the file
@@ -99,7 +104,6 @@ silently produces nothing:
 sudo install -o "$USER" -g "$USER" -m 644 /dev/null /var/log/n8n-backup.log
 ```
 
-
 ## Failure alert — Uptime Kuma Push monitor
 
 A failed run sends nothing; a good run pings a Push monitor, which turns
@@ -107,7 +111,8 @@ DOWN and alerts on Telegram after 25 h of silence (issue #133, diagrams in
 [docs/architecture/diagrams/backup/](../../docs/architecture/diagrams/backup/01-sequence.md)).
 
 1. In Uptime Kuma: **Add New Monitor → Push**, name `backup-n8n`,
-   heartbeat interval `90000` s (25 h), notification `bb-homelab-alerts`.
+   heartbeat interval `90000` s (25 h), retries `0`, notification
+   `bb-homelab-alerts`.
 2. Store the push URL outside git, readable by `benoit` only:
 
    ```bash
@@ -115,11 +120,7 @@ DOWN and alerts on Telegram after 25 h of silence (issue #133, diagrams in
    (umask 077; printf '%s' '<push URL>' > ~/.config/bb-homelab/kuma-push-n8n)
    ```
 
-3. Pass it from the crontab line:
-
-   ```cron
-   0 3 * * *  KUMA_PUSH_URL="$(cat /home/benoit/.config/bb-homelab/kuma-push-n8n)" BACKUP_DIR=/home/benoit/backups/n8n /home/benoit/bb-homelab/services/n8n/scripts/backup.sh >> /home/benoit/backups/n8n/backup.log 2>&1
-   ```
+3. Pass it from the crontab line shown in the cron section above.
 
 The archives are then pulled off the Pi every night, see
 [storage/OFFPI-COPY.md](../../storage/OFFPI-COPY.md).

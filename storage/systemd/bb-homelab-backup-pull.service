@@ -1,8 +1,10 @@
 [Unit]
 Description=Pull bb-homelab nightly backup archives from the Pi
-Wants=network-online.target
-After=network-online.target
+OnFailure=bb-homelab-backup-pull-failed.service
 
 [Service]
 Type=oneshot
 ExecStart=%h/Documents/02_personal/bb-homelab/storage/scripts/pull-backups.sh
+# A catch-up run right after boot may start before Tailscale is up.
+Restart=on-failure
+RestartSec=5min

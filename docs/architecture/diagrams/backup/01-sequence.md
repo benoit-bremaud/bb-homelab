@@ -37,16 +37,18 @@ sequenceDiagram
     bk->>kuma: GET KUMA_PUSH_URL?status=up
   else échec (conteneur arrêté, disque absent…)
     bk-->>cron: code de sortie ≠ 0, rien n'est envoyé
+    Note over kuma: aucun signal depuis 25 h → sonde DOWN
+    kuma->>tg: alerte « sauvegarde n8n / Vaultwarden manquante »
   end
-  Note over kuma: aucun signal depuis 25 h → sonde DOWN
-  kuma->>tg: alerte « sauvegarde n8n / Vaultwarden manquante »
-  pc->>sd: rsync (SSH, lecture seule) vers ~/Documents/02_personal/bb-homelab-backups
+  pc->>sd: rsync (SSH, clé du PC) vers ~/Documents/02_personal/bb-homelab-backups
   Note over pc: tourne au réveil du PC si la nuit a été manquée (Persistent=true)
+  Note over pc: en cas d'échec, notification locale sur le PC (OnFailure)
 ```
 
 ## Notes
 
 - Le Pi pousse vers Uptime Kuma, qui tourne sur le même Pi : si le Pi entier
-  tombe, la sonde Healthchecks.io existante (ADR 0004) couvre ce cas.
+  tombe, aucune de ces sondes ne parle. Ce cas relève de la supervision
+  externe prévue par l'ADR 0004, pas de ce dispositif.
 - L'URL de la sonde contient un jeton : elle reste dans un `.env` ignoré par
   git sur le Pi.

@@ -1,52 +1,99 @@
-# Local review — bb-homelab (branch diff docs/129-align-rules-with-global, uncommitted)
+# Local review — bb-homelab (branch `feat/133-backup-alert-offpi`)
 
-- Date: 2026-10-22
-- Commit: 0127b7e (base) + uncommitted changes
-- Scope: rules, skills and docs alignment (issue #129), mode `--push`
-- Checks run: docs · security · correctness (design and tests: not applicable, no code)
-- Verdict: fix Must Have first · Must 4 · Should 6 · Nice 5 (all Must and Should applied after the review)
+- Date: 2026-10-23
+- Commit: 0301986 (round 1) → fixes applied in the follow-up commit
+- Scope: branch diff `origin/main...HEAD` — backup heartbeat (n8n,
+  Vaultwarden), off-Pi rsync pull (script + user systemd units), backup
+  docs, UML sequence + state diagrams, QA evidence
+- Checks run: design · docs · tests · security · correctness · `--push`
+  mode (no QA pass; the live QA happened on the Pi, see
+  `docs/architecture/qa/2026-10-23-backup-alert/`)
+- Verdict (round 1): fix Must Have first · Must 1 · Should 8 · Nice 6 ·
+  Disagree 3 — **all Must and Should resolved before push**
 
-## Pre-merge gate (head SHA not yet committed)
+## Pre-push gate (head of branch)
 
 | Step | Result |
 |---|---|
-| 1 Tests | N/A: no test suite in this repo; linters run instead (markdownlint: only the known MD060 false positive; yamllint not runnable locally, no YAML changed) |
-| 2 Coverage | tests N/A (docs/rules diff) · docs: every link resolves, no new service |
-| 3 SonarQube | ✅ local instance, project `bb-homelab`: QUALITY GATE PASSED (CI scan retired with SonarCloud) |
-| 4 Secrets | ✅ gitleaks clean (working tree and origin/main..HEAD) · no tracked .env · diff read: nothing sensitive |
-| 5 QA pass | skipped (`--push` mode) |
+| 1 Tests | ✅ `shellcheck` on the 3 scripts · ✅ `pull-backups.sh` run end to end from the PC (both sources, rc 0) · ✅ both Push monitors UP after a real nightly run (crontab live on the Pi) · no application test suite (infra repo, see CLAUDE.md deviation) |
+| 2 Coverage | n/a (no application code) · docs: every new artefact has its doc (`OFFPI-COPY.md`, both `BACKUP.md` sections, `storage/README.md` row) |
+| 3 SonarQube | ✅ `QUALITY GATE STATUS: PASSED` (local instance, project `bb-homelab`) |
+| 4 Secrets | ✅ gitleaks clean (`origin/main..HEAD`) · no tracked `.env` · diff read: push URLs live only in `~/.config/bb-homelab/` on the Pi, usage line uses a `<tailscale-ip>` placeholder |
+| 5 QA pass | skipped (`--push`) — evidence from the live test: `qa/2026-10-23-backup-alert/01-kuma-push-monitors-up.jpg` |
 
-- Gate: not evaluated (push review only)
+- Gate: **GREEN for push**. Merge gate re-run on the merge SHA.
 
 ## 🔴 Must Have
 
-- `CLAUDE.md:21` `[docs]` · still says the security rule is "attribution policy (strict)" · change to "allowed, kept sober".
-- `CONTRIBUTING.md:43,45` `[docs]` · names a specific reviewer tool in a Category C doc, against the new rule · reword to "an automated reviewer" and keep the UI path as a literal label or "code-review settings".
-- `AGENTS.md:3`, `docs-conventions.md:11`, `CLAUDE.md:34-36` `[docs]` · precedence is stated three different ways · state one order once, mirror it.
-- `AGENTS.md:44` vs `docs-conventions.md:23-27` `[docs]` (pre-existing) · "docs in English" contradicts the FR/EN split · "commit messages and code comments in English; docs follow the FR/EN split".
+- `services/vaultwarden/scripts/backup.sh:41` `[docs|correctness]` ·
+  the `(use once HDD C lands — issue #19)` comment ended up under the
+  new `KUMA_PUSH_URL` block instead of the `BACKUP_DIR` example ·
+  **fixed**: comment moved back under `KEEP=14`.
 
 ## 🟡 Should Have
 
-- `AGENTS.md` §7 `[docs][security]` · attribution bullet omits the exceptions listed in security-invariants.md · add a pointer to that file.
-- `security-invariants.md` `[security]` · say that PR comments and PROJECT_LOG stay free of tool names; footer is for PR descriptions only, trailer for commits.
-- `docs-conventions.md:23-27` `[docs]` · `docs/architecture/qa/` and `docs/architecture/**` missing from Category A.
-- `docs-conventions.md:12-16`, `CLAUDE.md` `[docs][security]` · "to be confirmed by the owner" is an open question inside a rule, and invites a visibility flip · record the decision or link an issue; add "never change visibility without an explicit owner request".
-- `AGENTS.md:49`, `pr-workflow` `[docs]` · `docker compose config` and `caddy validate` are manual, not CI · say so; list tests/doc-coverage substitutions as known deviations.
-- `CLAUDE.md:70`, `AGENTS.md:46` `[docs]` · `review-local` is a command in `~/.claude/commands/`, not a skill · write `/review-local`.
+- `services/*/scripts/backup.sh` heartbeat `[security]` · push URL on the
+  `curl` command line is visible in `ps` · **fixed**: URL handed to curl
+  through `-K -` on stdin, `--retry 2` added.
+- `services/*/scripts/backup.sh` heartbeat `[correctness]` · the script
+  rewrote the stored URL (`%%\?*` + hard-coded query) · **fixed**: URL
+  called as stored (works for Kuma and Healthchecks.io alike).
+- `storage/scripts/pull-backups.sh` `[security]` · archives could be
+  overwritten by the Pi, SSH agent forwarding not explicitly off,
+  symlinks followed · **fixed**: `--ignore-existing` for `*.tar.gz`,
+  `-o ForwardAgent=no -o ClearAllForwardings=yes`, `--no-links`,
+  rsync ≥ 3.2.5 requirement documented (PC runs 3.4.1).
+- `storage/scripts/pull-backups.sh` `[correctness]` · first failing
+  source aborted the loop · **fixed**: loop continues, exit code 1 at
+  the end.
+- `storage/systemd/bb-homelab-backup-pull.service` `[design]` ·
+  `network-online.target` is meaningless for a user unit; no retry, no
+  signal on failure · **fixed**: removed, `Restart=on-failure` +
+  `RestartSec=5min`, `OnFailure=` → new
+  `bb-homelab-backup-pull-failed.service` (desktop notification).
+- `services/*/BACKUP.md` `[docs]` · two contradicting cron recipes
+  (`/var/backups/…` vs `~/backups/…`), MD012 double blank line, retries
+  not stated · **fixed**: one real cron line, `BACKUP_DIR` ↔ `SOURCES`
+  cross-reference, retries `0`.
+- `docs/architecture/diagrams/backup/01-sequence.md` `[docs]` · "lecture
+  seule" was wrong (the key is a normal shell key), Healthchecks.io
+  claim contradicted ADR 0004, DOWN note sat outside the failure branch
+  · **fixed**.
+- `storage/OFFPI-COPY.md` `[docs]` · jitter window, which files are
+  copied, no PC-side retention, failure notification · **fixed**.
 
-## 🔵 Nice to Have
+## 🔵 Nice to Have (filed as a follow-up issue)
 
-- `pr-workflow` description `[docs]` · "strict 6-step merge gate" now sits next to a pre-merge gate: add one sentence on how they chain.
-- `AGENTS.md` §4 `[docs]` · merge question copied in three places (AGENTS, skill, CONTRIBUTING summary) · keep the verbatim text in the skill only; add "if one fails, say which" for parity.
-- `pr-workflow` merge gate step 2 `[docs]` · names two reviewer tools · "the automated reviewers".
-- `pr-workflow` post-merge `[docs]` · memory compression restated · link to the global source instead.
-- `qa/README.md` `[docs]` · step 1 has no command for checking relative links.
+- `services/n8n/scripts/backup.sh` `[correctness]` · pre-existing:
+  `KEEP=0` not guarded like the Vaultwarden script.
+- `storage/systemd/*.service` `[security]` · hardening directives
+  (`ProtectSystem`, `PrivateTmp`…) for the user units.
+- `storage/OFFPI-COPY.md` `[docs]` · `loginctl enable-linger` note and a
+  reminder that the PC disk is the copy's only protection (encrypt).
+- `services/*/BACKUP.md` `[docs]` · Kuma notification settings worth
+  recording (resend interval, "important" flag).
+- `services/*/scripts/backup.sh` `[design]` · heartbeat block duplicated
+  twice; extract to a shared helper on the third copy.
+- `storage/scripts/pull-backups.sh` `[correctness]` · `--retry` on the
+  rsync side is not available; a second timer pass could cover a Pi
+  that boots late.
 
 ## ⚪ Disagree / Intentional
 
-- `pr-workflow:42` `[docs]` · a literal artefact filename and reviewer tool names in a Category B skill · covered by the security-invariants exceptions.
-- "SonarCloud" vs "SonarQube" · the repo runs SonarCloud, the global rule says SonarQube · kept as is, both name the same gate.
+- heartbeat block duplicated in two scripts `[design]` · rule of three;
+  a helper now would be a speculative abstraction (KISS/YAGNI).
+- PC → Pi pull direction `[security]` · intentional: the Pi holds no
+  credential for the PC, so a compromised Pi cannot reach the copy
+  (documented in `OFFPI-COPY.md` and the sequence diagram).
+- no ADR `[docs]` · the feature applies ADR 0004 (monitoring) and the
+  backup conventions already in place; the UML diagrams carry the
+  decisions.
 
 ## Per-dimension summary
 
-- Design: N/A, no code · Docs: stale line, one brand mention, two contradictions · Tests: N/A · Security: no weakened invariant, merge sentence identical to the global one, no secret · Correctness: links and frontmatter valid.
+- Design: units and script stay flat and single-purpose; `pull()` helper
+  removes the only real duplication · Docs: FR docs complete, one cron
+  recipe per service · Tests: scripts exercised for real (Pi cron run,
+  PC pull) · Security: token off the command line, pull hardened, no
+  secret in git · Correctness: loop continues on failure, exit code
+  propagated to systemd.
