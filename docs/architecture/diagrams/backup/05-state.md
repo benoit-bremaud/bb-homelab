@@ -1,7 +1,8 @@
 # Diagramme d'état — sonde Push d'une sauvegarde nocturne
 
 > **Fonctionnalité** : issue #133 — alerte en cas d'échec + copie hors du Pi
-> **Décisions capturées** : délai de 25 h (une nuit + 1 h de marge), une
+> **Décisions capturées** : délai de 26 h (une nuit, + 1 h pour le passage à l'heure
+> d'hiver, + 1 h de marge), une
 > seule alerte par passage à DOWN, un message de retour à la normale
 
 ## Contexte
@@ -17,7 +18,7 @@ stateDiagram-v2
   [*] --> EnAttente: sonde créée
   EnAttente --> UP: premier signal reçu
   UP --> UP: signal reçu (nuit suivante)
-  UP --> DOWN: 25 h sans signal
+  UP --> DOWN: 26 h sans signal
   DOWN --> DOWN: toujours aucun signal (pas de nouvelle alerte)
   DOWN --> UP: signal reçu / message « rétabli »
   UP --> EnPause: maintenance volontaire

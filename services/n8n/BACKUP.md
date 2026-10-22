@@ -109,11 +109,12 @@ sudo install -o "$USER" -g "$USER" -m 644 /dev/null /var/log/n8n-backup.log
 ## Failure alert — Uptime Kuma Push monitor
 
 A failed run sends nothing; a good run pings a Push monitor, which turns
-DOWN and alerts on Telegram after 25 h of silence (issue #133, diagrams in
+DOWN and alerts on Telegram after 26 h of silence (issue #133, diagrams in
 [docs/architecture/diagrams/backup/](../../docs/architecture/diagrams/backup/01-sequence.md)).
 
 1. In Uptime Kuma: **Add New Monitor → Push**, name `backup-n8n`,
-   heartbeat interval `90000` s (25 h), retries `0`, notification
+   heartbeat interval `93600` s (26 h: one night, plus 1 h for the
+   autumn DST change and 1 h of margin), retries `0`, notification
    `bb-homelab-alerts`.
 2. Store the push URL outside git, readable by `benoit` only:
 

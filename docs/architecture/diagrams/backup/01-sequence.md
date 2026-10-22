@@ -37,7 +37,7 @@ sequenceDiagram
     bk->>kuma: GET KUMA_PUSH_URL?status=up
   else échec (conteneur arrêté, disque absent…)
     bk-->>cron: code de sortie ≠ 0, rien n'est envoyé
-    Note over kuma: aucun signal depuis 25 h → sonde DOWN
+    Note over kuma: aucun signal depuis 26 h → sonde DOWN
     kuma->>tg: alerte « sauvegarde n8n / Vaultwarden manquante »
   end
   pc->>sd: rsync (SSH, clé du PC) vers ~/Documents/02_personal/bb-homelab-backups
