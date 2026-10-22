@@ -40,9 +40,9 @@ Nobody (including admins) can:
   `Lint YAML` (yamllint).
 - Merge a PR whose branch is not up-to-date with `main` (strict mode).
 
-**Reviews**: Copilot is configured as the default code reviewer
+**Reviews**: an automated code reviewer is configured
 (auto-reviews every PR). This is a GitHub repo setting, not code —
-verify or change it in **Settings → Code review → Copilot**.
+verify or change it in the repository **Settings → Code review** page.
 Review comments are treated per the procedure below (Must Have /
 Should Have / Nice to Have / Disagree), but reviews are **not
 blocking** — a solo developer cannot self-approve on GitHub, so
@@ -94,3 +94,13 @@ rationale. Place new content in the layer it belongs to:
 - Prune remote refs: `git remote prune origin`
 - Update [PROJECT_LOG.md](PROJECT_LOG.md) with a dated entry summarising
   the change and the PR number.
+
+## Gates before push and merge
+
+- **Before every push**: local review of `origin/main...HEAD`, every
+  Must Have fixed (no exception for small diffs).
+- **Before every merge**, on the head SHA: full linters and config
+  validation, doc coverage, SonarCloud gate, secrets scan, and a QA
+  pass with evidence in [docs/architecture/qa/](docs/architecture/qa/README.md).
+
+Details: [AGENTS.md](AGENTS.md) §4 and the `pr-workflow` skill.

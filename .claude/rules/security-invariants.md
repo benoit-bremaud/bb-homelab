@@ -6,17 +6,30 @@ everywhere, not just to specific file types. It extends the
 agent-agnostic brief in [AGENTS.md](../../AGENTS.md) §7 and the
 global rules in `~/.claude/CLAUDE.md`.
 
-## AI attribution — STRICT
+## AI attribution — allowed, kept sober
 
-**Never** add anywhere tracked in git:
+Policy aligned on the global one on 2026-10-22 (it was STRICT before;
+the global policy was reversed on 2026-07-02 — transparency over
+concealment). Attribution is permitted, never mandatory, and never
+replaces real authorship of decisions.
 
-- `Co-Authored-By` lines mentioning AI tooling
-- "Generated with …", "Made with AI", or similar footers
-- Any mention of `Claude`, `Copilot`, `GPT`, `Codex`, or other AI
-  brand names in commits, PR titles/bodies/comments, code comments,
-  README/CONTRIBUTING/PROJECT_LOG entries, or any other tracked file
+Allowed:
 
-Exceptions are limited to:
+- A `Co-Authored-By` AI trailer on commits (the standard harness
+  trailer)
+- A "Generated with …" footer on PR bodies
+
+The trailer belongs to commits and the footer to PR descriptions only:
+PR comments and commit bodies name no tool beyond them.
+
+Kept out of the documentation, so the audit trail stays about the
+infrastructure and not the tooling:
+
+- `README.md`, `CONTRIBUTING.md`, `ARCHITECTURE.md`, ADRs, service
+  docs, code comments and `PROJECT_LOG.md` carry no AI tool or brand
+  names (`Claude`, `Copilot`, `GPT`, `Codex`…)
+
+Exceptions to that last rule:
 
 - This file and `CLAUDE.md` / `.claude/rules/` / `.claude/skills/`
   (Category B — agent instructions, where naming tools is necessary
