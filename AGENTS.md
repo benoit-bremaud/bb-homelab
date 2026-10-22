@@ -46,8 +46,8 @@ When adding something, ask: which layer does it belong to? If unclear, write an 
 ### Pre-push and pre-merge gates
 
 - **Before every push** (no trivial-diff exception): a local read-only review of `origin/main...HEAD`, findings classified Must / Should / Nice / Disagree, every Must Have fixed. Claude Code: command `/review-local`.
-- **Before every merge**, on the head SHA being merged, all green or no merge: (1) full checks — `shellcheck`, `markdownlint`, `yamllint`, `hadolint` (run in CI), plus `docker compose config` and `caddy validate` where touched (manual, not in CI); (2) coverage — N/A for pure infra/docs diffs, state it explicitly; doc coverage: every new service has a README; (3) SonarCloud gate; (4) `gitleaks` + manual diff read for secrets; (5) QA on the real artefact — see [docs/architecture/qa/](docs/architecture/qa/README.md).
-- **Merge-approval question** (exact wording, only after CI, SonarCloud and every open comment are verified): « J'ai contrôlé, et je te confirme que toute la CI est verte, SonarQube est lui aussi content, et tous les commentaires ouverts dans l'onglet conversation dans GitHub ont bel et bien eu une réponse inline, dans ce cas m'autorises-tu à merger cette PR ? »
+- **Before every merge**, on the head SHA being merged, all green or no merge: (1) full checks — `shellcheck`, `markdownlint`, `yamllint`, `hadolint` (run in CI), plus `docker compose config` and `caddy validate` where touched (manual, not in CI); (2) coverage — N/A for pure infra/docs diffs, state it explicitly; doc coverage: every new service has a README; (3) local SonarQube gate (`sonar-scanner -Dsonar.qualitygate.wait=true`, project `bb-homelab`; the server is not reachable from CI); (4) `gitleaks` + manual diff read for secrets; (5) QA on the real artefact — see [docs/architecture/qa/](docs/architecture/qa/README.md).
+- **Merge-approval question** (exact wording, only after CI, the local SonarQube gate and every open comment are verified): « J'ai contrôlé, et je te confirme que toute la CI est verte, SonarQube est lui aussi content, et tous les commentaires ouverts dans l'onglet conversation dans GitHub ont bel et bien eu une réponse inline, dans ce cas m'autorises-tu à merger cette PR ? »
 
 ### Chats and decisions
 
@@ -80,9 +80,9 @@ Then append a dated entry to [PROJECT_LOG.md](PROJECT_LOG.md) referencing the PR
 
 ## 5. CI checks
 
-Nine workflows live in [.github/workflows/](.github/workflows/). Actions are pinned by SHA.
+Eight workflows live in [.github/workflows/](.github/workflows/). Actions are pinned by SHA.
 
-Required on `main` (branch protection): `gitleaks`, `shellcheck`, `hadolint`, `markdownlint`, `yamllint`. Also run but not yet required: `sonarcloud`. Public-only (gated by visibility): `codeql`, `dependency-review`, `scorecard`.
+Required on `main` (branch protection): `gitleaks`, `shellcheck`, `hadolint`, `markdownlint`, `yamllint`. Public-only (gated by visibility): `codeql`, `dependency-review`, `scorecard`.
 
 Run locally before pushing:
 

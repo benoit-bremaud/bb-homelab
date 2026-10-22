@@ -52,10 +52,9 @@ requiring an approving review would cause a lockout.
 (`enforce_admins: true`). If a merge is truly urgent and a CI check
 flakes, fix the flake first.
 
-**Non-required checks**: `SonarQube Cloud / SonarQube Cloud scan`
-runs on every PR for code-quality and security visibility but is **not**
-in the required-checks list. It will be promoted to a required check
-once the Quality Gate has proven stable across several PRs.
+**Code quality**: SonarQube runs on the maintainer's local instance
+(project `bb-homelab`), not in CI: its quality gate is a local step of
+the pre-merge gate (SonarCloud was retired on 2026-10-22).
 
 ## Security
 
@@ -74,7 +73,7 @@ once the Quality Gate has proven stable across several PRs.
 - [x] `.env.example` files have placeholder values only
 - [x] All development secrets rotated
 - [x] CI includes secret detection job
-- [x] SonarQube Cloud Quality Gate passes on `main`
+- [x] SonarQube Quality Gate passes on `main` (SonarCloud at the time)
 
 ## File organisation
 
@@ -100,7 +99,7 @@ rationale. Place new content in the layer it belongs to:
 - **Before every push**: local review of `origin/main...HEAD`, every
   Must Have fixed (no exception for small diffs).
 - **Before every merge**, on the head SHA: full linters and config
-  validation, doc coverage, SonarCloud gate, secrets scan, and a QA
+  validation, doc coverage, local SonarQube gate, secrets scan, and a QA
   pass with evidence in [docs/architecture/qa/](docs/architecture/qa/README.md).
 
 Details: [AGENTS.md](AGENTS.md) §4 and the `pr-workflow` skill.

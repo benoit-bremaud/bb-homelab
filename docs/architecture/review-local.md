@@ -12,7 +12,7 @@
 |---|---|
 | 1 Tests | N/A: no test suite in this repo; linters run instead (markdownlint: only the known MD060 false positive; yamllint not runnable locally, no YAML changed) |
 | 2 Coverage | tests N/A (docs/rules diff) · docs: every link resolves, no new service |
-| 3 SonarQube | not run (runs in CI on the PR) |
+| 3 SonarQube | ✅ local instance, project `bb-homelab`: QUALITY GATE PASSED (CI scan retired with SonarCloud) |
 | 4 Secrets | ✅ gitleaks clean (working tree and origin/main..HEAD) · no tracked .env · diff read: nothing sensitive |
 | 5 QA pass | skipped (`--push` mode) |
 

@@ -1312,6 +1312,13 @@ was done and why, by date.
   `.env.example` templates; an evidence-only final commit no longer
   re-runs the gate; review artefacts are Category C (English);
   reviewer tool names removed from the review report.
+- **Decision (code quality)**: SonarCloud retired; the repo now uses the
+  shared local SonarQube instance (project `bb-homelab`, global analysis
+  token, first scan passed the quality gate). The CI token had started
+  returning 403. The cloud workflow is removed and the quality gate is a
+  local pre-merge step, as on brasse-bouillon (PR #1216). #65 is obsolete;
+  the `SONAR_TOKEN` Actions secret is deleted after merge and the old
+  cloud token revoked by the owner.
 - **Follow-ups**: #130 (Dependabot for compose images), #131 (non-root
   and privileges audit), #90 (image scan), #127 (Caddyfile mount).
 - **Refs**: #129, #44, #66, #67, #25

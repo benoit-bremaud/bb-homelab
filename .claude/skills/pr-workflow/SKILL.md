@@ -81,7 +81,10 @@ file in it does).
    and `caddy validate` for touched services (manual, not in CI).
 2. **Coverage**: tests N/A for pure infra/docs diffs (state it); doc
    coverage: every new or changed service has an up-to-date README.
-3. **SonarCloud gate** passed on that SHA.
+3. **Local SonarQube gate** passed on that SHA: from the repo root,
+   `SONAR_TOKEN="$(cat ~/.config/sonarqube/analysis-token)" sonar-scanner
+   -Dsonar.qualitygate.wait=true` → `QUALITY GATE STATUS: PASSED`
+   (global token, project `bb-homelab`; the server is not reachable from CI).
 4. **Secrets**: `gitleaks` (full history, the repo is public), no
    tracked `.env` or `.env.*` except the `.env.example` templates
    (`git ls-files '.env*' '**/.env*' | grep -v '\.env\.example$'` must
@@ -95,8 +98,7 @@ Every merge on `main` requires all of the following, in order:
 
 1. ✅ **All required CI checks green** (5 currently: `Detect secrets`,
    `Lint shell scripts`, `Lint Dockerfiles`, `Lint Markdown`,
-   `Lint YAML`). SonarCloud Cloud scan is also checked but not yet
-   required (cf. issue #65).
+   `Lint YAML`). SonarQube runs locally, not in CI (pre-merge step 3).
 2. ✅ **Automated reviewer posted its review** — requested ≠ posted.
    Wait until Copilot or codex has actually submitted a review on the
    final commit before continuing.
@@ -110,7 +112,7 @@ Every merge on `main` requires all of the following, in order:
    - **Nice to Have** — style preference, optimisation → ack/defer
    - **Disagree** — explain why with technical justification
 4. ✅ **Merge-approval question** asked verbatim, once CI,
-   SonarCloud and every open Conversation comment are verified (if one
+   the local SonarQube gate and every open Conversation comment are verified (if one
    of the three fails, say which and do not ask):
    > « J'ai contrôlé, et je te confirme que toute la CI est verte,
    > SonarQube est lui aussi content, et tous les commentaires ouverts
