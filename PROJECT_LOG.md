@@ -1375,7 +1375,7 @@ was done and why, by date.
   host (127 apt upgrades pending, kernel 6.12 → 6.18 waiting for a
   reboot, SD card at 94 %), container posture, 14 risks scored
   V × I with P1–P4, a 7-step roadmap for the rest of #46 and the
-  deferrals filed as issues. Owner-run sudo relevés integrated (UFW,
+  deferrals filed as issues. Owner-run sudo readings integrated (UFW,
   `sshd -T`, sockets, swaps, `du`).
 - **Key findings**: P1 = apt backlog (R1), cloudflared two years behind
   and unsupervised (R2), n8n on `latest`, 28 minors behind and
@@ -1402,7 +1402,10 @@ was done and why, by date.
   until the probe, n8n reclassified Internet-exposed (P1) and moved to
   step 3, tunnel URL rotation handled in step 3, cloudflared image is
   distroless so the Compose healthcheck became a Kuma monitor,
-  restore-then-old-tag rollbacks for n8n, Vaultwarden, Kuma and Caddy,
+  rollbacks for n8n, Vaultwarden, Kuma and Caddy that restore the
+  pre-upgrade archive with the old tag pinned before anything starts
+  (n8n: old tag first, since its `BACKUP.md` restore ends with
+  `up -d`),
   SD threshold moved before any image pull, gate record listing every
   pushed head.
 - **Gate**: linters, gitleaks `origin/main..HEAD`, local SonarQube
