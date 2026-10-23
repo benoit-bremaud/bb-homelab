@@ -1367,3 +1367,55 @@ was done and why, by date.
 - **Closes**: #133 · **Merge**: `b4cdcc5`
 - **Follow-ups**: #134 (Nice to Have), #19 (encrypted off-site copy),
   full security audit and updates (next brick).
+
+### PR #137 merged: 2026-10-23 security audit and update roadmap (#46, step 1)
+
+- **What**: `docs/security/AUDIT.md` (French, linked from the README):
+  controls in place, version inventory of the 10 containers and the
+  host (127 apt upgrades pending, kernel 6.12 → 6.18 waiting for a
+  reboot, SD card at 94 %), container posture, 14 risks scored
+  V × I with P1–P4, a 7-step roadmap for the rest of #46 and the
+  deferrals filed as issues. Owner-run sudo readings integrated (UFW,
+  `sshd -T`, sockets, swaps, `du`).
+- **Key findings**: P1 = apt backlog (R1), cloudflared two years behind
+  and unsupervised (R2), n8n on `latest`, 28 minors behind and
+  Internet-exposed through the tunnel (R6), SD at 94 % (R3). Docker
+  published ports bypass UFW (R10): Internet exposure stays unverified
+  until an owner-run WAN probe from 4G, IPv4 and IPv6, TCP plus
+  UDP/443, scheduled as the first action of step 2.
+- **Roadmap**: 2 WAN probe + SD cleanup (exit: SD under 80 %) · 3
+  cloudflared + n8n + Caddy with cold archives of n8n and the Caddy PKI,
+  restore-based rollbacks and an end-to-end Uptime Kuma monitor on the
+  tunnel URL · 4 Vaultwarden · 5 Uptime Kuma + Homepage (cold Kuma
+  backup first) · 6 `apt full-upgrade` by the owner, no reboot until
+  physically at the Pi · 7 closures and journal.
+- **Backlog triage**: new issues #138 (Caddy PKI, Kuma, Jellyfin
+  backups), #139 (Docker ports vs UFW), #140 (unattended-upgrades
+  scope), #141 (host hardening), #142 (Jellyfin 12 migration), #143
+  (named tunnel); #46 and #29 raised to P2; #131, #90, #130 to P3; #26
+  reworded (P4). Board #48 reconciled: every open issue carries a status.
+- **Review**: local review round 1 (3 Must, 6 Should, 3 Nice, all
+  fixed before push). `automated review` over 12 rounds, 17 threads,
+  every claim verified against the repo and upstream sources before
+  being fixed, each resolution chosen by the owner on a weighted
+  matrix: WAN test scope (IPv6, QUIC), R10 and R2 kept conditional
+  until the probe, n8n reclassified Internet-exposed (P1) and moved to
+  step 3, tunnel URL rotation handled in step 3, cloudflared image is
+  distroless so the Compose healthcheck became a Kuma monitor,
+  rollbacks for n8n, Vaultwarden, Kuma and Caddy that restore the
+  pre-upgrade archive with the old tag pinned before anything starts
+  (n8n: old tag first, since its `BACKUP.md` restore ends with
+  `up -d`),
+  SD threshold moved before any image pull, gate record listing every
+  pushed head.
+- **Gate**: linters, gitleaks `origin/main..HEAD`, local SonarQube
+  passed and CI 7/7 green on every pushed head including the final
+  one; docs-only diff, no runtime touched.
+- **Process**: owner restatement during this PR, every proposal,
+  including the resolution of a single review comment, is weighted
+  with the MCDA matrix (all chats, all agents); written into the shared
+  agent rules.
+- **Pending**: `.claude/rules/docs-conventions.md` should list
+  `docs/security/**` under Category A (one-line edit, blocked by a hook
+  in the worktree session).
+- **Refs**: #46 (stays open: steps 2–7) · **Merge**: `04183d1`
