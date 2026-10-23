@@ -30,6 +30,7 @@ Chaque couche a son dossier dédié et son README détaillé.
 | **Réseau & accès distant** (Tailscale, reverse proxy) | [network/README.md](network/README.md), [network/tailscale.md](network/tailscale.md) |
 | **Services déployés** (un dossier par stack docker-compose) | [services/README.md](services/README.md) — n8n, Caddy, … |
 | **Stockage** (montages HDD, SMART, sauvegardes) | [storage/README.md](storage/README.md) |
+| **Sécurité** (audit, risques classés, feuille de route) | [docs/security/AUDIT.md](docs/security/AUDIT.md) |
 | Journal opérationnel | [PROJECT_LOG.md](PROJECT_LOG.md) |
 | Conventions de contribution | [CONTRIBUTING.md](CONTRIBUTING.md) |
 | Instructions IA tooling | [AGENTS.md](AGENTS.md), [CLAUDE.md](CLAUDE.md) |
