@@ -103,7 +103,7 @@ utilisateur par utilisateur est l'objet de l'issue #131.
 | Étape | Risques | Action | Garde-fous |
 |---|---|---|---|
 | 1 | — | Cet audit (`docs/security/AUDIT.md`) | PR `Refs #46` |
-| 2 | R10, R3 | D'abord le test de joignabilité depuis Internet (§6, par le propriétaire depuis la 4G, résultat consigné dans §6 et dans #139) : le report de R10 vers #139 n'est confirmé que si tout est fermé ; sinon R10 repasse en P1 et se traite avant toute mise à jour. Puis libérer la SD : supprimer les 4 images inutilisées (n8n 1.97.1, alpine, curl, hello-world : 1,45 Go), `apt clean`, trancher le doublon de swap, décider du sort de `.platformio` | lecture de `/proc/swaps` avant toute suppression ; aucune image utilisée par un conteneur n'est touchée |
+| 2 | R10, R3 | D'abord le relevé IPv6 puis le test de joignabilité depuis Internet, IPv4 et IPv6, TCP et UDP/443, selon le protocole de §6 (par le propriétaire depuis la 4G, résultat consigné dans §6 et dans #139) : le report de R10 vers #139 n'est confirmé que si tout est fermé ; sinon R10 repasse en P1 et se traite avant toute mise à jour. Puis libérer la SD : supprimer les 4 images inutilisées (n8n 1.97.1, alpine, curl, hello-world : 1,45 Go), `apt clean`, trancher le doublon de swap, décider du sort de `.platformio` | lecture de `/proc/swaps` avant toute suppression ; aucune image utilisée par un conteneur n'est touchée |
 | 3 | R2, R4 | Les deux bords exposés d'abord : cloudflared 2026.10.3 (seule entrée Internet) et Caddy 2.11.7 (TLS de tout le reste), compose + `.env.example`, `up -d`, QA des cinq routes ; ajouter une sonde cloudflared (`--metrics 127.0.0.1:<port>` + healthcheck sur `/ready`) | notes de version lues, retour arrière = ancien tag ; URL du tunnel vérifiée après |
 | 4 | R5, R6 | Vaultwarden 1.37.4 puis n8n : remplacer `latest` par 2.44.6 dans le `.env` du Pi et le compose | sauvegarde manuelle de chaque service avant, notes de migration n8n 2.16 → 2.44 lues, connexion au coffre vérifiée après |
 | 5 | R9, R7 (partiel) | Uptime Kuma 2.5.7 ; Homepage v2.6.0 après lecture du guide de migration v2 (config versionnée dans le dépôt, retour arrière = `git checkout` + ancien tag). Jellyfin est sorti de cette étape : deux majeures et un schéma non réversible, migration dédiée #142 | sauvegarde Kuma manuelle avant : première copie des données Kuma, la PKI Caddy et l'automatisation restent en §5.2 |
@@ -134,6 +134,7 @@ sudo cat /etc/ssh/sshd_config.d/50-cloud-init.conf
 sudo ss -tulpn | grep -E ":(18555|18554|39295|63761) "
 cat /proc/swaps
 sudo du -sh /var/lib/docker /var/swap /swapfile
+ip -6 addr show scope global
 ```
 
 | Relevé | Résultat |
@@ -143,7 +144,8 @@ sudo du -sh /var/lib/docker /var/swap /swapfile
 | Sockets non identifiés | `127.0.0.1:39295` cloudflared (métriques), `127.0.0.1:18554` et `*:18555` go2rtc (flux vidéo Home Assistant, réseau hôte, donc bloqué par UFW), `100.121.134.61:63761` tailscaled |
 | Swaps actifs (`/proc/swaps`) | `/swapfile` 2 Go (priorité -2, 0 utilisé) et `/dev/zram0` 2 Go ; `/var/swap` n'est pas monté → orphelin |
 | Tailles (`du`) | `/var/lib/docker` 8,5 Go, `/var/swap` 1,7 Go, `/swapfile` 2,1 Go |
-| Joignabilité depuis Internet (R10, §1 Réseau) | **à faire** : depuis un réseau extérieur (téléphone en 4G), tester l'IP publique de la box sur 22, 80, 443, 8096, 1883 et 8123 ; attendu : tout fermé. Tant que ce test n'est pas fait, l'audit traite ces ports comme potentiellement exposés |
+| Adresse IPv6 globale du Pi (`ip -6 addr show scope global`) | **à faire** : si le Pi porte une adresse IPv6 globale, les ports publiés par Docker (`443:443` sans adresse, donc v4 et v6, et `443:443/udp`) et sshd (`[::]:22`) sont joignables en IPv6 sans passer par la box ; si aucune, le volet IPv6 du test ci-dessous est clos par ce relevé |
+| Joignabilité depuis Internet (R10, §1 Réseau) | **à faire** : depuis un réseau extérieur (téléphone en 4G), tester l'IP publique IPv4 de la box **et** l'adresse IPv6 globale du Pi si le relevé précédent en donne une, sur 22, 80, 443, 8096, 1883 et 8123 en TCP, plus **UDP/443** (QUIC publié par Caddy : `curl --http3` ou `nmap -sU -p 443`) ; attendu : tout fermé dans les deux familles. Tant que ce test n'est pas fait, l'audit traite ces ports comme potentiellement exposés |
 
 ## 7. Références
 
