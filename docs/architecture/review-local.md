@@ -1,25 +1,35 @@
 # Local review — bb-homelab (branch `docs/46-security-audit`)
 
 - Date: 2026-10-23
-- Commit: 9f64e44 (round 1) → fixes in dd47194
+- Commit: 9f64e44 (round 1) → fixes in dd47194 → review-comment fixes
+  6e67df1, 278db23, 0e7c49d, 0ec5b91 and the head carrying this report
 - Scope: branch diff `origin/main...HEAD` — `docs/security/AUDIT.md`
-  (new, Category A, French) and one navigation row in `README.md`
+  (new, Category A, French), one navigation row in `README.md`, this
+  report
 - Checks run: docs · correctness · security · `--push` mode (no QA pass;
   docs-only diff, no runtime touched)
 - Verdict (round 1): fix Must Have first · Must 3 · Should 6 · Nice 3 ·
   Disagree 0 — **all Must and Should resolved before push** (dd47194)
 
-## Pre-merge gate (head SHA dd47194)
+## Pre-merge gate (re-run on every pushed head)
+
+Steps 3 and 4 and the CI (7 checks) were re-run on each head after
+each review-comment fix: 6e67df1, 278db23, 0e7c49d and 0ec5b91 all
+returned `QUALITY GATE STATUS: PASSED`, `no leaks found` and 7/7
+green. The head that carries this report changes AUDIT.md (R2/R6
+requalified, roadmap steps 3–4 reordered) and this file only; the
+gate is re-run on it before the merge question is asked, and the
+merge is refused if any step turns red.
 
 | Step | Result |
 |---|---|
 | 1 Tests | N/A — pure docs diff, no application code in this repo (stated per AGENTS.md §4) |
 | 2 Coverage | tests N/A · docs: the new document has no public API; every section is filled; two TODOs remain, each dated and owned: the mosquitto Docker Hub check (R12, #26) and the WAN reachability test from a 4G connection on ports 22/80/443/8096/1883/8123 (AUDIT §6, R10, #139 — owner-run, outside this docs diff) |
-| 3 SonarQube | ✅ `QUALITY GATE STATUS: PASSED` (project `bb-homelab`, local server, run on 9f64e44; dd47194 changes prose only in the same file) |
-| 4 Secrets | ✅ gitleaks `origin/main..HEAD` no leaks · no tracked `.env*` beyond `.env.example` · diff read: only the Tailscale IP already present in `README.md` and `services/caddy/README.md` |
+| 3 SonarQube | ✅ `QUALITY GATE STATUS: PASSED` (project `bb-homelab`, local server) on 9f64e44, 6e67df1, 278db23, 0e7c49d, 0ec5b91 and the final head |
+| 4 Secrets | ✅ gitleaks `origin/main..HEAD` no leaks on every head · no tracked `.env*` beyond `.env.example` · diff read: only the Tailscale IP already present in `README.md` and `services/caddy/README.md` |
 | 5 QA pass | skipped (`--push` mode); linters: markdownlint clean except MD060 (tolerated false positive), links verified by hand |
 
-- Gate: **GREEN for push** — the merge gate re-runs step 3 on the final SHA
+- Gate: **GREEN for push**; merge authorised only once steps 3–4 and CI are green on the final head (recorded in the PR #137 thread)
 
 ## 🔴 Must Have
 

@@ -28,7 +28,7 @@
 | Hôte | Données applicatives hors SD, montage par UUID avec `nofail` | `/mnt/appdata` sur `sda1` (pont USB-SATA JMS578, SMART lisible) |
 | Conteneurs | Aucun conteneur privilégié, aucun `docker.sock` monté, aucune capacité ajoutée | `docker inspect` des 10 conteneurs |
 | Conteneurs | Healthcheck sur 6 des 7 conteneurs du dépôt ; cloudflared n'en a pas (demande amont ouverte, cloudflared#1268) : le seul tunnel vers Internet reste « Up » même tombé (voir R2) | `docker ps` : 6 `healthy`, cloudflared `Up` sans état |
-| Conteneurs | Services internes derrière Caddy (TLS, CA locale), n8n lié à `127.0.0.1` | Caddyfile : 5 routes `*.bb-homelab.local` ; `127.0.0.1:5678` |
+| Conteneurs | Services internes derrière Caddy (TLS, CA locale), n8n lié à `127.0.0.1` mais relayé vers Internet par le tunnel cloudflared (R6) | Caddyfile : 5 routes `*.bb-homelab.local` ; `127.0.0.1:5678` |
 | Services | Vaultwarden : inscriptions et invitations fermées, jeton admin défini | `SIGNUPS_ALLOWED=false`, `INVITATIONS_ALLOWED=false` |
 | Services | Mosquitto : anonyme refusé, fichier de mots de passe | `allow_anonymous false`, `password_file` |
 | Sauvegardes | n8n et Vaultwarden archivés chaque nuit, battement de cœur Uptime Kuma, copie tirée vers le PC | cron 03:00 / 03:05, moniteurs push (#133) |
@@ -67,7 +67,7 @@ Relevé du 2026-10-23 contre la dernière version publiée sur GitHub.
 | bb-homelab-uptime-kuma | root | aucun | aucun | `/mnt/appdata/uptime-kuma`, **non sauvegardé** |
 | bb-homelab-homepage | root (explicite) | aucun | aucun | config versionnée dans le dépôt |
 | bb-homelab-jellyfin | root | **8096 sur 0.0.0.0** en plus de la route Caddy (voulu : clients TV et mobiles sans la CA locale, ADR 0003) | aucun | `/mnt/appdata/jellyfin`, **non sauvegardé** (#138) |
-| bb-homelab-n8n | `node` | 127.0.0.1:5678 | aucun | `/mnt/appdata/n8n`, sauvegardé |
+| bb-homelab-n8n | `node` | 127.0.0.1:5678, exposé à Internet via le tunnel | aucun | `/mnt/appdata/n8n`, sauvegardé |
 | bb-homelab-cloudflared | `nonroot` | réseau hôte | aucun | — |
 | homeassistant | root | réseau hôte (8123) | aucun | `/mnt/appdata/homeassistant`, non sauvegardé |
 | zigbee2mqtt | root | 127.0.0.1:8080 | aucun | `/mnt/appdata/zigbee2mqtt`, non sauvegardé |
@@ -82,11 +82,11 @@ utilisateur par utilisateur est l'objet de l'issue #131.
 | ID | Constat | V | I | Score | Priorité |
 |---|---|---|---|---|---|
 | R1 | 127 paquets apt en retard de six mois, dont OpenSSH, OpenSSL, sudo, systemd, noyau ; `unattended-upgrades` ne couvre que `Debian-Security`, jamais les point-releases stable ni les dépôts docker / tailscale / raspberrypi | 4 | 4 | 16 | **P1** |
-| R2 | `cloudflared` 2024.8.3 : seul composant exposé à Internet (tunnel n8n), deux ans de correctifs manquants, et aucun healthcheck (un tunnel tombé n'est pas détecté par Docker) | 4 | 4 | 16 | **P1** |
+| R2 | `cloudflared` 2024.8.3 : seule porte d'entrée depuis Internet, mais pas seul composant exposé : le tunnel relaie le trafic public vers n8n (`127.0.0.1:5678`, voir R6) ; deux ans de correctifs manquants, et aucun healthcheck (un tunnel tombé n'est pas détecté par Docker) | 4 | 4 | 16 | **P1** |
 | R3 | Carte SD à 94 % (décision SD → SSD : #29, passée P2) (1,7 Go libres) : 8,5 Go sous `/var/lib/docker` (13,2 Go d'images déclarées, 1,45 Go récupérables), 6 Go de `.platformio` hors homelab, un fichier swap orphelin `/var/swap` (1,7 Go, inactif : seuls `/swapfile` et zram sont dans `/proc/swaps`) ; un `apt full-upgrade` ou un `docker pull` peut échouer ou corrompre des bases SQLite | 5 | 3 | 15 | **P1** |
 | R4 | Caddy 2.8.4 : terminaison TLS et CA locale de tous les services, trois versions mineures de retard | 3 | 4 | 12 | P2 |
 | R5 | Vaultwarden 1.36.0 : coffre de mots de passe, une version mineure de retard ([notes de version 1.37.x](https://github.com/dani-garcia/vaultwarden/releases)) | 2 | 5 | 10 | P2 |
-| R6 | n8n sur le tag `latest` (`.env` du Pi) : déploiement non reproductible, et 28 versions mineures de retard sur un service qui tient des identifiants d'API | 3 | 3 | 9 | P2 |
+| R6 | n8n sur le tag `latest` (`.env` du Pi) : déploiement non reproductible, 28 versions mineures de retard sur un service qui tient des identifiants d'API **et qui traite du trafic Internet** dès que le tunnel cloudflared tourne (URL trycloudflare aléatoire, authentification n8n : la surface est publique, pas confidentielle) ; une compromission livre les identifiants des services tiers qu'il orchestre | 4 | 4 | 16 | **P1** |
 | R7 | PKI Caddy (CA locale) et données Uptime Kuma hors sauvegarde : perdre la CA oblige à re-faire confiance sur chaque client ; perdre Kuma efface moniteurs, notifications et historique | 3 | 3 | 9 | P2 |
 | R8 | Cinq des sept conteneurs du dépôt tournent root sans `no-new-privileges` ni `cap_drop` : une faille applicative donne root dans le conteneur (recoupe #131) | 2 | 4 | 8 | P3 |
 | R9 | Uptime Kuma, Homepage, Jellyfin en retard, dont deux sauts de version majeure ; Jellyfin 12 change le schéma de base sans retour arrière possible, et ses données ne sont pas sauvegardées | 3 | 2 | 6 | P3 |
@@ -104,8 +104,8 @@ utilisateur par utilisateur est l'objet de l'issue #131.
 |---|---|---|---|
 | 1 | — | Cet audit (`docs/security/AUDIT.md`) | PR `Refs #46` |
 | 2 | R10, R3 | D'abord le relevé IPv6 puis le test de joignabilité depuis Internet, IPv4 et IPv6, TCP et UDP/443, selon le protocole de §6 (par le propriétaire depuis la 4G, résultat consigné dans §6 et dans #139) : le report de R10 vers #139 n'est confirmé que si tout est fermé ; sinon R10 repasse en P1 et se traite avant toute mise à jour. Puis libérer la SD : supprimer les 4 images inutilisées (n8n 1.97.1, alpine, curl, hello-world : 1,45 Go), `apt clean`, trancher le doublon de swap, décider du sort de `.platformio` | lecture de `/proc/swaps` avant toute suppression ; aucune image utilisée par un conteneur n'est touchée |
-| 3 | R2, R4 | Les deux bords exposés d'abord : cloudflared 2026.10.3 (seule entrée Internet) et Caddy 2.11.7 (TLS de tout le reste), compose + `.env.example`, `up -d`, QA des cinq routes ; ajouter une sonde cloudflared (`--metrics 127.0.0.1:<port>` + healthcheck sur `/ready`) | notes de version lues, retour arrière = ancien tag ; URL du tunnel vérifiée après |
-| 4 | R5, R6 | Vaultwarden 1.37.4 puis n8n : remplacer `latest` par 2.44.6 dans le `.env` du Pi et le compose | sauvegarde manuelle de chaque service avant, notes de migration n8n 2.16 → 2.44 lues, connexion au coffre vérifiée après |
+| 3 | R2, R6, R4 | La surface Internet d'abord : cloudflared 2026.10.3 (la porte) et n8n 2.44.6 à la place de `latest` dans le `.env` du Pi et le compose (la cible du tunnel), puis Caddy 2.11.7 (TLS de tout le reste) ; compose + `.env.example`, `up -d`, QA des cinq routes ; ajouter une sonde cloudflared (`--metrics 127.0.0.1:<port>` + healthcheck sur `/ready`) | sauvegarde manuelle n8n avant, notes de migration n8n 2.16 → 2.44 lues, notes de version lues, retour arrière = ancien tag ; URL du tunnel et connexion n8n vérifiées après |
+| 4 | R5 | Vaultwarden 1.37.4 | sauvegarde manuelle avant, notes de version lues, connexion au coffre vérifiée après |
 | 5 | R9, R7 (partiel) | Uptime Kuma 2.5.7 ; Homepage v2.6.0 après lecture du guide de migration v2 (config versionnée dans le dépôt, retour arrière = `git checkout` + ancien tag). Jellyfin est sorti de cette étape : deux majeures et un schéma non réversible, migration dédiée #142 | sauvegarde Kuma manuelle avant : première copie des données Kuma, la PKI Caddy et l'automatisation restent en §5.2 |
 | 6 | R1 | `sudo apt full-upgrade` lancé par le propriétaire (`ssh -t`), **sans reboot** tant qu'il n'est pas à côté du Pi ; le noyau 6.18 attend ce reboot | `df` avant, SD sous 80 % ; `docker compose ps` après |
 | 7 | — | Issues de report (§5.2), fermeture de #46, journal | — |
