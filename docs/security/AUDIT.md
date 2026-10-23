@@ -20,7 +20,7 @@
 
 | Domaine | Contrôle | Preuve relevée |
 |---|---|---|
-| Réseau | Accès distant Tailscale uniquement, pas d'ingress public hors tunnel cloudflared de n8n | `tailscale status` : nœud 100.121.134.61 ; aucune redirection box documentée |
+| Réseau | Accès distant Tailscale uniquement, pas d'ingress public hors tunnel cloudflared de n8n | `tailscale status` : nœud 100.121.134.61 ; UFW `deny incoming` par défaut, seule règle `22/tcp ALLOW IN Anywhere` (§6) |
 | Réseau | UFW actif et activé au démarrage | `systemctl is-active ufw` → `active`, `is-enabled` → `enabled` |
 | Hôte | SSH par clé, root interdit, pas de clavier interactif | `PermitRootLogin no`, `KbdInteractiveAuthentication no` ; 0 échec d'authentification en 7 jours |
 | Hôte | Mises à jour de sécurité Debian automatiques, sans reboot automatique | `52unattended-upgrades-bb-homelab`, dernier passage 2026-10-23 06:57 |
@@ -47,16 +47,16 @@ Relevé du 2026-10-23 contre la dernière version publiée sur GitHub.
 | sudo / systemd | 1.9.16p2 u1 / 257.9 | u2 / 257.13 | correctifs stable |
 | Docker CE / Compose / containerd | 29.4.0 / v5.1.2 / 2.2.2 | 29.9.2 / 5.6.1 / 2.4.2 | dépôt tiers, jamais auto |
 | Tailscale | 1.102.2 | 1.104.2 | dépôt tiers, jamais auto |
-| caddy | 2.8.4 | 2.11.7 (2026-10-03) | 3 mineures, 2 ans |
+| caddy | 2.8.4 | 2.11.7 (2026-10-03) | 3 mineures |
 | vaultwarden/server | 1.36.0 | 1.37.4 (2026-10-05) | 1 mineure |
 | louislam/uptime-kuma | 2.3.2 | 2.5.7 (2026-10-23) | 2 mineures |
 | gethomepage/homepage | v1.13.2 | v2.6.0 (2026-10-17) | **majeure** |
 | jellyfin/jellyfin | 10.11.9 | v12.3 (2026-10-23) | **deux majeures** |
 | n8nio/n8n | tag `latest` (= 2.16.0, image du 2026-04-07) | 2.44.6 (2026-10-22) | 28 mineures, tag flottant |
-| cloudflare/cloudflared | 2024.8.3 | 2026.10.3 (2026-10-21) | 2 ans |
+| cloudflare/cloudflared | 2024.8.3 | 2026.10.3 (2026-10-21) | 26 mois de publications |
 | home-assistant (hors dépôt) | 2026.6.2 | 2026.10.2 | 4 mois |
 | zigbee2mqtt (hors dépôt) | 2.12.0 | 2.14.2 | 2 mineures |
-| eclipse-mosquitto (hors dépôt) | 2.1.2-alpine | — | à vérifier sur Docker Hub |
+| eclipse-mosquitto (hors dépôt) | 2.1.2-alpine | — | pas de release GitHub ; à vérifier sur Docker Hub dans l'issue R12 |
 
 ## 3. Posture des conteneurs
 
@@ -66,7 +66,7 @@ Relevé du 2026-10-23 contre la dernière version publiée sur GitHub.
 | bb-homelab-vaultwarden | root | aucun (Caddy seul) | aucun | `/mnt/appdata/vaultwarden`, sauvegardé |
 | bb-homelab-uptime-kuma | root | aucun | aucun | `/mnt/appdata/uptime-kuma`, **non sauvegardé** |
 | bb-homelab-homepage | root (explicite) | aucun | aucun | config versionnée dans le dépôt |
-| bb-homelab-jellyfin | root | **8096 sur 0.0.0.0** en plus de la route Caddy | aucun | `/mnt/appdata/jellyfin` |
+| bb-homelab-jellyfin | root | **8096 sur 0.0.0.0** en plus de la route Caddy (voulu : clients TV et mobiles sans la CA locale, ADR 0003) | aucun | `/mnt/appdata/jellyfin` |
 | bb-homelab-n8n | `node` | 127.0.0.1:5678 | aucun | `/mnt/appdata/n8n`, sauvegardé |
 | bb-homelab-cloudflared | `nonroot` | réseau hôte | aucun | — |
 | homeassistant | root | réseau hôte (8123) | aucun | `/mnt/appdata/homeassistant`, non sauvegardé |
@@ -83,17 +83,17 @@ utilisateur par utilisateur est l'objet de l'issue #131.
 |---|---|---|---|---|---|
 | R1 | 127 paquets apt en retard de six mois, dont OpenSSH, OpenSSL, sudo, systemd, noyau ; `unattended-upgrades` ne couvre que `Debian-Security`, jamais les point-releases stable ni les dépôts docker / tailscale / raspberrypi | 4 | 4 | 16 | **P1** |
 | R2 | `cloudflared` 2024.8.3 : seul composant exposé à Internet (tunnel n8n), deux ans de correctifs manquants | 4 | 4 | 16 | **P1** |
-| R3 | Carte SD à 94 % (1,7 Go libres) : 13,2 Go d'images Docker sur la SD, 6 Go de `.platformio` hors homelab, deux fichiers swap (`/swapfile` 2 Go, `/var/swap` 1,7 Go) en plus du zram ; un `apt full-upgrade` ou un `docker pull` peut échouer ou corrompre des bases SQLite | 5 | 3 | 15 | **P1** |
+| R3 | Carte SD à 94 % (1,7 Go libres) : 8,5 Go sous `/var/lib/docker` (13,2 Go d'images déclarées, 1,45 Go récupérables), 6 Go de `.platformio` hors homelab, un fichier swap orphelin `/var/swap` (1,7 Go, inactif : seuls `/swapfile` et zram sont dans `/proc/swaps`) ; un `apt full-upgrade` ou un `docker pull` peut échouer ou corrompre des bases SQLite | 5 | 3 | 15 | **P1** |
 | R4 | Caddy 2.8.4 : terminaison TLS et CA locale de tous les services, trois versions mineures de retard | 3 | 4 | 12 | P2 |
-| R5 | Vaultwarden 1.36.0 : coffre de mots de passe, une version mineure de retard (1.37.x corrige des problèmes de sécurité côté serveur) | 2 | 5 | 10 | P2 |
+| R5 | Vaultwarden 1.36.0 : coffre de mots de passe, une version mineure de retard ([notes de version 1.37.x](https://github.com/dani-garcia/vaultwarden/releases)) | 2 | 5 | 10 | P2 |
 | R6 | n8n sur le tag `latest` (`.env` du Pi) : déploiement non reproductible, et 28 versions mineures de retard sur un service qui tient des identifiants d'API | 3 | 3 | 9 | P2 |
 | R7 | PKI Caddy (CA locale) et données Uptime Kuma hors sauvegarde : perdre la CA oblige à re-faire confiance sur chaque client ; perdre Kuma efface moniteurs, notifications et historique | 3 | 3 | 9 | P2 |
-| R8 | Six conteneurs sur sept tournent root sans `no-new-privileges` ni `cap_drop` : une faille applicative donne root dans le conteneur (recoupe #131) | 2 | 4 | 8 | P2 |
+| R8 | Cinq des sept conteneurs du dépôt tournent root sans `no-new-privileges` ni `cap_drop` : une faille applicative donne root dans le conteneur (recoupe #131) | 2 | 4 | 8 | P3 |
 | R9 | Uptime Kuma, Homepage, Jellyfin en retard, dont deux sauts de version majeure (migration à préparer) | 3 | 2 | 6 | P3 |
-| R10 | Jellyfin 8096, Home Assistant 8123 et Mosquitto 1883 écoutent sur le LAN en contournant Caddy ; exposition réelle dépendante des règles UFW (§6) | 2 | 3 | 6 | P3 |
+| R10 | Les ports publiés par Docker (80/443 Caddy, 8096 Jellyfin voulu par l'ADR 0003, 1883 Mosquitto) **contournent UFW** : Docker écrit ses propres règles iptables dans la chaîne `FORWARD`, que UFW ne filtre pas ; la règle `deny incoming` ne protège donc que les services en réseau hôte (8123 Home Assistant, go2rtc 18555, SSH). Exposition LAN seulement, pas Internet | 3 | 3 | 9 | P2 |
 | R11 | Aucun scan d'image ni Dependabot sur les images compose (#90, #130) : les retards de §2 ne sont détectés que par un audit manuel | 3 | 2 | 6 | P3 |
 | R12 | Trois conteneurs hors dépôt (`~/home-assistant`) : ni épinglage suivi, ni sauvegarde, ni revue | 2 | 2 | 4 | P4 |
-| R13 | AppArmor installé mais désactivé au boot ; fail2ban et auditd absents ; `X11Forwarding yes` inutile | 1 | 2 | 2 | P4 |
+| R13 | AppArmor installé mais désactivé au boot ; fail2ban et auditd absents ; `X11Forwarding yes` inutile ; SSH autorisé depuis `Anywhere` alors que `harden-ssh.sh` offre `SSH_UFW_SCOPE=tailscale` (clé seule et mot de passe refusé, donc faible) | 1 | 2 | 2 | P4 |
 | R14 | `benoit` membre du groupe `docker` (équivalent root) : accepté, utilisateur unique, clé SSH seule | 1 | 2 | 2 | accepté |
 
 ## 5. Feuille de route
@@ -104,28 +104,27 @@ utilisateur par utilisateur est l'objet de l'issue #131.
 |---|---|---|---|
 | 1 | — | Cet audit (`docs/security/AUDIT.md`) | PR `Refs #46` |
 | 2 | R3 | Libérer la SD : supprimer les 4 images inutilisées (n8n 1.97.1, alpine, curl, hello-world : 1,45 Go), `apt clean`, trancher le doublon de swap, décider du sort de `.platformio` | lecture de `/proc/swaps` avant toute suppression ; aucune image utilisée par un conteneur n'est touchée |
-| 3 | R4, R5 | Épingler Caddy 2.11.7 et Vaultwarden 1.37.4 (compose + `.env.example`), sauvegarde manuelle avant, `up -d`, QA des cinq routes et connexion au coffre | notes de version lues, retour arrière = ancien tag |
-| 4 | R2, R6 | n8n : remplacer `latest` par 2.44.6 dans le `.env` du Pi et le compose ; cloudflared 2026.10.3 | sauvegarde n8n avant, lecture des notes de migration 2.16 → 2.44 |
-| 5 | R9 | Uptime Kuma 2.5.7 ; Homepage v2.6.0 et Jellyfin 12.3 après lecture des guides de migration (reportés en issue si le saut majeur exige plus qu'un changement de tag) | sauvegarde Kuma avant (couvre R7 une première fois) |
+| 3 | R2, R4 | Les deux bords exposés d'abord : cloudflared 2026.10.3 (seule entrée Internet) et Caddy 2.11.7 (TLS de tout le reste), compose + `.env.example`, `up -d`, QA des cinq routes | notes de version lues, retour arrière = ancien tag |
+| 4 | R5, R6 | Vaultwarden 1.37.4 puis n8n : remplacer `latest` par 2.44.6 dans le `.env` du Pi et le compose | sauvegarde manuelle de chaque service avant, notes de migration n8n 2.16 → 2.44 lues, connexion au coffre vérifiée après |
+| 5 | R9, R7 (partiel) | Uptime Kuma 2.5.7 ; Homepage v2.6.0 et Jellyfin 12.3 après lecture des guides de migration (reportés en issue si le saut majeur exige plus qu'un changement de tag) | sauvegarde Kuma manuelle avant : première copie des données Kuma, la PKI Caddy et l'automatisation restent en §5.2 |
 | 6 | R1 | `sudo apt full-upgrade` lancé par le propriétaire (`ssh -t`), **sans reboot** tant qu'il n'est pas à côté du Pi ; le noyau 6.18 attend ce reboot | `df` avant, SD sous 80 % ; `docker compose ps` après |
 | 7 | — | Issues de report (§5.2), fermeture de #46, journal | — |
 
-### 5.2 Reporté en issues (P3/P4)
+### 5.2 Reporté en issues
 
 | Risque | Issue | Décision proposée |
 |---|---|---|
-| R7 | nouvelle issue « backup : PKI Caddy + données Uptime Kuma » | Étendre le script de sauvegarde et le battement de cœur de #133 |
+| R7 (P2) | nouvelle issue « backup : PKI Caddy + données Uptime Kuma » | Étendre le script de sauvegarde et le battement de cœur de #133 ; reporté car il demande un script et un moniteur, pas un changement de tag |
 | R8 | #131 (existante) | Tableau utilisateur / capacités par service, `no-new-privileges` et `cap_drop` là où l'image le supporte |
-| R10 | nouvelle issue « réseau : fermer 8096 et revoir l'exposition LAN » | Jellyfin derrière Caddy seul ; décision UFW pour 8123 et 1883 |
+| R10 (P2) | nouvelle issue « réseau : Docker contourne UFW, revoir l'exposition LAN » | Lier les ports publiés à une adresse (`127.0.0.1:` ou l'IP Tailscale) ou poser des règles `DOCKER-USER` ; réévaluer 8096 (ADR 0003) et 1883 ; reporté car il touche l'accès de tous les clients et demande une matrice |
 | R11 | #90 et #130 (existantes), #22 à fermer | Dependabot compose + Trivy hebdomadaire remplacent Watchtower |
 | R1 (récurrence) | nouvelle issue « décision : périmètre d'unattended-upgrades » | Soit ajouter `Debian` stable + dépôts tiers, soit un rappel mensuel ; ADR |
 | R12 | nouvelle issue « adopter la pile domotique dans le dépôt » | Déplacer `~/home-assistant` sous `services/` avec épinglage et sauvegarde |
-| R13 | nouvelle issue « durcissement hôte : X11Forwarding, AppArmor, fail2ban » | `harden-ssh.sh` désactive X11 ; AppArmor et fail2ban évalués par matrice |
+| R13 | nouvelle issue « durcissement hôte : X11Forwarding, portée UFW de SSH, AppArmor, fail2ban » | Ajouter `X11Forwarding no` à `harden-ssh.sh` ; relancer `SSH_UFW_SCOPE=tailscale` quand le propriétaire est près du Pi ; AppArmor et fail2ban évalués par matrice |
 
-## 6. Relevés en attente (sudo)
+## 6. Relevés sudo (2026-10-23, lancés par le propriétaire)
 
-À compléter avec la sortie des commandes ci-dessous, lancées par le
-propriétaire :
+Commandes :
 
 ```bash
 sudo ufw status verbose
@@ -138,14 +137,15 @@ sudo du -sh /var/lib/docker /var/swap /swapfile
 
 | Relevé | Résultat |
 |---|---|
-| Règles UFW effectives (ports LAN de R10) | à compléter |
-| `PasswordAuthentication` effectif | à compléter |
-| Processus derrière `*:18555`, `127.0.0.1:18554`, `127.0.0.1:39295` | à compléter |
-| Swaps réellement actifs | à compléter |
+| Règles UFW effectives (R10, §1 Réseau) | `Status: active`, `Default: deny (incoming), allow (outgoing), deny (routed)`, une seule règle : `22/tcp ALLOW IN Anywhere` (v4 et v6) |
+| SSH effectif (`sshd -T`) | `passwordauthentication no` (fixé par `50-cloud-init.conf`), `pubkeyauthentication yes`, `maxauthtries 6`, écoute `0.0.0.0:22` et `[::]:22`, pas d'`AllowUsers` |
+| Sockets non identifiés | `127.0.0.1:39295` cloudflared (métriques), `127.0.0.1:18554` et `*:18555` go2rtc (flux vidéo Home Assistant, réseau hôte, donc bloqué par UFW), `100.121.134.61:63761` tailscaled |
+| Swaps actifs (`/proc/swaps`) | `/swapfile` 2 Go (priorité -2, 0 utilisé) et `/dev/zram0` 2 Go ; `/var/swap` n'est pas monté → orphelin |
+| Tailles (`du`) | `/var/lib/docker` 8,5 Go, `/var/swap` 1,7 Go, `/swapfile` 2,1 Go |
 
 ## 7. Références
 
-- Issue #46 (cette étude), #131, #90, #130, #22, #47, #134
+- Issue #46 (cette étude) ; #131, #90, #130, #22 (voir §5.2) ; #133 (sauvegardes et battements de cœur)
 - [ADR 0002 — reverse proxy Caddy](../decisions/0002-caddy-reverse-proxy.md),
   [ADR 0005 — Vaultwarden](../decisions/0005-vaultwarden-deployment.md)
 - [bootstrap/harden-ssh.sh](../../bootstrap/harden-ssh.sh),
