@@ -14,7 +14,7 @@
 | Step | Result |
 |---|---|
 | 1 Tests | N/A — pure docs diff, no application code in this repo (stated per AGENTS.md §4) |
-| 2 Coverage | tests N/A · docs: the new document has no public API; every section is filled, no TODO left except the mosquitto Docker Hub check, dated and owned by the R12 issue |
+| 2 Coverage | tests N/A · docs: the new document has no public API; every section is filled; two TODOs remain, each dated and owned: the mosquitto Docker Hub check (R12, #26) and the WAN reachability test from a 4G connection on ports 22/80/443/8096/1883/8123 (AUDIT §6, R10, #139 — owner-run, outside this docs diff) |
 | 3 SonarQube | ✅ `QUALITY GATE STATUS: PASSED` (project `bb-homelab`, local server, run on 9f64e44; dd47194 changes prose only in the same file) |
 | 4 Secrets | ✅ gitleaks `origin/main..HEAD` no leaks · no tracked `.env*` beyond `.env.example` · diff read: only the Tailscale IP already present in `README.md` and `services/caddy/README.md` |
 | 5 QA pass | skipped (`--push` mode); linters: markdownlint clean except MD060 (tolerated false positive), links verified by hand |
