@@ -145,8 +145,19 @@ ip -6 addr show scope global
 | Sockets non identifiés | `127.0.0.1:39295` cloudflared (métriques), `127.0.0.1:18554` et `*:18555` go2rtc (flux vidéo Home Assistant, réseau hôte, donc bloqué par UFW), `100.121.134.61:63761` tailscaled |
 | Swaps actifs (`/proc/swaps`) | `/swapfile` 2 Go (priorité -2, 0 utilisé) et `/dev/zram0` 2 Go ; `/var/swap` n'est pas monté → orphelin |
 | Tailles (`du`) | `/var/lib/docker` 8,5 Go, `/var/swap` 1,7 Go, `/swapfile` 2,1 Go |
-| Adresse IPv6 globale du Pi (`ip -6 addr show scope global`) | **à faire** : si le Pi porte une adresse IPv6 globale, les ports publiés par Docker (`443:443` sans adresse, donc v4 et v6, et `443:443/udp`) et sshd (`[::]:22`) sont joignables en IPv6 sans passer par la box ; si aucune, le volet IPv6 du test ci-dessous est clos par ce relevé |
-| Joignabilité depuis Internet (R10, §1 Réseau) | **à faire** : depuis un réseau extérieur (téléphone en 4G), tester l'IP publique IPv4 de la box **et** l'adresse IPv6 globale du Pi si le relevé précédent en donne une, sur 22, 80, 443, 8096, 1883 et 8123 en TCP, plus **UDP/443** (QUIC publié par Caddy : `curl --http3` ou `nmap -sU -p 443`) ; attendu : tout fermé dans les deux familles. Tant que ce test n'est pas fait, l'audit traite ces ports comme potentiellement exposés |
+| Adresse IPv6 globale du Pi (`ip -6 addr show scope global`) | **Relevé le 2026-10-23 : le Pi porte une adresse IPv6 globale** (préfixe /64 délégué par la box, dynamique, non reproduite ici). Les ports publiés par Docker sans adresse (`443:443`, `443:443/udp`) et sshd (`[::]:22`) écoutent donc aussi en IPv6 : le volet IPv6 du test ci-dessous est obligatoire, et le pare-feu IPv6 de la box est la seule protection en amont d'UFW |
+| Joignabilité depuis Internet (R10, §1 Réseau) | **à faire depuis le domicile (PC en partage 4G)** : tester l'IP publique IPv4 de la box **et** l'adresse IPv6 globale du Pi sur 22, 80, 443, 8096, 1883 et 8123 en TCP, plus **UDP/443** (QUIC publié par Caddy : `curl --http3` ou `nmap -sU -p 443`), et relever dans l'interface de la box l'état du pare-feu IPv6, des règles NAT/PAT, de la DMZ et d'UPnP ; attendu : tout fermé dans les deux familles. Un premier essai depuis un réseau d'entreprise a été **invalidé** : un proxy transparent y achève la connexion TCP vers n'importe quel port de n'importe quelle destination (mêmes résultats sur des résolveurs publics et sur un port arbitraire, puis aucune réponse applicative), ce qui rend les scans depuis ce réseau inexploitables. Tant que le test n'est pas fait, l'audit traite ces ports comme potentiellement exposés |
+
+### 6.1 Étape 2 : libération de la SD (2026-10-23)
+
+| Action | Résultat |
+|---|---|
+| `docker image rm` des 4 images inutilisées (n8n 1.97.1, alpine, curl 8.10.1, hello-world) | supprimées ; aucune image utilisée par un conteneur touchée |
+| `rm -rf ~/.platformio` (6 Go, inutilisé depuis 2026-06-17) | supprimé, décision du propriétaire |
+| `sudo rm /var/swap` après lecture de `/proc/swaps` (non monté, absent de `fstab`, pas de `dphys-swapfile`) | supprimé, 1,7 Go rendus ; `/swapfile` et `zram0` inchangés |
+| `sudo apt clean` | fait |
+| `df -h /` | **92 % → 64 %** (18 Go / 29 Go) : condition de sortie de l'étape 2 (< 80 %) remplie |
+| `docker ps` après coup | les 10 conteneurs présents. Observation hors périmètre : `zigbee2mqtt` redémarre en boucle depuis la recréation de la pile Home Assistant (coordinateur Zigbee réseau injoignable, `EHOSTUNREACH`), antérieur au nettoyage, traité dans #26 |
 
 ## 7. Références
 
