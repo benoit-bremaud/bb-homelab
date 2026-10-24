@@ -47,7 +47,7 @@ Relevé du 2026-10-23 contre la dernière version publiée sur GitHub.
 | OpenSSH | 10.0p1-7+deb13u2 | 10.0p1-7+deb13u4 | correctifs stable | à jour (étape 6) |
 | OpenSSL | 3.5.7-1~deb13u3 | 3.5.7-1~deb13u3+rpt1 | correctif | à jour (étape 6) |
 | sudo / systemd | 1.9.16p2 u1 / 257.9 | u2 / 257.13 | correctifs stable | à jour (étape 6) |
-| Docker CE / Compose / containerd | 29.4.0 / v5.1.2 / 2.2.2 | 29.9.2 / 5.6.1 / 2.4.2 | dépôt tiers, jamais auto | 29.9.2 (étape 6) |
+| Docker CE / Compose / containerd | 29.4.0 / v5.1.2 / 2.2.2 | 29.9.2 / 5.6.1 / 2.4.2 | dépôt tiers, jamais auto | 29.9.2 / 5.6.1 / 2.4.2 (étape 6) |
 | Tailscale | 1.102.2 | 1.104.2 | dépôt tiers, jamais auto | 1.104.2 (étape 6) |
 | caddy | 2.8.4 | 2.11.7 (2026-10-03) | 3 mineures | 2.11.7 (PR #154) |
 | vaultwarden/server | 1.36.0 | 1.37.4 (2026-10-05) | 1 mineure | 1.37.4 (PR #148) |
@@ -84,7 +84,7 @@ utilisateur par utilisateur est l'objet de l'issue #131.
 | ID | Constat | V | I | Score | Priorité |
 |---|---|---|---|---|---|
 | R1 | **Résolu le 2026-10-24 (étape 6, §6.2), récurrence dans #140** : 127 paquets apt en retard de six mois, dont OpenSSH, OpenSSL, sudo, systemd, noyau ; `unattended-upgrades` ne couvre que `Debian-Security`, jamais les point-releases stable ni les dépôts docker / tailscale / raspberrypi | 4 | 4 | 16 | **P1** |
-| R2 | **Version résolue le 2026-10-24 (PR #150, cloudflared 2026.10.3), tunnel nommé dans #143** : `cloudflared` 2024.8.3 : seule porte d'entrée depuis Internet, **confirmé** par le test WAN de l'étape 2 (§6 : ports publiés par Docker et SSH injoignables depuis Internet), et pas seul composant exposé : le tunnel relaie le trafic public vers n8n (`127.0.0.1:5678`, voir R6) ; deux ans de correctifs manquants, et aucune supervision du tunnel (un tunnel tombé n'est signalé par personne ; l'image officielle est distroless, sans shell ni `curl`, donc un `healthcheck` Compose n'a rien pour s'exécuter) | 4 | 4 | 16 | **P1** |
+| R2 | **Version et supervision résolues le 2026-10-24 (PR #150, cloudflared 2026.10.3 ; moniteur HTTPS Uptime Kuma sur l'URL publique, repointé à chaque rotation, §6.2) ; hostname stable dans #143** : `cloudflared` 2024.8.3 : seule porte d'entrée depuis Internet, **confirmé** par le test WAN de l'étape 2 (§6 : ports publiés par Docker et SSH injoignables depuis Internet), et pas seul composant exposé : le tunnel relaie le trafic public vers n8n (`127.0.0.1:5678`, voir R6) ; deux ans de correctifs manquants, et aucune supervision du tunnel (un tunnel tombé n'est signalé par personne ; l'image officielle est distroless, sans shell ni `curl`, donc un `healthcheck` Compose n'a rien pour s'exécuter) | 4 | 4 | 16 | **P1** |
 | R3 | **Atténué le 2026-10-24 (étape 2, §6.1)** : carte SD passée de 94 % à 64 % (environ 10 Go libres) après suppression de 4 images inutilisées, de `.platformio` et du swap orphelin `/var/swap`. Le risque résiduel reste la croissance des images et des données sur une SD : un disque plein pendant un `apt full-upgrade` ou un `docker pull` peut faire échouer la mise à jour ou corrompre des bases SQLite ; décision SD → SSD : #29 (P2) | 2 | 3 | 6 | P3 |
 | R4 | **Résolu le 2026-10-24 (PR #154, Caddy 2.11.7)** : Caddy 2.8.4 : terminaison TLS et CA locale de tous les services, trois versions mineures de retard | 3 | 4 | 12 | P2 |
 | R5 | **Résolu le 2026-10-24 (PR #148, Vaultwarden 1.37.4)** : Vaultwarden 1.36.0 : coffre de mots de passe, une version mineure de retard ([notes de version 1.37.x](https://github.com/dani-garcia/vaultwarden/releases)) | 2 | 5 | 10 | P2 |
