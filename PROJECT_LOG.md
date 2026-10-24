@@ -1505,3 +1505,26 @@ was done and why, by date.
   (80 and 443 in the default list). Fixed and replied inline. A slow
   re-review was replaced by the local review, at the owner's request.
 - **Merge**: `d59d66f`
+
+### PR #154 merged: Caddy 2.11.7 (#46, step 3b)
+
+- **What**: compose default, `.env.example` and README bumped from
+  2.8.4. Release notes 2.9.0 → 2.11.7 checked against the Caddyfile:
+  none of the 2.11 breaking changes applies (16 KiB header limit,
+  dropped `_`/`.` header fields, 1-minute idle timeouts, stricter
+  validation); `caddy validate` passes with 2.11.7.
+- **Cold archive**: Caddy stopped under a minute, `/mnt/appdata/caddy`
+  archived through a throwaway container (no sudo needed), internal
+  root fingerprint recorded. The archive holds the CA private keys and
+  was first created world-readable; tightened to mode 600 in a 700
+  directory right away (single-user host, no exposure).
+- **Rollout**: pull and recreate (about 10 s of HTTPS downtime). Root
+  fingerprint unchanged, so trusting devices are unaffected; the five
+  sites answer over HTTP/2; Vaultwarden API and prelogin OK; Kuma
+  dashboard live over websockets; owner confirmed Jellyfin playback
+  and the Vaultwarden extension login.
+- **Rollback**: stop, pin 2.8.4 first, restore the archive, `up -d`.
+- **Review**: `automated review` clean on the first round.
+- **Gate**: `caddy validate`, yaml-lint, markdownlint, gitleaks, local
+  SonarQube passed, CI 7/7 green.
+- **Refs**: #46 (stays open: steps 5–7) · **Merge**: `88fb637`
