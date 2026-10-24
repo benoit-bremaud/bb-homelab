@@ -1419,3 +1419,36 @@ was done and why, by date.
   `docs/security/**` under Category A (one-line edit, blocked by a hook
   in the worktree session).
 - **Refs**: #46 (stays open: steps 2–7) · **Merge**: `04183d1`
+
+## 2026-10-24
+
+### PR #147 merged: step 2 results, SD cleanup and WAN probe (#46, step 2)
+
+- **SD cleanup** (2026-10-23, owner-approved): 4 unused images,
+  `~/.platformio` (6 GB, unused since June), the orphan `/var/swap` and
+  `apt clean`. SD 92 % → 64 %, step 2 exit condition (< 80 %) met; the
+  10 containers untouched. R3 rescored mitigated (2 × 3 = 6, P3), SSD
+  decision still in #29.
+- **WAN probe**: nothing reachable from the Internet besides the n8n
+  tunnel. IPv4: the six ports time out from external check-host.net
+  nodes. IPv6: external IPscan scan of the Pi's global address, 105/105
+  ports stealth, the six target TCP ports added as custom ports. Box
+  read by the owner: 5G router with an IPv6-only WAN (carrier-translated
+  IPv4, so no inbound IPv4 at all), no port forwarding, DMZ or UPnP.
+  R10 Internet exposure ruled out in TCP and its deferral to #139
+  confirmed; UDP/443 over IPv6 only inferred, logged on #139.
+- **Lesson**: a first probe from the owner's laptop was invalid, its
+  endpoint security agent completes every outbound TCP connection (any
+  port, any host, any network). Port scans must run from external
+  services, never from that laptop.
+- **Side findings**: zigbee2mqtt restart loop (network Zigbee
+  coordinator unreachable, pre-existing, #26). The box UI redirects to
+  a vendor hostname with no DNS record; a temporary hosts-file entry
+  reaches it.
+- **Review**: `automated review` round 1, 2 threads: IPv6 coverage
+  (TCP already probed, UDP/443 reworded as inferred and tracked) and R3
+  status (marked mitigated); round 2 clean. Each resolution chosen by
+  the owner on a weighted matrix.
+- **Gate**: markdownlint, gitleaks `origin/main..HEAD`, local SonarQube
+  passed, CI 7/7 green; docs-only diff.
+- **Refs**: #46 (stays open: steps 3–7) · **Merge**: `dd7f0e2`
