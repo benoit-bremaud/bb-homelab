@@ -23,10 +23,12 @@ derrière Caddy avec la CA interne (ADR 0002).
 
 - Image : `vaultwarden/server:1.37.4` (épinglée — bump délibéré via
   `.env`). Manifeste multi-arch : l'ARM64 est tiré automatiquement sur le
-  Pi 5. Plancher : 1.37.0. En dessous, les clients Bitwarden 2026.7.0+
-  refusent la connexion (« KDF config response does not contain a valid
-  KDF type »), car la réponse de prelogin n'a pas l'objet `kdfSettings`
-  (issue #146).
+  Pi 5. Plancher : 1.37.2. Les notes de version Vaultwarden exigent
+  1.37.0 pour les clients Bitwarden 2026.7.0+ et 1.37.2 pour les clients
+  2026.8.0+. Sous 1.37.0, la réponse de prelogin n'a pas l'objet
+  `kdfSettings` et les clients refusent la connexion (« KDF config
+  response does not contain a valid KDF type », issue #146). Ne pas
+  descendre sous le tag épinglé sans relire ces notes.
 - **Aucun port hôte publié** : Caddy l'atteint comme `vaultwarden:80` via
   le réseau partagé `bb-homelab-proxy`. Surface d'attaque minimale pour
   la machine qui stocke tous les mots de passe.
