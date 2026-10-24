@@ -1429,14 +1429,15 @@ was done and why, by date.
   `apt clean`. SD 92 % → 64 %, step 2 exit condition (< 80 %) met; the
   10 containers untouched. R3 rescored mitigated (2 × 3 = 6, P3), SSD
   decision still in #29.
-- **WAN probe**: nothing reachable from the Internet besides the n8n
-  tunnel. IPv4: the six ports time out from external check-host.net
+- **WAN probe**: no tested TCP port reachable from the Internet
+  besides the n8n tunnel; IPv6 UDP/443 (Caddy QUIC) left unresolved,
+  tracked on #139. IPv4: the six ports time out from external check-host.net
   nodes. IPv6: external IPscan scan of the Pi's global address, 105/105
   ports stealth, the six target TCP ports added as custom ports. Box
   read by the owner: 5G router with an IPv6-only WAN (carrier-translated
   IPv4, so no inbound IPv4 at all), no port forwarding, DMZ or UPnP.
   R10 Internet exposure ruled out in TCP and its deferral to #139
-  confirmed; UDP/443 over IPv6 only inferred, logged on #139.
+  confirmed; UDP/443 over IPv6 only inferred, never probed directly.
 - **Lesson**: a first probe from the owner's laptop was invalid, its
   endpoint security agent completes every outbound TCP connection (any
   port, any host, any network). Port scans must run from external
