@@ -7,7 +7,7 @@ système — suivra).
 
 ## Stack
 
-- Image : `louislam/uptime-kuma:2.3.2` (épinglée — bump délibéré via
+- Image : `louislam/uptime-kuma:2.5.7` (épinglée — bump délibéré via
   `.env`).
 - Données persistantes : bind-mount `/mnt/appdata/uptime-kuma/` (HDD,
   Pattern Y) → `/app/data` dans le conteneur (SQLite + config).
