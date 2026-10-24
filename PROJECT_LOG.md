@@ -1455,6 +1455,22 @@ was done and why, by date.
   passed, CI 7/7 green; docs-only diff.
 - **Refs**: #46 (stays open: steps 3–7) · **Merge**: `dd7f0e2`
 
+### PR #148 merged: Vaultwarden 1.37.4 (#46, step 4)
+
+- **What**: default image bumped from 1.36.0 to 1.37.4 (compose,
+  `.env.example`, README).
+- **Why**: Bitwarden clients 2026.7 and later failed to log in ("KDF
+  config response does not contain a valid KDF type"): 1.36.0 answers
+  the prelogin with flat KDF fields, current clients read the nested
+  `kdfSettings` object returned from 1.37.0 on. Also resolves risk R5
+  of the security audit.
+- **Checked**: 1.37.x breaking notes against this setup (legacy
+  prelogin and register endpoints, `IP_HEADER`, CLI send) and the
+  arm64 manifest.
+- **Rollout**: the Pi runs 1.37.4, container healthy (checked
+  2026-10-24).
+- **Refs**: #46 step 4 · **Merge**: `206befc`
+
 ### PR #150 merged: n8n 2.44.6 and cloudflared 2026.10.3 (#46, step 3a)
 
 - **What**: compose defaults and `.env.example` bumped from n8n
@@ -1479,7 +1495,8 @@ was done and why, by date.
 - **Review**: `automated review` clean on the first round.
 - **Gate**: yaml-lint, `docker compose config`, gitleaks, local
   SonarQube passed, CI 7/7 green.
-- **Refs**: #46 (stays open: steps 3b, 5–7) · **Merge**: `afaf2d5`
+- **Refs**: #46 (stays open: steps 3b, 5–7; step 4 done in PR #148) ·
+  **Merge**: `afaf2d5`
 
 ### PR #149 merged: step 2 log entry
 
