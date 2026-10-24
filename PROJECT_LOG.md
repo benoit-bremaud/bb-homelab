@@ -1433,7 +1433,8 @@ was done and why, by date.
   besides the n8n tunnel; IPv6 UDP/443 (Caddy QUIC) left unresolved,
   tracked on #139. IPv4: the six ports time out from external check-host.net
   nodes. IPv6: external IPscan scan of the Pi's global address, 105/105
-  ports stealth, the six target TCP ports added as custom ports. Box
+  ports stealth, including the six target TCP ports (22, 1883, 8096
+  and 8123 added as custom ports, 80 and 443 in the default list). Box
   read by the owner: 5G router with an IPv6-only WAN (carrier-translated
   IPv4, so no inbound IPv4 at all), no port forwarding, DMZ or UPnP.
   R10 Internet exposure ruled out in TCP and its deferral to #139
