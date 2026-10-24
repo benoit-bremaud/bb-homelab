@@ -1528,3 +1528,27 @@ was done and why, by date.
 - **Gate**: `caddy validate`, yaml-lint, markdownlint, gitleaks, local
   SonarQube passed, CI 7/7 green.
 - **Refs**: #46 (stays open: steps 5–7) · **Merge**: `88fb637`
+
+### PR #157 merged: Uptime Kuma 2.5.7 and Homepage v2.7.0 (#46, step 5)
+
+- **What**: Uptime Kuma 2.3.2 → 2.5.7 and Homepage v1.13.2 → v2.7.0
+  (compose defaults, `.env.example`, READMEs). Kuma release notes
+  2.4.0 → 2.5.7 announce no breaking change. The only Homepage v2
+  breaking change is the authentication gate, opt-in; enabling it is
+  tracked in #156.
+- **Cold archive**: Kuma stopped about 30 s, `/mnt/appdata/uptime-kuma`
+  archived through a throwaway container, mode 600 in a 700 directory;
+  the archived database passes `PRAGMA integrity_check` with its 8
+  monitors.
+- **Rollout**: pull and recreate both services; both healthy, Kuma
+  logs clean, 7 monitors up (the eighth is the standing test monitor),
+  Homepage and Kuma answer through Caddy.
+- **SD space**: the new images pushed the SD card to 83 %, above the
+  80 % bar of the audit. The five superseded images (n8n 2.16.0,
+  cloudflared 2024.8.3, Caddy 2.8.4, Kuma 2.3.2, Homepage v1.13.2,
+  about 6.5 GB) were removed with owner approval: SD back to 68 %.
+  Rollbacks now re-pull the old tag; the data archives are kept.
+- **Review**: `automated review` clean on the first round.
+- **Gate**: `docker compose config`, yaml-lint, markdownlint, gitleaks,
+  local SonarQube passed, CI 7/7 green.
+- **Refs**: #46 (stays open: steps 6–7), #156 · **Merge**: `81edbc1`
