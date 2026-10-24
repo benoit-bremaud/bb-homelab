@@ -1454,3 +1454,54 @@ was done and why, by date.
 - **Gate**: markdownlint, gitleaks `origin/main..HEAD`, local SonarQube
   passed, CI 7/7 green; docs-only diff.
 - **Refs**: #46 (stays open: steps 3–7) · **Merge**: `dd7f0e2`
+
+### PR #148 merged: Vaultwarden 1.37.4 (#46, step 4)
+
+- **What**: default image bumped from 1.36.0 to 1.37.4 (compose,
+  `.env.example`, README).
+- **Why**: Bitwarden clients 2026.7 and later failed to log in ("KDF
+  config response does not contain a valid KDF type"): 1.36.0 answers
+  the prelogin with flat KDF fields, current clients read the nested
+  `kdfSettings` object returned from 1.37.0 on. Also resolves risk R5
+  of the security audit.
+- **Checked**: 1.37.x breaking notes against this setup (legacy
+  prelogin and register endpoints, `IP_HEADER`, CLI send) and the
+  arm64 manifest.
+- **Rollout**: the Pi runs 1.37.4, container healthy (checked
+  2026-10-24).
+- **Refs**: #46 step 4 · **Merge**: `206befc`
+
+### PR #150 merged: n8n 2.44.6 and cloudflared 2026.10.3 (#46, step 3a)
+
+- **What**: compose defaults and `.env.example` bumped from n8n
+  2.16.0 and cloudflared 2024.8.3. Direct jump chosen on a weighted
+  matrix: the only workflow uses Webhook v2.1 and Telegram v1.2, none
+  deprecated, and the SQLite migrations are automatic.
+- **Rollout on the Pi**: cold archive of `/mnt/appdata/n8n` first
+  (n8n stopped about a minute); the two `N8N_IMAGE_TAG=latest` lines
+  removed from the Pi `.env` so the compose defaults apply; pull and
+  recreate; migrations finished without error. The quick-tunnel URL
+  rotated, `WEBHOOK_URL` and `N8N_HOST` updated, n8n recreated.
+- **Tests**: `/healthz` 200 through the tunnel; one end-to-end POST on
+  the feedback webhook reached Telegram (owner confirmed). The
+  Impropedia widget needs no repointing: it is disabled in production
+  until a stable URL exists (#143).
+- **Monitoring**: new Uptime Kuma HTTPS monitor on the tunnel
+  `/healthz`, to update at each URL rotation until #143.
+- **Side findings**: `WEBHOOK_URL` deprecated in favour of
+  `N8N_WEBHOOK_URL` (#151); the feedback webhook reflects any `Origin`
+  in its CORS answer (#152).
+- **Rollback**: stop, pin 2.16.0 first, restore the archive, `up -d`.
+- **Review**: `automated review` clean on the first round.
+- **Gate**: yaml-lint, `docker compose config`, gitleaks, local
+  SonarQube passed, CI 7/7 green.
+- **Refs**: #46 (stays open: steps 3b, 5–7; step 4 done in PR #148) ·
+  **Merge**: `afaf2d5`
+
+### PR #149 merged: step 2 log entry
+
+- **Review**: `automated review` round 2 (P3): the IPv6 probe line
+  claimed six custom ports; only 22, 1883, 8096 and 8123 were custom
+  (80 and 443 in the default list). Fixed and replied inline. A slow
+  re-review was replaced by the local review, at the owner's request.
+- **Merge**: `d59d66f`
