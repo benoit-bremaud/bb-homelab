@@ -3,7 +3,7 @@ services:
     # Pinned by default. Bump via UPTIME_KUMA_IMAGE_TAG in .env after
     # testing. :latest avoided so a background pull cannot drag in a
     # breaking change.
-    image: louislam/uptime-kuma:${UPTIME_KUMA_IMAGE_TAG:-2.3.2}
+    image: louislam/uptime-kuma:${UPTIME_KUMA_IMAGE_TAG:-2.5.7}
     container_name: bb-homelab-uptime-kuma
     restart: unless-stopped
     environment:

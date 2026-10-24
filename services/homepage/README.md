@@ -7,7 +7,7 @@ affiche leur statut via Uptime Kuma. Choix de l'outil documenté dans
 
 ## Stack
 
-- Image : `ghcr.io/gethomepage/homepage:v1.13.2` (épinglée — bump
+- Image : `ghcr.io/gethomepage/homepage:v2.7.0` (épinglée — bump
   délibéré via `.env`, manifeste multi-arch → arm64 sur le Pi 5).
 - Configuration : **dans le repo**, bind-mount relatif
   `./config` → `/app/config`. Dérogation délibérée au Pattern Y :

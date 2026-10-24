@@ -3,7 +3,7 @@ services:
     # Pinned by default. Bump via HOMEPAGE_IMAGE_TAG in .env after
     # testing. :latest avoided so a background pull cannot drag in a
     # breaking change. Multi-arch manifest -> arm64 variant on the Pi 5.
-    image: ghcr.io/gethomepage/homepage:${HOMEPAGE_IMAGE_TAG:-v1.13.2}
+    image: ghcr.io/gethomepage/homepage:${HOMEPAGE_IMAGE_TAG:-v2.7.0}
     container_name: bb-homelab-homepage
     restart: unless-stopped
     environment:
