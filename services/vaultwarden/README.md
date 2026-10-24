@@ -21,9 +21,12 @@ derrière Caddy avec la CA interne (ADR 0002).
 
 ## Stack
 
-- Image : `vaultwarden/server:1.36.0` (épinglée — bump délibéré via
+- Image : `vaultwarden/server:1.37.4` (épinglée — bump délibéré via
   `.env`). Manifeste multi-arch : l'ARM64 est tiré automatiquement sur le
-  Pi 5.
+  Pi 5. Plancher : 1.37.0. En dessous, les clients Bitwarden 2026.7.0+
+  refusent la connexion (« KDF config response does not contain a valid
+  KDF type »), car la réponse de prelogin n'a pas l'objet `kdfSettings`
+  (issue #146).
 - **Aucun port hôte publié** : Caddy l'atteint comme `vaultwarden:80` via
   le réseau partagé `bb-homelab-proxy`. Surface d'attaque minimale pour
   la machine qui stocke tous les mots de passe.
@@ -68,7 +71,7 @@ sudo chmod 700 /mnt/appdata/vaultwarden
 #    deux fois). SAUVEGARDER le mot de passe EN CLAIR dans le gestionnaire
 #    de mots de passe MAINTENANT — c'est la clé break-glass de /admin et
 #    elle ne vit nulle part ailleurs.
-docker run --rm -it vaultwarden/server:1.36.0 /vaultwarden hash
+docker run --rm -it vaultwarden/server:1.37.4 /vaultwarden hash
 
 # 4. Créer .env, coller le hash dans VW_ADMIN_TOKEN ENTRE SIMPLES QUOTES,
 #    en gardant des '$' simples. Les valeurs .env entre simples quotes sont
@@ -138,7 +141,7 @@ pas un objet JSON), et lancer le premier backup (voir [BACKUP.md](BACKUP.md)).
 | Variable | Rôle |
 |---|---|
 | `VW_ADMIN_TOKEN` | **Hash Argon2 PHC** du mot de passe `/admin` (jamais en clair). Échec immédiat si vide. Mettre le hash entre simples quotes dans `.env` (`$` simples). Le clair ne vit que dans le gestionnaire de mots de passe. |
-| `VW_IMAGE_TAG` | Override du tag d'image (défaut `1.36.0`). Bump délibéré, testé d'abord. |
+| `VW_IMAGE_TAG` | Override du tag d'image (défaut `1.37.4`). Bump délibéré, testé d'abord. |
 | `VW_DOMAIN` | Origine publique (défaut `https://vaultwarden.bb-homelab.local`). Doit correspondre au hostname Caddy sinon WebAuthn/2FA et les liens cassent. |
 | `VW_SIGNUPS_ALLOWED` | Inscription ouverte (défaut `false`). `true` seulement pour l'amorçage ponctuel du compte. |
 | `VW_SIGNUPS_DOMAINS_WHITELIST` | **Laisser vide.** Une valeur non vide laisse ces domaines s'inscrire même quand `VW_SIGNUPS_ALLOWED=false` (elle l'outrepasse). |
