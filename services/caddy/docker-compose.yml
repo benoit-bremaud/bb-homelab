@@ -3,7 +3,7 @@ services:
     # Pinned by default. Bump via CADDY_IMAGE_TAG in .env when a newer
     # release is needed. :latest avoided so a background pull cannot
     # drag in a breaking change.
-    image: caddy:${CADDY_IMAGE_TAG:-2.8.4}
+    image: caddy:${CADDY_IMAGE_TAG:-2.11.7}
     container_name: bb-homelab-caddy
     restart: unless-stopped
     ports:
