@@ -1552,3 +1552,23 @@ was done and why, by date.
 - **Gate**: `docker compose config`, yaml-lint, markdownlint, gitleaks,
   local SonarQube passed, CI 7/7 green.
 - **Refs**: #46 (stays open: steps 6–7), #156 · **Merge**: `81edbc1`
+
+### Issue #46 closed: host upgrade, reboot and issue triage (steps 6 and 7)
+
+- **Step 6 (host)**: the owner ran `sudo apt full-upgrade` in `tmux`
+  over the LAN: 127 packages (OpenSSH, OpenSSL, sudo, systemd, Docker
+  29.9.2, Tailscale 1.104.2), 0 pending afterwards. Rebooted with the
+  owner next to the Pi: kernel 6.18.50 active, `/mnt/appdata` mounted
+  again by UUID, every container healthy, the five Caddy sites answer,
+  SD card at 71 %.
+- **Tunnel**: the quick-tunnel URL rotated twice (Docker restart, then
+  reboot); each time `WEBHOOK_URL` and `N8N_HOST` were updated, n8n
+  recreated and the Kuma tunnel monitor repointed, both back up.
+- **Step 7 (triage)**: #22 closed as not planned (Dependabot #90 and
+  weekly Trivy #130 replace Watchtower); #10 and #28 commented with the
+  reboot and rotation evidence; #15–17 and #81 left out of scope.
+  Follow-ups opened during the brick: #151, #152, #156.
+- **Audit**: `docs/security/AUDIT.md` moved to v2: final versions
+  column, R1/R4/R5/R6 resolved, R2/R9 partly resolved, step 6 record
+  (§6.2), follow-ups in §5.2.
+- **Refs**: closes #46
