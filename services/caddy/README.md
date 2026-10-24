@@ -12,7 +12,7 @@ independent by design — see [ADR 0002](../../docs/decisions/0002-caddy-reverse
 
 ## Stack
 
-- **Caddy 2.8.4** (pinned) — HTTPS termination + host-based routing.
+- **Caddy 2.11.7** (pinned) — HTTPS termination + host-based routing.
 - **Shared Docker network `bb-homelab-proxy`** — external, created
   once on the host. Every backend service that Caddy needs to reach
   (n8n, future Kuma / Jellyfin / …) joins this network.
