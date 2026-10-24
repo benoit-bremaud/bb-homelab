@@ -1,6 +1,9 @@
 # QA — Vaultwarden 1.37.4 (PR #148, issue #146)
 
-SHA testé : `da631403e237603594b6bd6c5ad2501a0d8d358e`. Date : 2026-10-24.
+SHA testé : `da631403e237603594b6bd6c5ad2501a0d8d358e`, puis contrôles
+locaux et porte SonarQube relancés sur
+`6ab2282b3f27d80f8e6874683edf08cc526dd756` (README seul, plancher client
+corrigé en 1.37.2 ; aucun effet sur le service déployé). Date : 2026-10-24.
 
 Le Pi tourne déjà en 1.37.4 via `VW_IMAGE_TAG=1.37.4` dans son `.env`
 (déploiement fait le 2026-10-24 après une sauvegarde manuelle par
