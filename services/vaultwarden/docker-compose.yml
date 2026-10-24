@@ -8,7 +8,7 @@ services:
     # test before rolling out. :latest is avoided because a background
     # `docker compose pull` could drag a breaking change into the service
     # that holds every other password. Multi-arch manifest → arm64 on the Pi.
-    image: vaultwarden/server:${VW_IMAGE_TAG:-1.36.0}
+    image: vaultwarden/server:${VW_IMAGE_TAG:-1.37.4}
     container_name: bb-homelab-vaultwarden
     restart: unless-stopped
     # No host port published. Unlike n8n (which binds 127.0.0.1 for
@@ -35,7 +35,7 @@ services:
       # ADMIN_TOKEN silently DISABLES the admin panel. In .env, wrap the PHC
       # hash in SINGLE QUOTES with single '$' (single-quoted .env values are
       # literal, so Compose does not interpolate the '$...' segments).
-      - "ADMIN_TOKEN=${VW_ADMIN_TOKEN:?VW_ADMIN_TOKEN must be set in .env -- generate an Argon2 PHC hash with 'docker run --rm -it vaultwarden/server:1.36.0 /vaultwarden hash' and wrap it in single quotes in .env}"
+      - "ADMIN_TOKEN=${VW_ADMIN_TOKEN:?VW_ADMIN_TOKEN must be set in .env -- generate an Argon2 PHC hash with 'docker run --rm -it vaultwarden/server:1.37.4 /vaultwarden hash' and wrap it in single quotes in .env}"
       # Internal listen port = 80 on the proxy bridge. Rocket also serves
       # the integrated WebSocket (/notifications/hub) on this same port
       # since v1.31 — no separate :3012, no special Caddy block.
