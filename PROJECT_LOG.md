@@ -1572,3 +1572,18 @@ was done and why, by date.
   column, R1/R4/R5/R6 resolved, R2/R9 partly resolved, step 6 record
   (§6.2), follow-ups in §5.2.
 - **Refs**: closes #46
+
+## 2026-10-28
+
+### UFW: let the Nest Mini fetch Home Assistant audio (#162)
+
+- **What**: one UFW rule on the Pi, `allow from <nest-ip> to any port
+  8123 proto tcp` (comment `Nest Mini fetches HA TTS audio`), applied
+  by the owner; `ufw status numbered` shows it as rule 2.
+- **Why**: confiture Piper TTS (benoit-bremaud/confiture#4) plays
+  answers on the Nest Mini, which must fetch the audio from HA on the
+  LAN; UFW dropped 8123 from the LAN. Owner MCDA: Nest only 435/500,
+  whole LAN 330, Caddy HTTPS 265 (the Nest rejects the internal CA).
+  The Nest IP is reserved on the box. HA itself stays tailnet-first.
+- **Audit**: `docs/security/AUDIT.md` §6 UFW record updated.
+- **Refs**: closes #162

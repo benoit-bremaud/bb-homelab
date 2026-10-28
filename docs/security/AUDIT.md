@@ -143,7 +143,7 @@ ip -6 addr show scope global
 
 | Relevé | Résultat |
 |---|---|
-| Règles UFW effectives (R10, §1 Réseau) | `Status: active`, `Default: deny (incoming), allow (outgoing), deny (routed)`, une seule règle : `22/tcp ALLOW IN Anywhere` (v4 et v6) |
+| Règles UFW effectives (R10, §1 Réseau) | `Status: active`, `Default: deny (incoming), allow (outgoing), deny (routed)`, une seule règle : `22/tcp ALLOW IN Anywhere` (v4 et v6). **Ajout du 2026-10-28** (#162) : `8123/tcp ALLOW IN <nest-ip>` (commentaire `Nest Mini fetches HA TTS audio`), la seule Nest Mini peut lire l'audio TTS de Home Assistant ; son adresse est réservée sur la box |
 | SSH effectif (`sshd -T`) | `passwordauthentication no` (fixé par `50-cloud-init.conf`), `pubkeyauthentication yes`, `maxauthtries 6`, écoute `0.0.0.0:22` et `[::]:22`, pas d'`AllowUsers` |
 | Sockets non identifiés | `127.0.0.1:39295` cloudflared (métriques), `127.0.0.1:18554` et `*:18555` go2rtc (flux vidéo Home Assistant, réseau hôte, donc bloqué par UFW), `100.121.134.61:63761` tailscaled |
 | Swaps actifs (`/proc/swaps`) | `/swapfile` 2 Go (priorité -2, 0 utilisé) et `/dev/zram0` 2 Go ; `/var/swap` n'est pas monté → orphelin |
