@@ -20,9 +20,9 @@ Other checks: live: `ufw status numbered` shows rule 2 `8123/tcp ALLOW IN <nest-
 
 - Gate: **GREEN — push authorised**; merge after CI and the owner's approval
 
-## PR review (Codex)
+## PR review (automated review)
 
-- `docs/architecture/review-local.md:9` `[process]` (Codex P1) · gate recorded on an earlier SHA than the head · **fixed**: gate re-run on the head below
+- `docs/architecture/review-local.md:9` `[process]` (automated review, P1) · gate recorded on an earlier SHA than the head · **fixed**: gate re-run on the head below
 
 ## 🔴 Must Have
 
