@@ -1,12 +1,12 @@
 # Local review — bb-homelab (branch diff main...docs/162-ufw-nest-ha-audio)
 
 - Date: 2026-10-28
-- Commit: 9e3cddd
+- Commit: 975c301 (gate re-run on this head on 2026-10-29; the next commit only updates this report)
 - Scope: branch diff `main...HEAD`
 - Checks run: docs · security · correctness (tests: docs only)
 - Verdict: ship as-is after the fixes below · Must 2 (all fixed) · Should 0 (all fixed) · Nice 0 (issue)
 
-## Pre-merge gate (head SHA 9e3cddd)
+## Pre-merge gate (head SHA 975c301)
 
 | Step | Result |
 |---|---|
@@ -19,6 +19,10 @@
 Other checks: live: `ufw status numbered` shows rule 2 `8123/tcp ALLOW IN <nest-ip>`.
 
 - Gate: **GREEN — push authorised**; merge after CI and the owner's approval
+
+## PR review (Codex)
+
+- `docs/architecture/review-local.md:9` `[process]` (Codex P1) · gate recorded on an earlier SHA than the head · **fixed**: gate re-run on the head below
 
 ## 🔴 Must Have
 
