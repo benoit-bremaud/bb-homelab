@@ -1,7 +1,7 @@
 # Local review — bb-homelab (branch diff main...fix/168-disable-uas-jms578)
 
 - Date: 2026-10-30
-- Commit: a809f1f
+- Commit: a809f1f (gitleaks re-run on 0d58aa8, which adds the PROJECT_LOG entry; the next commit only updates this report)
 - Scope: branch diff `main...HEAD` (`storage/INVENTORY.md`) plus the
   host change on the Pi (`/boot/firmware/cmdline.txt`, not versioned)
 - Checks run: docs · security · correctness (design, tests, containers:
