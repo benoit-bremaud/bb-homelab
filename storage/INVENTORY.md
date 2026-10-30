@@ -141,8 +141,11 @@ réception d'enclosures USB-SATA compatibles (issue #47).
 (Version détaillée à venir dans `storage/MOUNT.md`, issue #10.)
 
 1. Vérifier le chipset USB-SATA via `lsusb` (rejeter JMS583, accepter
-   JMS567/JMS578/ASM1153/ASM225CM). Pour un pont JMS578 (`152d:0578`),
-   désactiver UAS (quirk `usb-storage.quirks=152d:0578:u`, voir Disk #7).
+   JMS567/JMS578/ASM1153/ASM225CM). UAS est déjà désactivé pour tout
+   pont JMS578 (`152d:0578`, quirk global, voir Disk #7). Pour un autre
+   pont, ajouter son `VID:PID:u` au même paramètre, séparé par une
+   virgule ; ne jamais ajouter un second `usb-storage.quirks=` (le noyau
+   ne garde que le dernier).
 2. **Identifier sans ambiguïté le disque cible** (`/dev/sdX`) : confirmer
    le modèle, le numéro de série et la capacité via `lsblk -f /dev/sdX`
    et `sudo smartctl -i /dev/sdX`. Comparer au matériel physique branché
