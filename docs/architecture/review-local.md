@@ -1,15 +1,16 @@
 # Local review — bb-homelab (branch diff main...fix/168-disable-uas-jms578)
 
 - Date: 2026-10-30
-- Commit: a809f1f (gitleaks re-run on 0d58aa8, which adds the PROJECT_LOG entry; the next commit only updates this report)
-- Scope: branch diff `main...HEAD` (`storage/INVENTORY.md`) plus the
-  host change on the Pi (`/boot/firmware/cmdline.txt`, not versioned)
+- Commit: a172d35 (full gate re-run on this head on 2026-10-30; the next
+  commit only updates this report)
+- Scope: branch diff `main...HEAD` (`storage/INVENTORY.md`,
+  `PROJECT_LOG.md`, this report) plus the host change on the Pi (`/boot/firmware/cmdline.txt`, not versioned)
 - Checks run: docs · security · correctness (design, tests, containers:
   N/A, docs-only diff)
 - Verdict: ship · Must 2 (all fixed) · Should 2 (all fixed) · Nice 2
   (kept, see below)
 
-## Pre-merge gate (head SHA a809f1f)
+## Pre-merge gate (head SHA a172d35)
 
 | Step | Result |
 |---|---|
@@ -22,6 +23,20 @@
 Waiver: no GitHub Actions credit (#21); the gate runs locally.
 
 - Gate: **GREEN — merge authorised** after the owner's approval
+
+## PR review (independent local review)
+
+The automated reviewer hit its usage limit twice; owner MCDA (460/500)
+chose an independent local review instead, recorded here.
+
+- `storage/INVENTORY.md:144` `[docs]` (Should) · step 1 told the
+  reader to re-add the quirk for a new JMS578, and a second
+  `usb-storage.quirks=` replaces the first · **fixed** in a172d35
+- `docs/architecture/review-local.md:4` `[process]` (Should) · gate
+  recorded on an earlier SHA, scope incomplete · **fixed**: full gate
+  re-run on a172d35
+- `docs/architecture/review-local.md:44` `[docs]` (Nice) · wrong
+  occurrence count · **fixed**
 
 ## 🔴 Must Have
 
@@ -41,9 +56,9 @@ Waiver: no GitHub Actions credit (#21); the gate runs locally.
 
 - `storage/INVENTORY.md:90` `[docs]` · "aggressive head parking" is an
   unsourced reading · kept: it mirrors the issue's SMART analysis
-- `storage/INVENTORY.md:52,143` `[docs]` · the quirk string appears
-  three times · kept: each place serves a different reader (disk
-  sheet, note, integration procedure)
+- `storage/INVENTORY.md:116,145` `[docs]` · the quirk string appears
+  twice (line 52 only points to the note) · kept: each place serves a
+  different reader (disk note, integration procedure)
 
 ## ⚪ Disagree / Intentional
 
