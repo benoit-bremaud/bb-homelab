@@ -1,25 +1,22 @@
-# Local review — bb-homelab (branch diff main...docs/172-safe-uas-rollback)
+# Local review — bb-homelab (chore/169-persistent-journal)
 
 - Date: 2026-10-30
-- Commit: b6f0874 (the amended head only adds the Should Have fix and
-  this report)
-- Scope: branch diff `main...HEAD` (`storage/INVENTORY.md`,
-  `PROJECT_LOG.md`, this report); docs-only, nothing changed on the Pi
-- Checks run: docs · security · correctness (design, tests, containers:
-  N/A, docs-only diff)
-- Verdict: ship · Must 0 · Should 1 (fixed) · Nice 1 (kept)
+- Commit: cbc1a95 + review fixes
+- Scope: branch diff origin/main...HEAD (bootstrap journald drop-in, bootstrap.sh step, README, PROJECT_LOG)
+- Checks run: design · docs · security · correctness (combined pass; no application code, no tests in scope)
+- Verdict: ship · Must 0 · Should 3 (fixed) · Nice 1 (fixed)
 
-## Pre-merge gate (head SHA b6f0874)
+## Pre-merge gate (head SHA pending)
 
 | Step | Result |
 |---|---|
-| 1 Tests | N/A (no application code); markdownlint-cli2 green except the known MD060 false positive at `storage/INVENTORY.md:41` (pre-existing) |
-| 2 Coverage | N/A (no code); every touched file is documentation |
-| 3 SonarQube | ⚠️ not run locally; the SonarCloud check runs on the PR |
-| 4 Secrets | ✅ gitleaks clean (`origin/main..HEAD`) · no tracked `.env` · diff read: no address, no identifier |
-| 5 QA pass | N/A (docs diff); the `sed` and `cat` commands were checked by hand against the quirk as appended (leading space) |
+| 1 Tests | shellcheck clean · markdownlint clean (repo has no test suite, see CLAUDE.md deviations) |
+| 2 Coverage | n/a (no application code) |
+| 3 SonarQube | CI check on the PR |
+| 4 Secrets | gitleaks clean (origin/main..HEAD) · no tracked .env · diff read: nothing sensitive |
+| 5 QA pass | pending: apply on the Pi, check `cat-config`, `/var/log/journal`; `--list-boots` > 1 after next approved reboot |
 
-- Gate: **GREEN for push**; merge waits for the PR checks
+- Gate: **GREEN for push**; merge after step 5 on the Pi
 
 ## 🔴 Must Have
 
@@ -27,15 +24,13 @@ _None._
 
 ## 🟡 Should Have
 
-- `storage/INVENTORY.md:120` `[correctness]` · `dmesg | grep` can
-  return nothing (`dmesg_restrict`, ring buffer rolled over) and
-  suggest the quirk is inactive · fixed: `sudo journalctl -k -b | grep
-  -i 'UAS is ignored'` (owner MCDA 470/500 vs `sudo dmesg` 410)
+- `bootstrap/bootstrap.sh:288` `[correctness]` · `$0` wrong if sourced · fixed: `${BASH_SOURCE[0]}`
+- `bootstrap/bootstrap.sh:290` `[docs]` · curl-downloaded run skips the step · README states "from a clone only"; kept (single source of truth for the drop-in)
+- `bootstrap/README.md:112` `[docs]` · `--disk-usage` comment inaccurate · fixed: `journalctl --flush` + `ls /var/log/journal`
 
 ## 🔵 Nice to Have
 
-- `storage/INVENTORY.md:121-124` `[docs]` · "le disque reste le goulot"
-  then "À revoir si … devient un goulot" is a mild repetition · kept
+- `bootstrap/bootstrap.sh:301` `[correctness]` · flush the current boot to disk · fixed: `journalctl --flush`
 
 ## ⚪ Disagree / Intentional
 
@@ -43,6 +38,4 @@ _None._
 
 ## Per-dimension summary
 
-- Design: N/A · Docs: French Category A respected, review items 1-3
-  and both Nice applied · Tests: N/A · Security: reboot only with
-  physical access, no secret · Correctness: one re-check command fixed
+- Design: minimal drop-in + idempotent step · Docs: procedure and runbook accurate · Tests: n/a · Security: 0644 root file, no secret · Correctness: precedence 50- over 40- confirmed

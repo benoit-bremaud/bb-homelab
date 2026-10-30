@@ -91,6 +91,37 @@ sudo SSH_UFW_SCOPE=tailscale bash bootstrap/harden-ssh.sh
 After running, **always open a new terminal and verify SSH still
 works** before closing the original session.
 
+## Persistent journal (issue #169)
+
+Raspberry Pi OS ships `Storage=volatile`
+(`/usr/lib/systemd/journald.conf.d/40-rpi-volatile-storage.conf`), so
+the kernel log of the previous boot is lost at every restart. The
+drop-in [`journald/50-persistent.conf`](journald/50-persistent.conf)
+keeps the journal on the SD card (`Storage=persistent`), capped at
+`SystemMaxUse=100M`. All levels are kept: USB/UAS reset messages are
+logged at info level and are the evidence we need after a disk stall.
+
+`bootstrap.sh` installs it (step `step_persistent_journal`, from a
+clone only). By hand, from a clone on the Pi:
+
+```bash
+sudo install -D -m 0644 bootstrap/journald/50-persistent.conf \
+  /etc/systemd/journald.conf.d/50-persistent.conf
+sudo systemctl restart systemd-journald   # no reboot needed
+systemd-analyze cat-config systemd/journald.conf | grep -E 'Storage|SystemMaxUse'
+sudo journalctl --flush                   # move this boot from /run to /var
+ls /var/log/journal                       # directory now exists
+```
+
+Runbook — after an unexpected restart:
+
+```bash
+journalctl --list-boots                   # more than one boot listed
+journalctl -k -b -1                       # kernel log of the previous boot
+journalctl -k -b -1 | grep -iE 'uas|usb .*reset|ext4|i/o error'
+journalctl -b -1 -n 100                   # last 100 lines before the stop
+```
+
 ## Manual procedure (without the script)
 
 If you'd rather do it by hand:

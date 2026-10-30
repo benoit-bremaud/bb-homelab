@@ -1625,3 +1625,21 @@ was done and why, by date.
   remote reboot on a malformed line can leave the headless Pi
   unreachable. Docs-only, nothing changed on the Pi.
 - **Refs**: closes #172, refs #168
+
+### Host: keep the systemd journal across reboots (#169)
+
+- **What**: versioned drop-in `bootstrap/journald/50-persistent.conf`
+  (`Storage=persistent`, `SystemMaxUse=100M`, all levels kept),
+  installed by a new idempotent `bootstrap.sh` step; install procedure
+  and post-restart runbook (`journalctl -k -b -1`) in
+  `bootstrap/README.md`.
+- **Why**: Raspberry Pi OS ships `Storage=volatile`, so the
+  2026-10-29 appdata stall could not be proven after the reboot. Owner
+  MCDA: persistent on the SD card 435/500 (HDD 330, remote syslog 330);
+  keep all levels 450/500 against `MaxLevelStore=notice` 240 (USB/UAS
+  resets are info level); installer step in `bootstrap.sh` 410/500
+  against manual procedure only 400.
+- **Measured before**: about 8 MB of journal in 10 h; SD root 83 % used.
+- **Open**: `journalctl --list-boots` > 1 after the next owner-approved
+  reboot; then #168's 7-day watch can be read.
+- **Refs**: closes #169, refs #168
