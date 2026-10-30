@@ -109,7 +109,8 @@ sudo install -D -m 0644 bootstrap/journald/50-persistent.conf \
   /etc/systemd/journald.conf.d/50-persistent.conf
 sudo systemctl restart systemd-journald   # no reboot needed
 systemd-analyze cat-config systemd/journald.conf | grep -E 'Storage|SystemMaxUse'
-journalctl --disk-usage                   # now under /var/log/journal
+sudo journalctl --flush                   # move this boot from /run to /var
+ls /var/log/journal                       # directory now exists
 ```
 
 Runbook — after an unexpected restart:
