@@ -49,7 +49,7 @@ de dérive ultérieure.
 | Secteurs | 512 logiques / 4096 physiques (Advanced Format) |
 | Vitesse rotation | 5400 rpm |
 | Date d'acquisition | 2026-05-08 (récupéré recyclé) |
-| **Enclosure USB-SATA** | JMicron **JMS578** (`152d:0578`, SMART passthrough OK) |
+| **Enclosure USB-SATA** | JMicron **JMS578** (`152d:0578`, SMART passthrough OK, UAS désactivé : voir Notes) |
 | **Date d'intégration** | 2026-05-08 |
 | **Mount point** | `/mnt/appdata` |
 | **Filesystem UUID** | `aed8879a-543a-4d43-90b1-0fb05aa371ea` |
@@ -75,6 +75,25 @@ de dérive ultérieure.
 - LifeTime à l'exécution : 2 heures
 - LBA_of_first_error : aucun
 
+#### Relevé SMART post-incident (2026-10-30, issue #168)
+
+Relevé après le blocage du lien USB du 2026-10-29 (`smartctl -a` à
+travers le pont JMS578), comparé à la baseline ci-dessus :
+
+- Health overall : `PASSED`
+- Reallocated_Sector_Ct / Current_Pending_Sector / Offline_Uncorrectable : 0 / 0 / 0
+- Reported_Uncorrect / Command_Timeout : 0 / 0
+- UDMA_CRC_Error_Count : 0 (lien SATA disque ↔ pont sain)
+- Journal d'erreurs SMART : aucune erreur
+- Power_On_Hours : 2 740
+- Temperature_Celsius : 36°C (max 47)
+- Load_Cycle_Count : 92 915 (~34/h, parcage des têtes agressif mais
+  dans les limites d'un disque 2.5")
+
+Conclusion : surface et lien SATA sains, la piste reste le lien
+USB/UAS du pont. Si les secteurs réalloués ou en attente augmentent,
+la décision est rouverte (remplacement par un SSD).
+
 #### Notes
 
 - Disque récupéré recyclé. Contenait avant intégration une installation
@@ -91,6 +110,13 @@ de dérive ultérieure.
 - Tests post-intégration : `mount -a` sans erreur, lecture + écriture +
   suppression d'un fichier test confirmées. Reboot test non encore
   effectué — à valider lors du prochain reboot planifié.
+- **UAS désactivé (2026-10-30, issue #168)** : le lien USB s'est bloqué
+  le 2026-10-29 en mode UAS, alors que le relevé SMART est sain. Le pont
+  passe en `usb-storage` via le quirk `usb-storage.quirks=152d:0578:u`,
+  ajouté à la fin de l'unique ligne de `/boot/firmware/cmdline.txt`
+  (sauvegarde préalable `cmdline.txt.bak-2026-10-30-pre-168`). Contrôle
+  après reboot : `lsusb -t` affiche `Driver=usb-storage` pour le disque.
+  Retour arrière : restaurer la sauvegarde puis redémarrer.
 
 ## Disques en attente d'intégration
 
@@ -113,7 +139,8 @@ réception d'enclosures USB-SATA compatibles (issue #47).
 (Version détaillée à venir dans `storage/MOUNT.md`, issue #10.)
 
 1. Vérifier le chipset USB-SATA via `lsusb` (rejeter JMS583, accepter
-   JMS567/JMS578/ASM1153/ASM225CM).
+   JMS567/JMS578/ASM1153/ASM225CM). Pour un pont JMS578 (`152d:0578`),
+   désactiver UAS (quirk `usb-storage.quirks=152d:0578:u`, voir Disk #7).
 2. **Identifier sans ambiguïté le disque cible** (`/dev/sdX`) : confirmer
    le modèle, le numéro de série et la capacité via `lsblk -f /dev/sdX`
    et `sudo smartctl -i /dev/sdX`. Comparer au matériel physique branché
