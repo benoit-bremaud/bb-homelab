@@ -1,64 +1,41 @@
-# Local review — bb-homelab (branch diff main...fix/168-disable-uas-jms578)
+# Local review — bb-homelab (branch diff main...docs/172-safe-uas-rollback)
 
 - Date: 2026-10-30
-- Commit: a172d35 (full gate re-run on this head on 2026-10-30; the next
-  commit only updates this report)
+- Commit: b6f0874 (the amended head only adds the Should Have fix and
+  this report)
 - Scope: branch diff `main...HEAD` (`storage/INVENTORY.md`,
-  `PROJECT_LOG.md`, this report) plus the host change on the Pi (`/boot/firmware/cmdline.txt`, not versioned)
+  `PROJECT_LOG.md`, this report); docs-only, nothing changed on the Pi
 - Checks run: docs · security · correctness (design, tests, containers:
   N/A, docs-only diff)
-- Verdict: ship · Must 2 (all fixed) · Should 2 (all fixed) · Nice 2
-  (kept, see below)
+- Verdict: ship · Must 0 · Should 1 (fixed) · Nice 1 (kept)
 
-## Pre-merge gate (head SHA a172d35)
+## Pre-merge gate (head SHA b6f0874)
 
 | Step | Result |
 |---|---|
-| 1 Tests | N/A: docs only · markdownlint clean (only the known MD060 false positive) |
-| 2 Coverage | N/A (no code) |
-| 3 SonarQube | ✅ PASSED |
-| 4 Secrets | ✅ gitleaks clean (`--log-opts=--all`) · no tracked .env · diff read: no IP, MAC, city or serial added |
-| 5 QA pass | ✅ smoke on the Pi after the reboot: `lsusb -t` shows `Driver=usb-storage`, kernel logs "UAS is ignored for this device", `/mnt/appdata` mounted from `sda1`, every container with a healthcheck healthy (Home Assistant included), Zigbee2MQTT started, tunnel registered |
+| 1 Tests | N/A (no application code); markdownlint-cli2 green except the known MD060 false positive at `storage/INVENTORY.md:41` (pre-existing) |
+| 2 Coverage | N/A (no code); every touched file is documentation |
+| 3 SonarQube | ⚠️ not run locally; the SonarCloud check runs on the PR |
+| 4 Secrets | ✅ gitleaks clean (`origin/main..HEAD`) · no tracked `.env` · diff read: no address, no identifier |
+| 5 QA pass | N/A (docs diff); the `sed` and `cat` commands were checked by hand against the quirk as appended (leading space) |
 
-Waiver: no GitHub Actions credit (#21); the gate runs locally.
-
-- Gate: **GREEN — merge authorised** after the owner's approval
-
-## PR review (independent local review)
-
-The automated reviewer hit its usage limit twice; owner MCDA (460/500)
-chose an independent local review instead, recorded here.
-
-- `storage/INVENTORY.md:144` `[docs]` (Should) · step 1 told the
-  reader to re-add the quirk for a new JMS578, and a second
-  `usb-storage.quirks=` replaces the first · **fixed** in a172d35
-- `docs/architecture/review-local.md:4` `[process]` (Should) · gate
-  recorded on an earlier SHA, scope incomplete · **fixed**: full gate
-  re-run on a172d35
-- `docs/architecture/review-local.md:44` `[docs]` (Nice) · wrong
-  occurrence count · **fixed**
+- Gate: **GREEN for push**; merge waits for the PR checks
 
 ## 🔴 Must Have
 
-- `storage/INVENTORY.md:111` `[docs]` · "reboot test not done yet"
-  contradicted the new note · **fixed** in a809f1f
-- `storage/INVENTORY.md:113` `[docs]` · the post-reboot check read as a
-  procedure, not a result · **fixed** in a809f1f (dated result)
+_None._
 
 ## 🟡 Should Have
 
-- `storage/INVENTORY.md:93,113` `[docs]` · UAS stated as the proven
-  cause · **fixed**: worded as the probable cause
-- `storage/INVENTORY.md:117` `[docs]` · rollback without the backup
-  path · **fixed**: full `cp` command
+- `storage/INVENTORY.md:120` `[correctness]` · `dmesg | grep` can
+  return nothing (`dmesg_restrict`, ring buffer rolled over) and
+  suggest the quirk is inactive · fixed: `sudo journalctl -k -b | grep
+  -i 'UAS is ignored'` (owner MCDA 470/500 vs `sudo dmesg` 410)
 
 ## 🔵 Nice to Have
 
-- `storage/INVENTORY.md:90` `[docs]` · "aggressive head parking" is an
-  unsourced reading · kept: it mirrors the issue's SMART analysis
-- `storage/INVENTORY.md:116,145` `[docs]` · the quirk string appears
-  twice (line 52 only points to the note) · kept: each place serves a
-  different reader (disk note, integration procedure)
+- `storage/INVENTORY.md:121-124` `[docs]` · "le disque reste le goulot"
+  then "À revoir si … devient un goulot" is a mild repetition · kept
 
 ## ⚪ Disagree / Intentional
 
@@ -66,6 +43,6 @@ _None._
 
 ## Per-dimension summary
 
-- Design: N/A · Docs: 4 fixes applied · Tests: N/A · Security: nothing
-  sensitive added; the pre-existing serial number on the disk sheet is
-  out of scope · Correctness: SMART figures match the issue comment
+- Design: N/A · Docs: French Category A respected, review items 1-3
+  and both Nice applied · Tests: N/A · Security: reboot only with
+  physical access, no secret · Correctness: one re-check command fixed
