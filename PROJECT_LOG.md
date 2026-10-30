@@ -1587,3 +1587,26 @@ was done and why, by date.
   The Nest IP is reserved on the box. HA itself stays tailnet-first.
 - **Audit**: `docs/security/AUDIT.md` §6 UFW record updated.
 - **Refs**: closes #162
+
+## 2026-10-30
+
+### Storage: disable UAS for the JMS578 bridge of the appdata HDD (#168)
+
+- **What**: `usb-storage.quirks=152d:0578:u` appended to the single
+  line of `/boot/firmware/cmdline.txt` on the Pi (backup
+  `cmdline.txt.bak-2026-10-30-pre-168`), applied by the owner, then
+  rebooted. After the reboot, `lsusb -t` shows `Driver=usb-storage`,
+  `/mnt/appdata` is mounted from `sda1` and the whole stack is healthy.
+- **Why**: on 2026-10-29 about 22:57 the appdata HDD link stalled;
+  the #11 guard (`RequiresMountsFor=/mnt/appdata`) stopped Docker
+  cleanly at 23:03 (diagnosis in benoit-bremaud/home-assistant#45).
+  SMART is clean (CRC 0, no reallocated or pending sector), so the
+  JMS578 bridge in UAS mode is the probable cause. Owner MCDA: disable
+  UAS 410/500, observe only 360, powered hub 330, SSD swap 250.
+- **Docs**: `storage/INVENTORY.md` Disk #7 gets the post-incident
+  SMART read, the quirk note (check and rollback) and a JMS578 reminder
+  in the integration procedure.
+- **Open**: 7-day watch for UAS/USB resets and ext4 errors, readable
+  once the persistent journal (#169) is in place; #168 stays open
+  until then.
+- **Refs**: refs #168
