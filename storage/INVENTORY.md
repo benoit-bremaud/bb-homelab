@@ -91,7 +91,7 @@ travers le pont JMS578), comparé à la baseline ci-dessus :
   dans les limites d'un disque 2.5")
 
 Conclusion : surface et lien SATA sains, la piste reste le lien
-USB/UAS du pont. Si les secteurs réalloués ou en attente augmentent,
+USB/UAS du pont (cause probable). Si les secteurs réalloués ou en attente augmentent,
 la décision est rouverte (remplacement par un SSD).
 
 #### Notes
@@ -108,15 +108,17 @@ la décision est rouverte (remplacement par un SSD).
   unique, mount direct, pas de bind-mount pour archive en attendant
   d'autres disques).
 - Tests post-intégration : `mount -a` sans erreur, lecture + écriture +
-  suppression d'un fichier test confirmées. Reboot test non encore
-  effectué — à valider lors du prochain reboot planifié.
+  suppression d'un fichier test confirmées. Reboot test validé le
+  2026-10-30 (voir la note « UAS désactivé » ci-dessous).
 - **UAS désactivé (2026-10-30, issue #168)** : le lien USB s'est bloqué
-  le 2026-10-29 en mode UAS, alors que le relevé SMART est sain. Le pont
-  passe en `usb-storage` via le quirk `usb-storage.quirks=152d:0578:u`,
-  ajouté à la fin de l'unique ligne de `/boot/firmware/cmdline.txt`
-  (sauvegarde préalable `cmdline.txt.bak-2026-10-30-pre-168`). Contrôle
-  après reboot : `lsusb -t` affiche `Driver=usb-storage` pour le disque.
-  Retour arrière : restaurer la sauvegarde puis redémarrer.
+  le 2026-10-29, UAS actif. Le relevé SMART est sain, la cause probable
+  est donc UAS. Le pont passe en `usb-storage` via le quirk
+  `usb-storage.quirks=152d:0578:u`, ajouté à la fin de l'unique ligne de
+  `/boot/firmware/cmdline.txt`. Contrôle fait le 2026-10-30 après
+  reboot : `lsusb -t` affiche `Driver=usb-storage`, `/mnt/appdata` est
+  monté depuis `sda1` et tous les conteneurs sont sains. Retour
+  arrière : `sudo cp -p /boot/firmware/cmdline.txt.bak-2026-10-30-pre-168
+  /boot/firmware/cmdline.txt` puis redémarrer.
 
 ## Disques en attente d'intégration
 
