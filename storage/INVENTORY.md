@@ -116,9 +116,23 @@ la décision est rouverte (remplacement par un SSD).
   `usb-storage.quirks=152d:0578:u`, ajouté à la fin de l'unique ligne de
   `/boot/firmware/cmdline.txt`. Contrôle fait le 2026-10-30 après
   reboot : `lsusb -t` affiche `Driver=usb-storage`, `/mnt/appdata` est
-  monté depuis `sda1` et tous les conteneurs sont sains. Retour
-  arrière : `sudo cp -p /boot/firmware/cmdline.txt.bak-2026-10-30-pre-168
-  /boot/firmware/cmdline.txt` puis redémarrer.
+  monté depuis `sda1` et tous les conteneurs sont sains. Revérifier à
+  tout moment : `lsusb -t | grep -i 'Driver=usb-storage'` et
+  `sudo journalctl -k -b | grep -i 'UAS is ignored'`.
+  Contrepartie : en `usb-storage` (BOT), pas de file de commandes ;
+  débit et latence aléatoire un peu moins bons, acceptables pour un
+  disque 5400 rpm (le disque reste le goulot). À revoir si
+  `/mnt/appdata` devient un goulot d'I/O.
+  Retour arrière : retirer seulement le quirk
+  (`sudo sed -i 's/ usb-storage\.quirks=152d:0578:u//' /boot/firmware/cmdline.txt`),
+  puis `cat /boot/firmware/cmdline.txt` pour vérifier qu'il reste une
+  seule ligne, avec `root=` et sans le quirk. Si d'autres `VID:PID`
+  sont ajoutés au même paramètre, adapter le `sed`. La sauvegarde
+  `cmdline.txt.bak-2026-10-30-pre-168` ne sert qu'en dernier recours :
+  elle effacerait toute modification ultérieure de `cmdline.txt`.
+  Redémarrer uniquement avec un accès physique au Pi (clavier/écran ou
+  lecteur de carte SD pour corriger `cmdline.txt`), jamais à distance :
+  une ligne mal formée peut laisser le Pi sans démarrage ou hors réseau.
 
 ## Disques en attente d'intégration
 
@@ -142,7 +156,8 @@ réception d'enclosures USB-SATA compatibles (issue #47).
 
 1. Vérifier le chipset USB-SATA via `lsusb` (rejeter JMS583, accepter
    JMS567/JMS578/ASM1153/ASM225CM). UAS est déjà désactivé pour tout
-   pont JMS578 (`152d:0578`, quirk global, voir Disk #7). Pour un autre
+   pont JMS578 (`152d:0578`, quirk global, voir Disk #7) : choix
+   délibéré, tout futur boîtier JMS578 sera aussi en BOT. Pour un autre
    pont, ajouter son `VID:PID:u` au même paramètre, séparé par une
    virgule ; ne jamais ajouter un second `usb-storage.quirks=` (le noyau
    ne garde que le dernier).

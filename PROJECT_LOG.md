@@ -1610,3 +1610,18 @@ was done and why, by date.
   once the persistent journal (#169) is in place; #168 stays open
   until then.
 - **Refs**: refs #168
+
+### Storage: make the #168 UAS rollback safe and document the trade-off (#172)
+
+- **What**: `storage/INVENTORY.md` Disk #7 note: the rollback now
+  removes only the quirk with a targeted `sed` plus a `cat` check, the
+  `.bak` file is a last resort only; a reboot after a `cmdline.txt`
+  edit needs physical access to the Pi; the UAS-off trade-off (BOT, no
+  command queuing, slightly lower throughput) is recorded; re-check
+  commands added; the integration procedure states that every future
+  JMS578 bridge also runs in BOT.
+- **Why**: automated review (Should Have) after PR #170: restoring the
+  frozen `.bak` would silently drop later `cmdline.txt` edits, and a
+  remote reboot on a malformed line can leave the headless Pi
+  unreachable. Docs-only, nothing changed on the Pi.
+- **Refs**: closes #172, refs #168
