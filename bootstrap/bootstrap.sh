@@ -281,6 +281,26 @@ Unattended-Upgrade::Automatic-Reboot "false";
 CONF
 }
 
+step_persistent_journal() {
+  # Raspberry Pi OS defaults to Storage=volatile: the kernel log of the
+  # previous boot is lost. Install the versioned drop-in (issue #169).
+  local src dst=/etc/systemd/journald.conf.d/50-persistent.conf
+  src="$(dirname "$(readlink -f "$0")")/journald/50-persistent.conf"
+  if [ ! -f "$src" ]; then
+    warn "$src not found (script run outside a clone). Skipping persistent journal."
+    return
+  fi
+  if cmp -s "$src" "$dst"; then
+    log "Persistent journal drop-in already installed. Skipping."
+    return
+  fi
+  log "Installing persistent journal drop-in ($dst)…"
+  install -D -m 0644 "$src" "$dst"
+  if has_systemd; then
+    systemctl restart systemd-journald
+  fi
+}
+
 # --- Main --------------------------------------------------------------------
 
 main() {
@@ -301,6 +321,7 @@ main() {
   step_set_timezone
   step_set_hostname
   step_enable_unattended_upgrades
+  step_persistent_journal
 
   log "Bootstrap complete."
   log "Next steps:"
