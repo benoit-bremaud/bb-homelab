@@ -183,6 +183,15 @@ committer `.env`.
   Retour arrière : même commande avec `0:0`, puis revert **ensemble** du
   compose et de l'upstream Caddy (`vaultwarden:80`), sinon Caddy vise un
   port fermé ; recharger Caddy.
+- **Alerte sur les rafales d'échecs de connexion.**
+  `scripts/login-alert.sh` compte, toutes les 5 minutes, les échecs
+  (mot de passe maître, token admin, code 2FA) dans les logs du
+  conteneur et pousse vers une sonde Uptime Kuma de type Push :
+  `up` sous le seuil (5 par défaut), `down` au-delà, et une absence de
+  heartbeat passe aussi la sonde en `down`. URL de push dans
+  `~/.config/bb-homelab/kuma-push-vaultwarden-logins` (chmod 600, hors
+  git), puis cron :
+  `*/5 * * * * KUMA_PUSH_URL="$(cat /home/benoit/.config/bb-homelab/kuma-push-vaultwarden-logins)" /bin/bash /home/benoit/bb-homelab/services/vaultwarden/scripts/login-alert.sh >> /home/benoit/vaultwarden-backups/login-alert.log 2>&1`
 
 ## Refs
 
