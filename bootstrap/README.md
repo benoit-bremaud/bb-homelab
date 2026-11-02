@@ -122,6 +122,25 @@ journalctl -k -b -1 | grep -iE 'uas|usb .*reset|ext4|i/o error'
 journalctl -b -1 -n 100                   # last 100 lines before the stop
 ```
 
+## Nonlocal bind for tailnet-bound ports (issue #139)
+
+Caddy and Jellyfin publish their ports on loopback and on the Pi's
+tailnet IP only (ADR 0007), because Docker-published ports bypass UFW.
+At boot Docker can start before `tailscaled` has brought `tailscale0`
+up; the sysctl drop-in
+[`sysctl/99-bb-homelab-nonlocal-bind.conf`](sysctl/99-bb-homelab-nonlocal-bind.conf)
+(`net.ipv4.ip_nonlocal_bind = 1`) lets the bind succeed anyway.
+
+`bootstrap.sh` installs it (step `step_nonlocal_bind`, from a clone
+only). By hand, from a clone on the Pi:
+
+```bash
+sudo install -D -m 0644 bootstrap/sysctl/99-bb-homelab-nonlocal-bind.conf \
+  /etc/sysctl.d/99-bb-homelab-nonlocal-bind.conf
+sudo sysctl -p /etc/sysctl.d/99-bb-homelab-nonlocal-bind.conf
+cat /proc/sys/net/ipv4/ip_nonlocal_bind   # 1
+```
+
 ## Manual procedure (without the script)
 
 If you'd rather do it by hand:

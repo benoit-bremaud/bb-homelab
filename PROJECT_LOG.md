@@ -1711,3 +1711,20 @@ was done and why, by date.
   pause. The Kuma archive was restored into a throwaway container:
   `integrity_check` ok, 10 monitors, existing account.
 - **Refs**: closes #138
+
+### Security: Caddy and Jellyfin ports bound to loopback and the tailnet (#139)
+
+- **What**: Caddy (80, 443/tcp, 443/udp) and Jellyfin (8096) publish on
+  `127.0.0.1` and the Pi's tailnet IP instead of every interface; new
+  sysctl drop-in `bootstrap/sysctl/99-bb-homelab-nonlocal-bind.conf`
+  (`net.ipv4.ip_nonlocal_bind = 1`, installed by `bootstrap.sh`) so the
+  tailnet bind survives Docker starting before `tailscaled`; ADR 0007;
+  real per-port exposure table in `network/README.md`; R10 updated.
+- **Why**: audit finding R10 (#46): Docker-published ports bypass UFW,
+  so both services were open to the whole LAN. 30 days of logs showed
+  tailnet clients only. Owner MCDA: bind to loopback + tailnet 395/500
+  against `DOCKER-USER` rules 330, accept with an ADR 325 and
+  `ufw-docker` 310.
+- **Open**: Mosquitto 1883 stays LAN-wide by design (repo
+  `home-assistant`).
+- **Refs**: closes #139

@@ -319,6 +319,24 @@ step_persistent_journal() {
   fi
 }
 
+step_nonlocal_bind() {
+  # Docker binds Caddy and Jellyfin to the tailnet IP, which may not exist
+  # yet when Docker starts at boot (ADR 0007, issue #139).
+  local src dst=/etc/sysctl.d/99-bb-homelab-nonlocal-bind.conf
+  src="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/sysctl/99-bb-homelab-nonlocal-bind.conf"
+  if [ ! -f "$src" ]; then
+    warn "$src not found (script run outside a clone). Skipping nonlocal bind."
+    return
+  fi
+  if cmp -s "$src" "$dst"; then
+    log "Nonlocal bind sysctl already installed. Skipping."
+    return
+  fi
+  log "Installing nonlocal bind sysctl ($dst)…"
+  install -D -m 0644 "$src" "$dst"
+  sysctl -p "$dst"
+}
+
 # --- Main --------------------------------------------------------------------
 
 main() {
@@ -340,6 +358,7 @@ main() {
   step_set_hostname
   step_enable_unattended_upgrades
   step_persistent_journal
+  step_nonlocal_bind
 
   log "Bootstrap complete."
   log "Next steps:"
