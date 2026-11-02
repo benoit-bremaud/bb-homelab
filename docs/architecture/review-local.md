@@ -16,9 +16,9 @@ Pre-push review of the one-line scorecard-action bump that fixes the red OSSF Sc
 | 2 Coverage | n/a (project deviation recorded in `CLAUDE.md`) |
 | 3 SonarQube | ⚠️ gate OK on the last main analysis (`new_violations` 0); branch not scanned, workflow YAML not analysed |
 | 4 Secrets | ✅ gitleaks clean (origin/main..HEAD) · no tracked .env · diff read: nothing sensitive |
-| 5 QA pass | skipped (`--push`); proof = Scorecard run green on the branch |
+| 5 QA pass | skipped (`--push`); partial proof: the image pull succeeds on branch run 41430377142, analysis and publication pending on `main` after merge (`publish_results: true` runs on the default branch only) |
 
-- Gate: **push authorised**; merge waits for the green Scorecard run.
+- Gate: **push authorised**; merge on the other required checks; Scorecard confirmed on `main` after merge.
 
 ## 🔴 Must Have
 
