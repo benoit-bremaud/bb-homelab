@@ -32,7 +32,7 @@ jobs:
         with:
           results_file: results.sarif
           results_format: sarif
-          publish_results: false  # TEMP #175 branch test, revert before merge
+          publish_results: true
       - name: Upload artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
