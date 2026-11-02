@@ -68,3 +68,8 @@ redémarrer les conteneurs qui en gardent une copie (ex.
   (sauvegardées avec le reste du HDD). `kuma.db` est une base SQLite.
 - Mise à jour : bumper `UPTIME_KUMA_IMAGE_TAG` dans `.env`, puis
   `docker compose pull && docker compose up -d`.
+
+## Sauvegarde
+
+Sauvegarde nocturne et restauration : voir
+[storage/APPDATA-BACKUP.md](../../storage/APPDATA-BACKUP.md).

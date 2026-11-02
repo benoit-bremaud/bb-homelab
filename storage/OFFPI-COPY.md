@@ -29,7 +29,7 @@ hors site chiffrée reste l'objet de l'issue #19.
 
 | Fichier | Rôle |
 |---|---|
-| [`scripts/pull-backups.sh`](scripts/pull-backups.sh) | Copie `~/backups/n8n/` et `~/vaultwarden-backups/` du Pi vers `~/Documents/02_personal/bb-homelab-backups/{n8n,vaultwarden}/` |
+| [`scripts/pull-backups.sh`](scripts/pull-backups.sh) | Copie `~/backups/{n8n,caddy,uptime-kuma,jellyfin}/` et `~/vaultwarden-backups/` du Pi vers `~/Documents/02_personal/bb-homelab-backups/<service>/` |
 | [`systemd/bb-homelab-backup-pull.service`](systemd/bb-homelab-backup-pull.service) | Lance le script une fois |
 | [`systemd/bb-homelab-backup-pull.timer`](systemd/bb-homelab-backup-pull.timer) | Chaque jour entre 04:00 et 04:10, avec rattrapage |
 | [`systemd/bb-homelab-backup-pull-failed.service`](systemd/bb-homelab-backup-pull-failed.service) | Notification de bureau si la copie échoue |
@@ -60,5 +60,6 @@ systemctl --user list-timers bb-homelab-backup-pull.timer
 
 Une archive copiée ici se restaure exactement comme sur le Pi : voir
 [services/n8n/BACKUP.md](../services/n8n/BACKUP.md) et
-[services/vaultwarden/BACKUP.md](../services/vaultwarden/BACKUP.md). La
+[services/vaultwarden/BACKUP.md](../services/vaultwarden/BACKUP.md) et
+[storage/APPDATA-BACKUP.md](APPDATA-BACKUP.md). La
 copier d'abord sur le Pi avec `scp`.
