@@ -58,6 +58,14 @@ vaultwarden.bb-homelab.local {
 	tls internal
 	@outside_tailnet not remote_ip 100.64.0.0/10 fd7a:115c:a1e0::/48
 	respond @outside_tailnet 403
+	# The /admin panel can disable 2FA and delete users: only the admin
+	# PC (vev-xps-15-9530) may reach it; everyone else sees a 404
+	# (bb-vault#21). Update the IP if that device is re-enrolled.
+	@admin_not_pc {
+		path /admin /admin/*
+		not remote_ip 100.67.85.126
+	}
+	respond @admin_not_pc 404
 	reverse_proxy vaultwarden:80 {
 		header_up X-Real-IP {remote_host}
 	}
