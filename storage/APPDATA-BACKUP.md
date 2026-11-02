@@ -75,28 +75,32 @@ ok, 10 moniteurs, compte existant (redirection vers `/dashboard`).
 Précondition : le disque est monté (`mountpoint -q /mnt/appdata`). Les
 compose utilisent `create_host_path: false`.
 
-| Service | Dossier compose | Dossier d'archive | Cible sur l'hôte |
-|---|---|---|---|
-| `caddy` | `services/caddy` | `data` | `/mnt/appdata/caddy/data` |
-| `uptime-kuma` | `services/uptime-kuma` | `app_data` | `/mnt/appdata/uptime-kuma` |
-| `jellyfin` | `services/jellyfin` | `config` | `/mnt/appdata/jellyfin/config` |
+| Service | Dossier compose | Dossier d'archive | Cible sur l'hôte | Propriétaire |
+|---|---|---|---|---|
+| `caddy` | `services/caddy` | `data` | `/mnt/appdata/caddy/data` | `0:0` |
+| `uptime-kuma` | `services/uptime-kuma` | `app_data` | `/mnt/appdata/uptime-kuma` | `1000:1000` |
+| `jellyfin` | `services/jellyfin` | `config` | `/mnt/appdata/jellyfin/config` | `0:0` |
 
-Exemple pour Uptime Kuma (remplacer les trois valeurs pour un autre service) :
+Exemple pour Uptime Kuma (remplacer les quatre valeurs pour un autre service) :
 
 ```bash
 cd ~/bb-homelab/services/uptime-kuma
 ARCHIVE=~/backups/uptime-kuma/uptime-kuma-2026-11-03_031500.tar.gz
 SRC=app_data
 DEST=/mnt/appdata/uptime-kuma
+OWNER=1000:1000
+mountpoint -q /mnt/appdata && test -d "${DEST}" || echo 'STOP: disque non monté'
 
 docker compose down
 sudo find "${DEST:?}" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
 sudo tar -xzf "${ARCHIVE}" -C "${DEST}" --strip-components=2 "./${SRC}"
+sudo chown -R "${OWNER}" "${DEST}"
 docker compose up -d
 ```
 
-`docker cp -a` a conservé les propriétaires d'origine, et `sudo tar`
-les restaure. Pour une archive copiée sur le PC, la renvoyer d'abord sur
+Lancé sans root, `docker cp` écrit les fichiers au nom de `benoit`
+(`1000`) : le `chown` remet le propriétaire d'origine.
+Pour une archive copiée sur le PC, la renvoyer d'abord sur
 le Pi avec `scp`.
 
 Après une restauration Caddy, la CA est identique : aucun client n'a à

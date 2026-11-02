@@ -34,11 +34,12 @@ shift 2
 [[ "${NAME}" =~ ^[a-z0-9-]+$ ]] || die "name must be lowercase kebab-case (got: '${NAME}')"
 BACKUP_DIR="${BACKUP_DIR:-${HOME}/backups/${NAME}}"
 KEEP="${KEEP:-7}"
-[[ "${KEEP}" =~ ^[0-9]+$ ]] || die "KEEP must be a non-negative integer (got: '${KEEP}')"
+[[ "${KEEP}" =~ ^[1-9][0-9]*$ ]] || die "KEEP must be a positive integer (got: '${KEEP}')"
 ARCHIVE="${BACKUP_DIR}/${NAME}-$(date +%Y-%m-%d_%H%M%S).tar.gz"
 
 command -v docker >/dev/null || die "docker not found in PATH"
 command -v tar >/dev/null || die "tar not found in PATH"
+command -v timeout >/dev/null || die "timeout not found in PATH"
 docker ps --format '{{.Names}}' | grep -qx "${CONTAINER}" \
   || die "container '${CONTAINER}' is not running"
 
@@ -53,6 +54,8 @@ cleanup() {
   rm -rf "${TMP}" "${ARCHIVE}.part"
 }
 trap cleanup EXIT
+# Route signals through exit so cleanup always resumes the container.
+trap 'exit 130' INT TERM HUP
 
 log "pausing ${CONTAINER} and copying: $*"
 PAUSED=true
@@ -60,7 +63,8 @@ docker pause "${CONTAINER}" >/dev/null
 for path in "$@"; do
   dest="${TMP}/$(printf '%s' "${path#/}" | tr '/' '_')"
   mkdir -p "${dest}"
-  docker cp -a "${CONTAINER}:${path}/." "${dest}/"
+  # Bounded so a stuck copy cannot leave the container paused forever.
+  timeout 120 docker cp -a "${CONTAINER}:${path}/." "${dest}/"
 done
 docker unpause "${CONTAINER}" >/dev/null
 PAUSED=false
