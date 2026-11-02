@@ -188,3 +188,8 @@ Caddy, utiliser l'accès direct `http://bb-homelab:8096`.
   de Jellyfin + stratégie média/transcodage
 - [storage/LAYOUT.md](../../storage/LAYOUT.md) — convention `/mnt`
   (Pattern Y)
+
+## Sauvegarde
+
+Sauvegarde nocturne et restauration : voir
+[storage/APPDATA-BACKUP.md](../../storage/APPDATA-BACKUP.md).

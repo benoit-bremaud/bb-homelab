@@ -19,6 +19,9 @@ DEST="${DEST:-${HOME}/Documents/02_personal/bb-homelab-backups}"
 SOURCES=(
   "backups/n8n/:n8n"
   "vaultwarden-backups/:vaultwarden"
+  "backups/caddy/:caddy"
+  "backups/uptime-kuma/:uptime-kuma"
+  "backups/jellyfin/:jellyfin"
 )
 
 log() { printf '[pull-backups] %s\n' "$*"; }

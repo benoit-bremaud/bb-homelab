@@ -191,3 +191,8 @@ internal CA root can then be uninstalled from every client device.
   to Tailscale (only devices on the tailnet can resolve the IP).
   When adding services with stronger auth needs (Vaultwarden, etc.),
   layer Caddy's `basicauth` or forward-auth directives per-route.
+
+## Sauvegarde
+
+Sauvegarde nocturne et restauration : voir
+[storage/APPDATA-BACKUP.md](../../storage/APPDATA-BACKUP.md).

@@ -1688,3 +1688,26 @@ was done and why, by date.
   owner-approved reboot; faster alert on a fleet-wide push outage to
   be filed separately.
 - **Refs**: closes #161
+
+### Backup: nightly archives of the Caddy PKI, Uptime Kuma and Jellyfin (#138)
+
+- **What**: new generic `storage/scripts/appdata-backup.sh`
+  (`<name> <container> <path>...`): pauses the container, `docker cp -a`
+  the paths, resumes, writes an atomic `chmod 600` archive under
+  `~/backups/<name>/`, keeps 7, pings a Kuma Push monitor on success.
+  Three cron jobs (03:10 Caddy `/data`, 03:15 Kuma `/app/data`, 03:20
+  Jellyfin `/config`), three new `SOURCES` in `pull-backups.sh`, restore
+  procedure in `storage/APPDATA-BACKUP.md` linked from the three service
+  READMEs.
+- **Why**: audit finding R7 (#46): the Caddy internal CA and the Kuma
+  data had no backup; losing the CA forces re-trusting every client.
+  Jellyfin config added from the PR #137 review (needed before #142).
+  Owner MCDA: generic script 480/500 against three copies of the n8n
+  script 350 and a root `sudo tar` cron 275. `docker cp` goes through
+  the daemon, so the root-owned dirs are read without sudo.
+- **Test (2026-11-02, on the Pi)**: the three archives were written
+  (16 K, 2.1 M, 4.9 M), the CA root and intermediate keys were in the
+  Caddy archive, and the containers were back to healthy after the
+  pause. The Kuma archive was restored into a throwaway container:
+  `integrity_check` ok, 10 monitors, existing account.
+- **Refs**: closes #138
