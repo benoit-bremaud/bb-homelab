@@ -64,9 +64,10 @@ docker network inspect bb-homelab-proxy >/dev/null 2>&1 \
   || docker network create bb-homelab-proxy
 
 # 2. Créer la cible du bind-mount sur le HDD (répertoire « crown jewels »).
-#    Vaultwarden tourne en root dans l'image stock, donc pas de chown
-#    nécessaire (contrairement à l'uid 1000 de n8n). Verrouiller le dir :
+#    Le conteneur tourne en 1000:1000 (`user:` du compose), donc le dir
+#    doit lui appartenir. Verrouiller le dir :
 sudo mkdir -p /mnt/appdata/vaultwarden
+sudo chown 1000:1000 /mnt/appdata/vaultwarden
 sudo chmod 700 /mnt/appdata/vaultwarden
 
 # 3. Générer le hash Argon2 PHC du token admin (demande le mot de passe
@@ -179,7 +180,9 @@ committer `.env`.
   pids et mémoire, écoute sur `8080`. Migration depuis l'image root (une
   fois, conteneur arrêté) :
   `docker run --rm -v /mnt/appdata/vaultwarden:/d alpine chown -R 1000:1000 /d`.
-  Retour arrière : même commande avec `0:0` et revert du compose.
+  Retour arrière : même commande avec `0:0`, puis revert **ensemble** du
+  compose et de l'upstream Caddy (`vaultwarden:80`), sinon Caddy vise un
+  port fermé ; recharger Caddy.
 
 ## Refs
 
