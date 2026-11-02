@@ -5,8 +5,8 @@ Pre-push review of the one-line scorecard-action bump that fixes the red OSSF Sc
 - Date: 2026-11-02
 - Commit: 41058bf
 - Scope: branch diff origin/main...HEAD (`.github/workflows/scorecard.yml`)
-- Checks run: security · correctness (design, docs and tests agents skipped: one pinned SHA, no code, no tests in scope)
-- Verdict: ship as-is · Must 0 · Should 0 · Nice 1
+- Checks run: security · correctness · adversarial (design, docs and tests agents skipped: one pinned SHA, no code, no tests in scope)
+- Verdict: ship · Must 1 (fixed: timeline and root cause corrected) · Should 2 (fixed) · Nice 1
 
 ## Pre-merge gate (head SHA 41058bf, `--push` mode)
 
@@ -16,9 +16,10 @@ Pre-push review of the one-line scorecard-action bump that fixes the red OSSF Sc
 | 2 Coverage | n/a (project deviation recorded in `CLAUDE.md`) |
 | 3 SonarQube | ⚠️ gate OK on the last main analysis (`new_violations` 0); branch not scanned, workflow YAML not analysed |
 | 4 Secrets | ✅ gitleaks clean (origin/main..HEAD) · no tracked .env · diff read: nothing sensitive |
-| 5 QA pass | skipped (`--push`); partial proof: the image pull succeeds on branch run 41430377142, analysis and publication pending on `main` after merge (`publish_results: true` runs on the default branch only) |
+| 5 QA pass | skipped (`--push`); partial proof: the image pull succeeds on branch runs 41430377142 (`f80f936`) and 41432672651 (`546ea26`, temporary `publish_results: false`, reverted); the action refuses non-default branches either way, so analysis and publication are pending on `main` after merge |
 
 - Gate: **push authorised**; merge on the other required checks; Scorecard confirmed on `main` after merge.
+- History: Scorecard has never passed on main (35 failures, 2026-06-16 to 2026-10-30). The image pull failures start on 2026-10-22; the earlier analysis-step failures have expired logs, so the analysis may still fail after this fix. #175 stays open until a green run on main.
 
 ## 🔴 Must Have
 
@@ -34,7 +35,7 @@ _None._
 
 ## ⚪ Disagree / Intentional
 
-_None._
+- `.github/workflows/scorecard.yml:31` `[security]` · the action pins its container image by tag (`ghcr.io/ossf/scorecard-action:v2.5.0`), not digest · set upstream in `action.yaml`; the commit pin is the strongest control available here, accepted residual risk.
 
 ## Per-dimension summary
 
