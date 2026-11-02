@@ -334,7 +334,7 @@ step_nonlocal_bind() {
   fi
   log "Installing nonlocal bind sysctl ($dst)…"
   install -D -m 0644 "$src" "$dst"
-  sysctl -p "$dst"
+  sysctl -p "$dst" || warn "sysctl -p failed; the value applies at next boot."
 }
 
 # --- Main --------------------------------------------------------------------

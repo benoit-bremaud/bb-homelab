@@ -15,8 +15,8 @@ musique diffusés en streaming sur le tailnet, sans compte tiers ni cloud.
 - Réseau : `bb-homelab-proxy` (partagé avec Caddy) + port `8096` publié
   pour l'accès direct.
 - Accès : `https://jellyfin.bb-homelab.local` (via Caddy) ou direct
-  `http://bb-homelab:8096` (tailnet/LAN uniquement, aucun ingress
-  public — décision #28).
+  `http://bb-homelab:8096` (tailnet uniquement, port lié à `127.0.0.1` et à l'IP tailnet —
+  ADR 0007 ; aucun ingress public — décision #28).
 
 ## Médiathèque temporaire sur le Disque A
 
@@ -80,7 +80,7 @@ mélange films et épisodes) :
 
 ### Réglage des bibliothèques (une seule fois)
 
-Depuis le navigateur d'un poste du LAN (`http://bb-homelab:8096`,
+Depuis le navigateur d'un poste du tailnet (`http://bb-homelab:8096`,
 compte admin) :
 
 1. **Tableau de bord → Bibliothèques → Movies → Gérer** : retirer le

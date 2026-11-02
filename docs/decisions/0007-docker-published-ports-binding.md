@@ -49,7 +49,15 @@ des journaux montre qu'aucun usage LAN n'existe, donc A tient.
 - Négatives : un appareil du LAN sans Tailscale (TV, Chromecast) ne
   peut plus joindre Jellyfin ; il faudrait alors ajouter son accès par
   l'option B. Si l'IP tailnet du Pi change (nœud recréé), les deux
-  compose sont à mettre à jour.
+  compose sont à mettre à jour : Docker écoute alors sur une adresse
+  morte sans erreur, et les sondes Kuma, qui passent par `127.0.0.1`,
+  ne le voient pas. Reprise : nouvelle IP dans les deux compose, puis
+  `docker compose up -d`.
+- `ip_nonlocal_bind` vaut pour tout l'hôte (IPv4 seulement) : tout
+  processus local peut se lier à une adresse que le Pi ne porte pas ;
+  risque faible sur un Pi mono-utilisateur.
+- Déploiement : installer le sysctl **avant** le `docker compose up -d`
+  des deux services.
 - Mosquitto 1883 (dépôt `home-assistant`) reste exposé sur le LAN, par
   choix (ESP32) : suivi dans ce dépôt.
 
