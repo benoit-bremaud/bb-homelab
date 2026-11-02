@@ -3,12 +3,12 @@
 Pre-push review of the one-line scorecard-action bump that fixes the red OSSF Scorecard workflow.
 
 - Date: 2026-11-02
-- Commit: 41058bf
+- Commit: 41058bf + review fixes (head b6111a7)
 - Scope: branch diff origin/main...HEAD (`.github/workflows/scorecard.yml`)
 - Checks run: security · correctness · adversarial (design, docs and tests agents skipped: one pinned SHA, no code, no tests in scope)
 - Verdict: ship · Must 1 (fixed: timeline and root cause corrected) · Should 2 (fixed) · Nice 1
 
-## Pre-merge gate (head SHA 41058bf, `--push` mode)
+## Pre-merge gate (head SHA b6111a7, `--push` mode)
 
 | Step | Result |
 |---|---|
@@ -23,11 +23,12 @@ Pre-push review of the one-line scorecard-action bump that fixes the red OSSF Sc
 
 ## 🔴 Must Have
 
-_None._
+- `PROJECT_LOG.md` · `docs/architecture/review-local.md` `[correctness]` · the failure history was wrong (Scorecard has never passed on main; image pull failures only from 2026-10-22) · fixed in b6111a7; #175 stays open until a green run on main.
 
 ## 🟡 Should Have
 
-_None._
+- `docs/architecture/review-local.md:21` `[correctness]` · the QA row required a green branch run that the action cannot produce · fixed in 94dcd74: partial proof, analysis pending on `main`.
+- `docs/architecture/review-local.md:21` `[correctness]` · branch run tied to the wrong commit · fixed in b6111a7: runs cited with their own SHAs.
 
 ## 🔵 Nice to Have
 
