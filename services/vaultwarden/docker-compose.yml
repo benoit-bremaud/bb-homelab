@@ -11,9 +11,23 @@ services:
     image: vaultwarden/server:${VW_IMAGE_TAG:-1.37.4}
     container_name: bb-homelab-vaultwarden
     restart: unless-stopped
+    # Hardening (bb-vault#22). Runs as the host `benoit` uid:gid so the
+    # host-side backup (docker cp -a, then tar as benoit) can read /data
+    # and restores keep a consistent owner. /mnt/appdata/vaultwarden must
+    # be owned by that uid:gid (see README "Non-root migration").
+    user: "${VW_UID:-1000}:${VW_GID:-1000}"
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    # Image rootfs is read-only; state lives in /data, scratch in /tmp
+    # (also used by scripts/backup.sh staging).
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    pids_limit: 256
+    mem_limit: 512m
     # No host port published. Unlike n8n (which binds 127.0.0.1 for
     # cloudflared), Vaultwarden is reached ONLY by Caddy over the shared
-    # bb-homelab-proxy network as `vaultwarden:80`. Smallest possible
+    # bb-homelab-proxy network as `vaultwarden:8080`. Smallest possible
     # attack surface for the box that stores every password.
     environment:
       # Public origin. MUST match the Caddy hostname exactly (scheme +
@@ -36,14 +50,11 @@ services:
       # hash in SINGLE QUOTES with single '$' (single-quoted .env values are
       # literal, so Compose does not interpolate the '$...' segments).
       - "ADMIN_TOKEN=${VW_ADMIN_TOKEN:?VW_ADMIN_TOKEN must be set in .env -- generate an Argon2 PHC hash with 'docker run --rm -it vaultwarden/server:1.37.4 /vaultwarden hash' and wrap it in single quotes in .env}"
-      # Internal listen port = 80 on the proxy bridge. Rocket also serves
-      # the integrated WebSocket (/notifications/hub) on this same port
-      # since v1.31 — no separate :3012, no special Caddy block.
-      # NOTE: 80 is privileged (<1024); this works because the stock image
-      # runs as root. If a `user:` override is ever added, switch this to a
-      # non-privileged port (e.g. 8080), repoint the Caddy route, and chown
-      # /mnt/appdata/vaultwarden to that uid:gid.
-      - ROCKET_PORT=80
+      # Internal listen port = 8080 on the proxy bridge (non-privileged:
+      # the container runs as a non-root user, see `user:` below). Rocket
+      # also serves the integrated WebSocket (/notifications/hub) on this
+      # same port since v1.31 — no separate :3012, no special Caddy block.
+      - ROCKET_PORT=8080
       - ROCKET_ADDRESS=0.0.0.0
       # Mobile push relay. OFF by default: enabling it routes device push
       # tokens through Bitwarden's relay (a third party). Turn on later
@@ -98,7 +109,7 @@ services:
       # `default` — local bridge (no host port, but keeps egress for push
       # if it is ever enabled).
       # `proxy` — shared external network; Caddy reaches this service as
-      # `vaultwarden:80` (see services/caddy/ + ADR 0002).
+      # `vaultwarden:8080` (see services/caddy/ + ADR 0002).
       - default
       - proxy
 

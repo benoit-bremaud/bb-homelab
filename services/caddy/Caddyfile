@@ -45,7 +45,7 @@ status.bb-homelab.local {
 # vaultwarden.bb-homelab.local → vaultwarden container (password manager,
 # issue #25). Reached over the shared bb-homelab-proxy network. A single
 # reverse_proxy is sufficient: since Vaultwarden 1.31 the WebSocket
-# (/notifications/hub) is served by Rocket on the same port 80, and Caddy
+# (/notifications/hub) is served by Rocket on the same port 8080, and Caddy
 # upgrades WebSocket connections automatically — no separate hub block.
 # X-Real-IP is forwarded so Vaultwarden logs the true tailnet client IP
 # (for its admin-panel rate-limiting / fail2ban) instead of Caddy's
@@ -66,7 +66,7 @@ vaultwarden.bb-homelab.local {
 		not remote_ip 100.67.85.126
 	}
 	respond @admin_not_pc 404
-	reverse_proxy vaultwarden:80 {
+	reverse_proxy vaultwarden:8080 {
 		header_up X-Real-IP {remote_host}
 	}
 }

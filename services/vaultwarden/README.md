@@ -29,7 +29,7 @@ derrière Caddy avec la CA interne (ADR 0002).
   `kdfSettings` et les clients refusent la connexion (« KDF config
   response does not contain a valid KDF type », issue #146). Ne pas
   descendre sous le tag épinglé sans relire ces notes.
-- **Aucun port hôte publié** : Caddy l'atteint comme `vaultwarden:80` via
+- **Aucun port hôte publié** : Caddy l'atteint comme `vaultwarden:8080` via
   le réseau partagé `bb-homelab-proxy`. Surface d'attaque minimale pour
   la machine qui stocke tous les mots de passe.
 - Données persistantes : bind-mount `/mnt/appdata/vaultwarden` (HDD,
@@ -133,7 +133,7 @@ docker compose up -d
 #    dans .env).
 ```
 
-Enfin, enregistrer une sonde Uptime Kuma sur `http://vaultwarden:80/alive`
+Enfin, enregistrer une sonde Uptime Kuma sur `http://vaultwarden:8080/alive`
 (moniteur HTTP « status / keyword » attendant un code 200 — **pas** un
 moniteur « JSON query » : `/alive` renvoie une simple chaîne timestamp,
 pas un objet JSON), et lancer le premier backup (voir [BACKUP.md](BACKUP.md)).
@@ -173,6 +173,13 @@ committer `.env`.
   Acceptable pour une instance mono-utilisateur (plus tard petite famille).
 - **Push désactivé par défaut** pour éviter de router les tokens push
   device via le relais tiers Bitwarden.
+- **Conteneur non-root durci.** Tourne en `1000:1000` (uid de `benoit`,
+  surchargeable via `VW_UID` / `VW_GID`), `cap_drop: ALL`,
+  `no-new-privileges`, rootfs en lecture seule, `/tmp` en tmpfs, limites
+  pids et mémoire, écoute sur `8080`. Migration depuis l'image root (une
+  fois, conteneur arrêté) :
+  `docker run --rm -v /mnt/appdata/vaultwarden:/d alpine chown -R 1000:1000 /d`.
+  Retour arrière : même commande avec `0:0` et revert du compose.
 
 ## Refs
 
