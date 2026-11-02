@@ -1643,3 +1643,26 @@ was done and why, by date.
 - **Open**: `journalctl --list-boots` > 1 after the next owner-approved
   reboot; then #168's 7-day watch can be read.
 - **Refs**: closes #169, refs #168
+
+## 2026-11-02
+
+### CI: bump scorecard-action to v2.5.0 (#175)
+
+- **What**: `.github/workflows/scorecard.yml` pins
+  `ossf/scorecard-action` v2.5.0 (commit `fa7117db`) instead of v2.4.0.
+- **Why**: the OSSF Scorecard workflow has never passed on main since
+  the repo went public (35 red runs, 2026-06-16 to 2026-10-30). From
+  2026-10-22 (20 runs) the v2.4.0 image no longer pulled from
+  `gcr.io`; v2.5.0 pulls `ghcr.io/ossf/scorecard-action:v2.5.0`. The
+  earlier failures (2026-06-16 to 2026-08-17) were in the analysis
+  step itself; their logs have expired, cause unknown. Owner MCDA:
+  v2.5.0 440/500 against v2.4.4 370.
+- **Checked**: the image pull succeeds on a branch run. The action
+  refuses any non-default branch on `workflow_dispatch`, even with
+  `publish_results: false` (temporary test commit, reverted), so the
+  analysis can only be proven on main after the merge.
+- **Accepted risk**: the action pins its image by tag, not digest;
+  this is set upstream and cannot be pinned from the workflow.
+- **Open**: #175 stays open until a green run on main; a new failure
+  in the analysis step is diagnosed from that run's logs.
+- **Refs**: refs #175
