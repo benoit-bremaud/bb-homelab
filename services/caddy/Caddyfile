@@ -50,8 +50,14 @@ status.bb-homelab.local {
 # X-Real-IP is forwarded so Vaultwarden logs the true tailnet client IP
 # (for its admin-panel rate-limiting / fail2ban) instead of Caddy's
 # container IP.
+# Tailnet-only: Caddy publishes 80/443 on every host interface (LAN and
+# global IPv6), and Docker-published ports bypass ufw. Any client whose
+# source IP is outside the Tailscale ranges gets a 403 before reaching
+# the vault (bb-vault#20).
 vaultwarden.bb-homelab.local {
 	tls internal
+	@outside_tailnet not remote_ip 100.64.0.0/10 fd7a:115c:a1e0::/48
+	respond @outside_tailnet 403
 	reverse_proxy vaultwarden:80 {
 		header_up X-Real-IP {remote_host}
 	}
