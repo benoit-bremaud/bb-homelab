@@ -56,6 +56,9 @@ status.bb-homelab.local {
 # the vault (bb-vault#20).
 vaultwarden.bb-homelab.local {
 	tls internal
+	# HSTS: browsers refuse plain HTTP for a year after the first visit
+	# (bb-vault#24). No preload: .local cannot be on the preload list.
+	header Strict-Transport-Security "max-age=31536000"
 	@outside_tailnet not remote_ip 100.64.0.0/10 fd7a:115c:a1e0::/48
 	respond @outside_tailnet 403
 	# The /admin panel can disable 2FA and delete users: only the admin
