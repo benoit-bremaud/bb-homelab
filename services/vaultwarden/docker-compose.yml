@@ -68,6 +68,10 @@ services:
       # troubleshooting. EXTENDED_LOGGING adds timestamps + targets.
       - LOG_LEVEL=${VW_LOG_LEVEL:-warn}
       - EXTENDED_LOGGING=true
+      # No server-side favicon fetching: it would reveal the list of saved
+      # sites to third parties (DNS + HTTP) and is an SSRF-shaped surface
+      # (bb-vault#26). Clients show generic icons instead.
+      - DISABLE_ICON_DOWNLOAD=true
       # SMTP intentionally unset: no mail server in the homelab yet.
       # Consequence — no email-based 2FA / hints, and the admin must
       # manually confirm any invited user. Acceptable for a single-user
