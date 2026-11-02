@@ -89,14 +89,22 @@ ARCHIVE=~/backups/uptime-kuma/uptime-kuma-2026-11-03_031500.tar.gz
 SRC=app_data
 DEST=/mnt/appdata/uptime-kuma
 OWNER=1000:1000
-mountpoint -q /mnt/appdata && test -d "${DEST}" || echo 'STOP: disque non monté'
+case "${DEST}" in /mnt/appdata/?*) OK=1 ;; *) OK=0 ;; esac
 
-docker compose down
-sudo find "${DEST:?}" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
-sudo tar -xzf "${ARCHIVE}" -C "${DEST}" --strip-components=2 "./${SRC}"
-sudo chown -R "${OWNER}" "${DEST}"
-docker compose up -d
+if [ "${OK}" = 1 ] && mountpoint -q /mnt/appdata && test -d "${DEST}"; then
+  docker compose down
+  sudo find "${DEST}" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
+  sudo tar -xzf "${ARCHIVE}" -C "${DEST}" --strip-components=2 "./${SRC}"
+  sudo chown -R -h "${OWNER}" "${DEST}"
+  docker compose up -d
+else
+  echo "STOP: DEST invalide ou disque non monté (${DEST})"
+fi
 ```
+
+Le garde-fou refuse toute cible hors de `/mnt/appdata/<service>` avant
+d'effacer quoi que ce soit, et `chown -h` ne suit pas un lien symbolique
+qui se trouverait dans l'archive.
 
 Lancé sans root, `docker cp` écrit les fichiers au nom de `benoit`
 (`1000`) : le `chown` remet le propriétaire d'origine.
