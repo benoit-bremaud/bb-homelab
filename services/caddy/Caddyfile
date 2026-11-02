@@ -45,7 +45,7 @@ status.bb-homelab.local {
 # vaultwarden.bb-homelab.local → vaultwarden container (password manager,
 # issue #25). Reached over the shared bb-homelab-proxy network. A single
 # reverse_proxy is sufficient: since Vaultwarden 1.31 the WebSocket
-# (/notifications/hub) is served by Rocket on the same port 80, and Caddy
+# (/notifications/hub) is served by Rocket on the same port 8080, and Caddy
 # upgrades WebSocket connections automatically — no separate hub block.
 # X-Real-IP is forwarded so Vaultwarden logs the true tailnet client IP
 # (for its admin-panel rate-limiting / fail2ban) instead of Caddy's
@@ -56,9 +56,20 @@ status.bb-homelab.local {
 # the vault (bb-vault#20).
 vaultwarden.bb-homelab.local {
 	tls internal
+	# HSTS: browsers refuse plain HTTP for a year after the first visit
+	# (bb-vault#24). No preload: .local cannot be on the preload list.
+	header Strict-Transport-Security "max-age=31536000"
 	@outside_tailnet not remote_ip 100.64.0.0/10 fd7a:115c:a1e0::/48
 	respond @outside_tailnet 403
-	reverse_proxy vaultwarden:80 {
+	# The /admin panel can disable 2FA and delete users: only the admin
+	# PC (vev-xps-15-9530) may reach it; everyone else sees a 404
+	# (bb-vault#21). Update the IP if that device is re-enrolled.
+	@admin_not_pc {
+		path /admin /admin/*
+		not remote_ip 100.67.85.126
+	}
+	respond @admin_not_pc 404
+	reverse_proxy vaultwarden:8080 {
 		header_up X-Real-IP {remote_host}
 	}
 }
