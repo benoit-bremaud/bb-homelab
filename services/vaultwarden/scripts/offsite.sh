@@ -31,24 +31,31 @@ die() { printf '[offsite] ERROR: %s\n' "$*" >&2; exit 1; }
 [ -d "${BACKUP_DIR}" ] || die "BACKUP_DIR ${BACKUP_DIR} does not exist"
 command -v restic >/dev/null || die "restic is not installed"
 
+# One run at a time (cron vs manual run).
+exec 9>"${XDG_RUNTIME_DIR:-/tmp}/vw-offsite.lock"
+flock -n 9 || die "another off-site run is in progress"
+
 set -a
 # shellcheck source=/dev/null
 . "${RESTIC_ENV_FILE}"
 set +a
 # One sub-path per service inside the shared bucket.
-export RESTIC_REPOSITORY="${RESTIC_REPOSITORY}/vaultwarden"
+RESTIC_REPOSITORY="${RESTIC_REPOSITORY%/}"
+export RESTIC_REPOSITORY="${RESTIC_REPOSITORY%/vaultwarden}/vaultwarden"
 
 log "backup ${BACKUP_DIR}"
-restic backup --quiet --tag vaultwarden --host bb-homelab --exclude '*.log' "${BACKUP_DIR}"
+# *.part: archive still being written by backup.sh.
+restic backup --quiet --retry-lock 10m --tag vaultwarden --host bb-homelab \
+  --exclude '*.log' --exclude '*.part' "${BACKUP_DIR}"
 
 log "retention: 30 daily, 12 monthly"
-restic forget --quiet --tag vaultwarden --keep-daily 30 --keep-monthly 12 --prune
+restic forget --quiet --retry-lock 10m --tag vaultwarden --keep-daily 30 --keep-monthly 12 --prune
 
 log "check 5% of the data"
-restic check --quiet --read-data-subset=5%
+restic check --quiet --retry-lock 10m --read-data-subset=5%
 
-log "done"
 if [ -n "${KUMA_PUSH_URL:-}" ]; then
   printf 'url = "%s"\n' "${KUMA_PUSH_URL}" | curl -fsS -m 10 --retry 2 -o /dev/null -K - \
     || log "warning: heartbeat to Uptime Kuma failed (backup itself is fine)"
 fi
+log "done"

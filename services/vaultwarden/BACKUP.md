@@ -68,9 +68,9 @@ Promote Vaultwarden to a Tier-0 dependency only when:
    repository on Cloudflare R2 every night (see "Off-site copy" below).
    Other services join the same bucket under #19. Disk C (`/mnt/backup`,
    #47) still pending; 3-2-1, local kept alongside remote.
-2. **Restore drill passed** — done 2026-11-02 from R2: restore →
-   `PRAGMA integrity_check` ok → throwaway instance `/alive` 200. A login
-   in that instance remains to be tested by the owner.
+2. **Restore drill passed** — partly done 2026-11-02 from R2: restore →
+   `PRAGMA integrity_check` ok → throwaway instance `/alive` 200. Still
+   missing: the owner logs in to the restored instance.
 3. **Uptime Kuma probe green** — HTTP probe on `/alive`, wired to the
    fault-only Telegram channel (ADR 0004).
 4. **Dead-man's-switch green** — Healthchecks.io covers the Pi (ADR
@@ -259,6 +259,11 @@ incident and keep the previous archive as the working copy.
   `~/.config/bb-homelab/restic-password`. The R2 token
   `r2-bb-homelab-restic-backup-2026` is scoped to the bucket, read/write
   objects, expires after 1 year — rotate before expiry.
+- **Known risk**: the R2 token can delete objects, so a compromised Pi
+  can erase the off-site history (`forget --prune` or S3 DELETE). Accepted
+  for now; the fix (delete-less token + R2 bucket lock, retention run from
+  a trusted machine) is tracked in a follow-up issue.
+- **Kuma monitor**: Push type, interval 25 h (above the 24 h cron period).
 - **Break-glass**: the restic password and the R2 key pair must also be
   in the owner's password manager. Without the restic password nothing
   restores.
@@ -268,6 +273,7 @@ incident and keep the previous archive as the working copy.
 ```bash
 export AWS_ACCESS_KEY_ID=… AWS_SECRET_ACCESS_KEY=…
 export RESTIC_REPOSITORY=s3:https://<account-id>.r2.cloudflarestorage.com/bb-homelab-backups/vaultwarden
+export RESTIC_PASSWORD_FILE=/path/to/restic-password  # or let restic prompt
 restic snapshots
 restic restore latest --target /tmp/vw-restore
 # then extract the newest vaultwarden-*.tar.gz into the data dir and
