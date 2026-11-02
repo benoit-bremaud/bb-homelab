@@ -1643,3 +1643,18 @@ was done and why, by date.
 - **Open**: `journalctl --list-boots` > 1 after the next owner-approved
   reboot; then #168's 7-day watch can be read.
 - **Refs**: closes #169, refs #168
+
+## 2026-11-02
+
+### CI: bump scorecard-action to v2.5.0 (#175)
+
+- **What**: `.github/workflows/scorecard.yml` pins
+  `ossf/scorecard-action` v2.5.0 (commit `fa7117db`) instead of v2.4.0.
+- **Why**: the OSSF Scorecard workflow failed on main since 2026-10-26
+  (5 red runs): the v2.4.0 image no longer pulled from `gcr.io`.
+  v2.5.0 pulls `ghcr.io/ossf/scorecard-action:v2.5.0`. Owner MCDA:
+  v2.5.0 440/500 against v2.4.4 370.
+- **Checked**: the image pull succeeds on a branch run; the analysis
+  itself only runs on `main` with `publish_results: true`, so the
+  green run is checked after the merge.
+- **Refs**: closes #175
