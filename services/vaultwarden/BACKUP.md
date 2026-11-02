@@ -63,12 +63,14 @@ never plaintext, never only on the Pi's SD card.
 
 Promote Vaultwarden to a Tier-0 dependency only when:
 
-1. **Unified off-site backup** — `restic` of `BACKUP_DIR` to Backblaze
-   B2 / Hetzner Storage Box, with Disk C mounted as `/mnt/backup`
-   (issues #19 / #47). 3-2-1, local kept alongside remote.
-2. **Restore drill passed** — an end-to-end restore (extract →
-   `PRAGMA integrity_check` → bring up a throwaway instance → log in)
-   performed and documented.
+1. **Off-site backup** — done for Vaultwarden (2026-11-02):
+   `scripts/offsite.sh` pushes `BACKUP_DIR` to an encrypted `restic`
+   repository on Cloudflare R2 every night (see "Off-site copy" below).
+   Other services join the same bucket under #19. Disk C (`/mnt/backup`,
+   #47) still pending; 3-2-1, local kept alongside remote.
+2. **Restore drill passed** — done 2026-11-02 from R2: restore →
+   `PRAGMA integrity_check` ok → throwaway instance `/alive` 200. A login
+   in that instance remains to be tested by the owner.
 3. **Uptime Kuma probe green** — HTTP probe on `/alive`, wired to the
    fault-only Telegram channel (ADR 0004).
 4. **Dead-man's-switch green** — Healthchecks.io covers the Pi (ADR
@@ -242,15 +244,40 @@ incident and keep the previous archive as the working copy.
   negligible.
 - Target (once HDD C is in): move `BACKUP_DIR` to
   `/mnt/backup/vaultwarden/`, extend `KEEP` to 14 or 30.
-- Target (once off-site is in, issue #19): add a second job that
-  `restic` the local `BACKUP_DIR` to Backblaze B2 / Hetzner Storage Box.
-  Do not replace local backups with remote — keep both (3-2-1). This is
-  criterion 1 of the Tier-0 gate above.
+- Off-site: see "Off-site copy" below. Do not replace local backups with
+  remote — keep both (3-2-1).
+
+## Off-site copy (restic → Cloudflare R2)
+
+- **What**: `scripts/offsite.sh`, cron `20 3 * * *` (after the 03:05 local
+  backup). Pushes `BACKUP_DIR` to `s3:…r2.cloudflarestorage.com/bb-homelab-backups/vaultwarden`,
+  keeps 30 daily + 12 monthly snapshots, checks 5% of the data, then
+  pings the Uptime Kuma Push monitor "Vaultwarden off-site backup".
+- **Encryption**: restic encrypts client-side; R2 only stores ciphertext.
+- **Secrets** (on the Pi, `chmod 600`, out of git):
+  `~/.config/bb-homelab/restic-r2.env` (R2 key pair, repository) and
+  `~/.config/bb-homelab/restic-password`. The R2 token
+  `r2-bb-homelab-restic-backup-2026` is scoped to the bucket, read/write
+  objects, expires after 1 year — rotate before expiry.
+- **Break-glass**: the restic password and the R2 key pair must also be
+  in the owner's password manager. Without the restic password nothing
+  restores.
+
+### Restore from R2 (any machine with restic)
+
+```bash
+export AWS_ACCESS_KEY_ID=… AWS_SECRET_ACCESS_KEY=…
+export RESTIC_REPOSITORY=s3:https://<account-id>.r2.cloudflarestorage.com/bb-homelab-backups/vaultwarden
+restic snapshots
+restic restore latest --target /tmp/vw-restore
+# then extract the newest vaultwarden-*.tar.gz into the data dir and
+# follow "Restore" above.
+```
 
 ## Refs
 
 - Issue #25 — Vaultwarden deployment.
-- Issue #19 — off-site backups (restic) of `BACKUP_DIR`.
+- Issue #19 — off-site backups (restic); Vaultwarden part done (bb-vault#19).
 - ADR [0004](../../docs/decisions/0004-monitoring-architecture.md) —
   monitoring (Uptime Kuma probe, Healthchecks.io dead-man's-switch).
 - ADR [0005](../../docs/decisions/0005-vaultwarden-deployment.md) —
