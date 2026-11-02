@@ -249,7 +249,10 @@ step_set_hostname() {
   for hosts_file in /etc/cloud/templates/hosts.debian.tmpl /etc/hosts; do
     [ -f "$hosts_file" ] || continue
     if ! grep -qE "^127\.0\.0\.1[[:space:]]+${HOMELAB_STATUS_HOST//./\\.}([[:space:]]|$)" "$hosts_file"; then
+      # Never glue the entry onto a last line that lacks its newline.
+      [ -z "$(tail -c1 "$hosts_file")" ] || printf '\n' >>"$hosts_file"
       printf '%s\n' "$hosts_line" >>"$hosts_file"
+      log "Added $HOMELAB_STATUS_HOST to $hosts_file."
     fi
   done
 }
