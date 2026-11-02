@@ -24,6 +24,7 @@ set -euo pipefail
 # --- Configuration -----------------------------------------------------------
 
 HOMELAB_HOSTNAME="${HOMELAB_HOSTNAME:-bb-homelab}"
+HOMELAB_STATUS_HOST="${HOMELAB_STATUS_HOST:-status.bb-homelab.local}"
 HOMELAB_TZ="${HOMELAB_TZ:-Europe/Paris}"
 HOMELAB_USER="${HOMELAB_USER:-${SUDO_USER:-${USER:-}}}"
 HOMELAB_SWAP_MB="${HOMELAB_SWAP_MB:-2048}"
@@ -238,6 +239,19 @@ step_set_hostname() {
   else
     printf '127.0.1.1\t%s\n' "$HOMELAB_HOSTNAME" >>/etc/hosts
   fi
+
+  # The Pi pushes to Uptime Kuma through Caddy on loopback, so the push
+  # scripts do not depend on Tailscale (#161). cloud-init
+  # (manage_etc_hosts: true) rewrites /etc/hosts from its template at
+  # every boot, so the line goes into the template as well.
+  local hosts_line hosts_file
+  hosts_line="$(printf '127.0.0.1\t%s' "$HOMELAB_STATUS_HOST")"
+  for hosts_file in /etc/cloud/templates/hosts.debian.tmpl /etc/hosts; do
+    [ -f "$hosts_file" ] || continue
+    if ! grep -qE "^127\.0\.0\.1[[:space:]]+${HOMELAB_STATUS_HOST//./\\.}([[:space:]]|$)" "$hosts_file"; then
+      printf '%s\n' "$hosts_line" >>"$hosts_file"
+    fi
+  done
 }
 
 step_enable_unattended_upgrades() {

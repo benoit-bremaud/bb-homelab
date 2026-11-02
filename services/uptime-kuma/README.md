@@ -34,6 +34,21 @@ du Pi (cf. `services/caddy/README.md`) :
 100.121.134.61  status.bb-homelab.local
 ```
 
+Sur le Pi lui-même, les pushes (sauvegardes, Home Assistant) passent
+par Caddy en loopback, sans dépendre de Tailscale :
+
+```text
+127.0.0.1  status.bb-homelab.local
+```
+
+`bootstrap/bootstrap.sh` (étape hostname) pose cette ligne dans
+`/etc/hosts` **et** dans `/etc/cloud/templates/hosts.debian.tmpl` :
+cloud-init (`manage_etc_hosts: true`) réécrit `/etc/hosts` depuis ce
+template à chaque boot, une ligne ajoutée à la main est donc perdue au
+redémarrage (incident #161). Après un changement de `/etc/hosts`,
+redémarrer les conteneurs qui en gardent une copie (ex.
+`homeassistant`).
+
 ## Configuration (post-démarrage, via l'UI)
 
 À la première ouverture de `https://status.bb-homelab.local` :
