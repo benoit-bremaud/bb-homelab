@@ -1667,3 +1667,24 @@ was done and why, by date.
   Scorecard run on main (run 41433988517): image pull, analysis,
   publication and SARIF upload all succeed. #175 closed.
 - **Refs**: closes #175 (PR #176)
+
+### Host: make status.bb-homelab.local resolve on the Pi across reboots (#161)
+
+- **What**: the `bootstrap.sh` hostname step now adds
+  `127.0.0.1 status.bb-homelab.local` (overridable via
+  `HOMELAB_STATUS_HOST`) to `/etc/hosts` and to the cloud-init template
+  `/etc/cloud/templates/hosts.debian.tmpl`, only when missing;
+  `services/uptime-kuma/README.md` documents the Pi-side entry next to
+  the client one.
+- **Why**: after the 2026-10-24 reboot every push from the Pi failed
+  with `Could not resolve host` for about two days: cloud-init
+  (`manage_etc_hosts: true`) rewrites `/etc/hosts` from its template at
+  each boot and dropped the hand-added line. Hotfix on the Pi
+  2026-10-26 (template + `/etc/hosts`, loopback; owner MCDA 465/500
+  against `manage_etc_hosts: false` 425 and per-client `--resolve` 330).
+  Owner MCDA for the repo fix: bootstrap step 475/500 against a
+  cloud-init bootcmd drop-in 390 and a systemd oneshot 300.
+- **Open**: confirm the name resolves on the Pi after the next
+  owner-approved reboot; faster alert on a fleet-wide push outage to
+  be filed separately.
+- **Refs**: closes #161
