@@ -1,22 +1,24 @@
-# Local review — bb-homelab (chore/169-persistent-journal)
+# Local review — bb-homelab (ci/175-bump-scorecard-action)
 
-- Date: 2026-10-30
-- Commit: cbc1a95 + review fixes
-- Scope: branch diff origin/main...HEAD (bootstrap journald drop-in, bootstrap.sh step, README, PROJECT_LOG)
-- Checks run: design · docs · security · correctness (combined pass; no application code, no tests in scope)
-- Verdict: ship · Must 0 · Should 3 (fixed) · Nice 1 (fixed)
+Pre-push review of the one-line scorecard-action bump that fixes the red OSSF Scorecard workflow.
 
-## Pre-merge gate (head SHA pending)
+- Date: 2026-11-02
+- Commit: 41058bf
+- Scope: branch diff origin/main...HEAD (`.github/workflows/scorecard.yml`)
+- Checks run: security · correctness (design, docs and tests agents skipped: one pinned SHA, no code, no tests in scope)
+- Verdict: ship as-is · Must 0 · Should 0 · Nice 1
+
+## Pre-merge gate (head SHA 41058bf, `--push` mode)
 
 | Step | Result |
 |---|---|
-| 1 Tests | shellcheck clean · markdownlint clean (repo has no test suite, see CLAUDE.md deviations) |
-| 2 Coverage | n/a (no application code) |
-| 3 SonarQube | CI check on the PR |
-| 4 Secrets | gitleaks clean (origin/main..HEAD) · no tracked .env · diff read: nothing sensitive |
-| 5 QA pass | pending: apply on the Pi, check `cat-config`, `/var/log/journal`; `--list-boots` > 1 after next approved reboot |
+| 1 Tests | n/a (no application code, no `justfile`) · yamllint clean |
+| 2 Coverage | n/a (project deviation recorded in `CLAUDE.md`) |
+| 3 SonarQube | ⚠️ gate OK on the last main analysis (`new_violations` 0); branch not scanned, workflow YAML not analysed |
+| 4 Secrets | ✅ gitleaks clean (origin/main..HEAD) · no tracked .env · diff read: nothing sensitive |
+| 5 QA pass | skipped (`--push`); proof = Scorecard run green on the branch |
 
-- Gate: **GREEN for push**; merge after step 5 on the Pi
+- Gate: **push authorised**; merge waits for the green Scorecard run.
 
 ## 🔴 Must Have
 
@@ -24,13 +26,11 @@ _None._
 
 ## 🟡 Should Have
 
-- `bootstrap/bootstrap.sh:288` `[correctness]` · `$0` wrong if sourced · fixed: `${BASH_SOURCE[0]}`
-- `bootstrap/bootstrap.sh:290` `[docs]` · curl-downloaded run skips the step · README states "from a clone only"; kept (single source of truth for the drop-in)
-- `bootstrap/README.md:112` `[docs]` · `--disk-usage` comment inaccurate · fixed: `journalctl --flush` + `ls /var/log/journal`
+_None._
 
 ## 🔵 Nice to Have
 
-- `bootstrap/bootstrap.sh:301` `[correctness]` · flush the current boot to disk · fixed: `journalctl --flush`
+- `.github/workflows/scorecard.yml:27` `[security]` · `actions/checkout`, `upload-artifact` (v4) and `codeql-action/upload-sarif` (v3) lag their latest majors · leave to Dependabot / a separate issue, out of scope here.
 
 ## ⚪ Disagree / Intentional
 
@@ -38,4 +38,5 @@ _None._
 
 ## Per-dimension summary
 
-- Design: minimal drop-in + idempotent step · Docs: procedure and runbook accurate · Tests: n/a · Security: 0644 root file, no secret · Correctness: precedence 50- over 40- confirmed
+- Security: pin verified (annotated tag `v2.5.0` → commit `fa7117db…`); v2.5.0 pulls its image from `ghcr.io` instead of `gcr.io`, which removes the failing pull.
+- Correctness: inputs used (`results_file`, `results_format: sarif`, `publish_results`) unchanged in the v2.5.0 release notes.
