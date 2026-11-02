@@ -1663,6 +1663,7 @@ was done and why, by date.
   analysis can only be proven on main after the merge.
 - **Accepted risk**: the action pins its image by tag, not digest;
   this is set upstream and cannot be pinned from the workflow.
-- **Open**: #175 stays open until a green run on main; a new failure
-  in the analysis step is diagnosed from that run's logs.
-- **Refs**: refs #175
+- **Result**: squash-merged as `a084e96` (PR #176). The first green
+  Scorecard run on main (run 41433988517): image pull, analysis,
+  publication and SARIF upload all succeed. #175 closed.
+- **Refs**: closes #175 (PR #176)
