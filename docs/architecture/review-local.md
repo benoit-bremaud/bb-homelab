@@ -1,22 +1,22 @@
-# Local review — bb-homelab (fix/161-pi-status-hosts-entry)
+# Local review — bb-homelab (fix/139-bind-ports-tailnet-loopback)
 
 - Date: 2026-11-02
-- Commit: branch head after the review fix
+- Commit: 6490a2e
 - Scope: branch diff origin/main...HEAD
-- Checks run: design · docs · security · correctness (tests: none in scope)
-- Verdict: ship as-is · Must 0 · Should 0 (1 fixed) · Nice 2
+- Checks run: containers · security · correctness · docs (no application code, no tests in scope)
+- Verdict: ship as-is · Must 0 · Should 0 open (4 fixed) · Nice 2
 
-## Pre-merge gate
+## Pre-merge gate (head SHA 6490a2e)
 
 | Step | Result |
 |---|---|
-| 1 Tests | ✅ shellcheck + markdownlint-cli2 clean; idempotence checked on a temp file (2 runs, 1 line) |
-| 2 Coverage | n/a: no application code (CLAUDE.md deviation: linters and config validation instead) |
-| 3 SonarQube | ✅ checked in CI on the PR |
-| 4 Secrets | ✅ gitleaks clean (origin/main..HEAD) · no tracked .env · diff read: nothing sensitive |
-| 5 QA pass | ⚠️ deferred: the behaviour is proven at the next owner-approved reboot (the hotfix already runs on the Pi) |
+| 1 Tests | n/a: no application code; shellcheck, yamllint, `docker compose config` pass |
+| 2 Coverage | n/a (project deviation: linters and config validation replace coverage) |
+| 3 SonarQube | ✅ PASSED |
+| 4 Secrets | ✅ gitleaks clean (origin/main..HEAD) · no tracked .env · diff read: only the tailnet IP, already public |
+| 5 QA pass | pending: applied on the Pi with the owner, then probed from LAN and tailnet |
 
-- Gate: **GREEN for push**; the merge waits for the CI checks
+- Gate: **GREEN for push**; merge waits for step 5.
 
 ## 🔴 Must Have
 
@@ -24,17 +24,21 @@ _None._
 
 ## 🟡 Should Have
 
-- `bootstrap/bootstrap.sh:253` `[correctness]` · append onto a file without a final newline would glue lines · fixed: newline guard added
+- Fixed in 6490a2e: stale "tailnet/LAN" claims in `services/jellyfin/README.md`; `sysctl -p` no
+  longer aborts `bootstrap.sh`; ADR 0007 states IP-change recovery, host-wide sysctl scope and the
+  deploy order.
 
 ## 🔵 Nice to Have
 
-- `bootstrap/bootstrap.sh:252` `[correctness]` · skipped missing template was silent · fixed: the append is now logged
-- `bootstrap/bootstrap.sh:253` `[correctness]` · regex only detects the host as first alias · kept (KISS, harmless duplicate)
+- `network/README.md`: add a UDP/443 probe from the LAN to the check command.
+- `bootstrap/README.md`: add the sysctl value to post-install checks (already shown by `cat`).
 
 ## ⚪ Disagree / Intentional
 
-_None._
+- `services/caddy/docker-compose.yml`, `services/jellyfin/docker-compose.yml` · tailnet IP hardcoded
+  instead of `TAILNET_IP` in `.env` · owner decision 2026-11-02 (stable IP, already public, YAGNI).
 
 ## Per-dimension summary
 
-- Design: minimal, in the existing hostname step · Docs: French README accurate, log in English · Tests: none in scope · Security: nothing sensitive · Correctness: one Should, fixed
+- Containers: no internal caller depends on LAN/bridge paths · Security: LAN exposure removed, IPv6
+  dropped · Correctness: boot race covered by the sysctl · Docs: language categories respected.

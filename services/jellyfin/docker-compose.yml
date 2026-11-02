@@ -13,13 +13,16 @@ services:
       # when reaching Jellyfin through Caddy. Adjust in .env if needed.
       - JELLYFIN_PublishedServerUrl=${JELLYFIN_PUBLISHED_URL:-https://jellyfin.bb-homelab.local}
     ports:
-      # Published for direct tailnet/LAN access (http://bb-homelab:8096),
+      # Published for direct tailnet access (http://bb-homelab:8096),
       # required by issue #12 so phone/TV apps can point straight at the
-      # server without installing Caddy's internal CA. No public ingress:
-      # the Pi has no port-forwarding and is reachable on the tailnet/LAN
-      # only (decision #28). The Caddy route below is the nicer hostname
-      # path for browsers that already trust the internal CA.
-      - "8096:8096"
+      # server without installing Caddy's internal CA. Bound to loopback
+      # and the Pi's tailnet IP only (ADR 0007, #139): Docker-published
+      # ports bypass UFW, so an unbound port is open to the whole LAN.
+      # The tailnet bind at boot relies on net.ipv4.ip_nonlocal_bind=1
+      # (bootstrap/sysctl/). The Caddy route is the nicer hostname path
+      # for browsers that already trust the internal CA.
+      - "127.0.0.1:8096:8096"
+      - "100.121.134.61:8096:8096"
     volumes:
       # Pattern Y, role appdata. Multi-volume service → one subdir per
       # volume under /mnt/appdata/jellyfin/. create_host_path: false
