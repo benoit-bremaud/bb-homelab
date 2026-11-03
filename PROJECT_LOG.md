@@ -1728,3 +1728,20 @@ was done and why, by date.
 - **Open**: Mosquitto 1883 stays LAN-wide by design (repo
   `home-assistant`).
 - **Refs**: closes #139
+
+## 2026-11-03
+
+### Docs: host and network pentest plan and first report (#198)
+
+- **What**: new `docs/security/README.md` (scope split, rules of
+  engagement, reports), `docs/security/pentest-plan.md` (E1–E3, T1–T2,
+  H1–H2, H4, L1–L2, L6–L7, P1, by criticality) and
+  `docs/security/reports/2026-11-03-pentest.md`. `AUDIT.md` stays in
+  place and is linked from the README.
+- **Why**: owner MCDA (2026-11-03): pentest docs split by target owner;
+  hub-service tests live in `home-assistant` `docs/security/`
+  (home-assistant#95, PR home-assistant#96), with test IDs shared
+  across both plans.
+- **Findings**: #196 (n8n editor and login public through the quick
+  tunnel, no MFA), #197 (global IPv6, inbound filtering unverified).
+- **Refs**: closes #198
