@@ -1,21 +1,22 @@
 # Local review — bb-homelab (branch diff origin/main...HEAD)
 
 - Date: 2026-11-04
-- Commit: af0c173 (round 2), round 1 on aa636e2
+- Commit: 3194246 (round 3), round 1 on aa636e2, round 2 on af0c173
 - Scope: branch `docs/207-pentest-session-2-report`, diff `origin/main...HEAD` (pentest report,
   plan, security README, `PROJECT_LOG.md`, `.gitignore`)
 - Checks run: adversarial (2 rounds) · docs · security (diff read, gitleaks) · CI mirror
   (markdownlint); design, tests and containers not applicable (documentation only)
 - Verdict: ship as-is · Must 0 · Should 0 · Nice 0 open
 
-## Adversarial review (#236)
+## Adversarial review
 
 - Round 1 on `aa636e2`: Must 2 · Should 7 · Nice 3 · unverified 0 · Push gate: closed
 - Round 2 on `af0c173`: 13 fixed · 0 not fixed · 0 regressed · new Must 0 · new Should 1 ·
-  new Nice 2 · **Push gate: open**; the new Should and Nice items were fixed in the report commit
+  new Nice 2 · Push gate: open
+- Round 3 on `3194246`: 3 fixed · 0 not fixed · 0 regressed · new Must 0 · **Push gate: open**
 - Hosted reviewers (filled at the pre-merge run): Copilot pending · Codex optional
 
-## Pre-merge gate (head SHA af0c173)
+## Pre-merge gate (head SHA 3194246)
 
 | Step | Result |
 |---|---|
