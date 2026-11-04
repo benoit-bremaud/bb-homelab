@@ -4,7 +4,7 @@
 - Commit: 494be7d (round 3), round 1 on 91e6731, round 2 on cd23fbf
 - Scope: branch diff `origin/main...HEAD` (disk usage check script, `storage/DISK-ALERT.md`,
   activity diagram, `storage/README.md` row, `docs/security/AUDIT.md` risk R3)
-- Checks run: adversarial (Opus, 3 rounds) · docs · security (diff read, gitleaks) · CI mirror
+- Checks run: adversarial (3 rounds) · docs · security (diff read, gitleaks) · CI mirror
   (shellcheck, markdownlint); design and tests proportional (one script, no test suite in the
   repository), containers not applicable
 - Verdict: ship as-is · Must 0 · Should 0 · Nice 0 open
@@ -16,7 +16,7 @@
   new Must 0 · new Nice 3 (one round 1 Nice partly fixed) · Push gate: open
 - Round 3 on `494be7d`: 4 fixed · 0 not fixed · 0 regressed · new findings 0 ·
   **Push gate: open**
-- Hosted reviewers (filled at the pre-merge run): Copilot pending · Codex optional
+- Hosted automated reviews (filled at the pre-merge run): pending
 
 ## Pre-merge gate (head SHA 494be7d)
 
