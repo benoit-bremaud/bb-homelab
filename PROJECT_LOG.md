@@ -1745,3 +1745,26 @@ was done and why, by date.
 - **Findings**: #196 (n8n editor and login public through the quick
   tunnel, no MFA), #197 (global IPv6, inbound filtering unverified).
 - **Refs**: closes #198
+
+## 2026-11-04
+
+### Security: pentest session 2, campaign cards
+
+- **What**: every read-only campaign card run on the Pi (exposure config,
+  OSINT, secrets at rest, tailnet, privilege escalation, container
+  isolation, SSH config, image and OS vulnerabilities, OS hardening,
+  resources, physical); report
+  `docs/security/reports/2026-11-04-pentest.md`; plan gains a card column
+  and new IDs H9–H12, L11, P5.
+- **Why**: owner choice (2026-11-04): full campaign under a scope file
+  validated the same day, a separate go per active test.
+- **Findings**: #200 (shared proxy network reaches Vaultwarden directly,
+  Medium), #201 (fixable Critical CVEs in service images, Medium), #202
+  (SD card at 83 %, no disk alert, Medium), #203, #204, #205, #206 (Low).
+- **Active cards** (one owner go each): tailnet scan done, only expected
+  or tracked ports open; LAN scan partial (routed from another subnet, all
+  filtered); web apps partial (by address only); lateral probe refused by
+  the scope guard, not worked around.
+- **Open**: #207 tracks every card not run (Caddy virtual hosts out of
+  scope, same-subnet scan, `sudo` outputs, tailnet ACL export, restore
+  drill, maintenance-window cards).

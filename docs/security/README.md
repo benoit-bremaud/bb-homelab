@@ -34,5 +34,6 @@ The 2026-10-23 configuration audit, its risk register and roadmap stay in
 
 | Date | Report |
 |---|---|
+| 2026-11-04 | [Pentest session 2 — campaign cards, read-only pass](reports/2026-11-04-pentest.md) |
 | 2026-11-03 | [Pentest session 1 — host and network](reports/2026-11-03-pentest.md) |
 | 2026-10-23 | [Configuration audit](AUDIT.md) |
