@@ -14,9 +14,9 @@
 - Round 2 on `af0c173`: 13 fixed · 0 not fixed · 0 regressed · new Must 0 · new Should 1 ·
   new Nice 2 · Push gate: open
 - Round 3 on `3194246`: 3 fixed · 0 not fixed · 0 regressed · new Must 0 · **Push gate: open**
-- Hosted reviewers (pre-merge run on be215e0): Copilot not posted (review request not recorded
-  during the GitHub Pull Requests incident; owner rule: handle its comments, do not block on it)
-  · Codex quota refused (optional)
+- Hosted automated reviews (pre-merge run on be215e0): none posted (review requests not
+  recorded during the GitHub Pull Requests incident, or quota refused); owner rule: handle
+  their comments when posted, do not block on them
 
 ## Pre-merge gate (head SHA be215e0)
 
