@@ -14,20 +14,24 @@
 - Round 2 on `af0c173`: 13 fixed · 0 not fixed · 0 regressed · new Must 0 · new Should 1 ·
   new Nice 2 · Push gate: open
 - Round 3 on `3194246`: 3 fixed · 0 not fixed · 0 regressed · new Must 0 · **Push gate: open**
-- Hosted reviewers (filled at the pre-merge run): Copilot pending · Codex optional
+- Hosted reviewers (pre-merge run on be215e0): Copilot not posted (review request not recorded
+  during the GitHub Pull Requests incident; owner rule: handle its comments, do not block on it)
+  · Codex quota refused (optional)
 
-## Pre-merge gate (head SHA 3194246)
+## Pre-merge gate (head SHA be215e0)
 
 | Step | Result |
 |---|---|
 | 0 CI mirror | ✅ markdownlint (4 changed `.md` files, MD060 known false positive); yamllint, shellcheck, hadolint: no file in scope; CodeQL, Scorecard, dependency review: CI-only |
 | 1 Tests | n/a — documentation only, no test suite in the repository |
 | 2 Coverage | n/a — no code; docs coverage replaced by linters (project deviation in `CLAUDE.md`) |
-| 3 SonarQube | ⏸ deferred to the pre-merge run (`--push`) |
-| 4 Secrets | ✅ gitleaks clean (`origin/main..HEAD`) · no tracked `.env` · diff read: no address, tailnet or tunnel name, token, or tool name; `docs/security/scope.yaml*` gitignored |
+| 3 SonarQube | ✅ PASSED (local scan, quality gate wait, project `bb-homelab`) |
+| 4 Secrets | ✅ gitleaks clean (`origin/main..be215e0`, base `b0de086` = current `main`) · no tracked `.env` · diff read: no address, tailnet or tunnel name, token, or tool name; `docs/security/scope.yaml*` gitignored |
 | 5 E2E/smoke | n/a — no runnable product in the diff |
 
-- Gate: `--push`: **pre-push green**, SonarQube deferred (never GREEN)
+- Gate: **GREEN — ready for the merge question** (CI 7/7 green on GitHub; no attestation
+  script in this repository); this report commit changes `docs/architecture/review-local.md`
+  only
 
 ## 🔴 Must Have
 
