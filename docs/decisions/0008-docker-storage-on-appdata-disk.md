@@ -43,12 +43,14 @@ Notes de 0 à 5, poids entre parenthèses, total sur 500 :
 | Option | Place (35) | Risque (30) | Effort (20) | Cohérence (15) | Total | Raison |
 |---|---|---|---|---|---|---|
 | Déplacer le stockage Docker sur le HDD | 5 | 3 | 3 | 4 | 385 | Retenue |
-| Nettoyage seul (cache, volume orphelin, anciens paquets) | 1 | 5 | 5 | 3 | 285 | Moins de 1 Go libéré, la SD remonte en quelques jours |
-| Démarrer le Pi sur SSD ou HDD (#29) | 5 | 1 | 1 | 4 | 250 | Migration complète et redémarrage ; reste ouverte à plus long terme |
+| Nettoyage seul (cache, volume orphelin, anciens paquets) | 1 | 5 | 5 | 3 | 330 | Moins de 1 Go libéré, la SD remonte en quelques jours |
+| Démarrer le Pi sur SSD ou HDD (#29) | 5 | 1 | 1 | 4 | 285 | Migration complète et redémarrage ; reste ouverte à plus long terme |
 
-Sensibilité : avec un poids de 45 pour le risque, le déplacement reste
-devant le nettoyage (350 contre 340) ; le nettoyage ne passe devant que si
-le risque pèse plus que la place libérée.
+Sensibilité : en prenant des points sur la place pour les donner au
+risque, le nettoyage passe devant dès que la place pèse 25 ou moins
+(risque 40 ou plus) ; en les prenant sur l'effort, le déplacement reste
+devant (385 contre 330). Le choix tient tant que libérer durablement la SD
+reste le critère principal, ce qui est l'objet de l'issue.
 
 ## Refs
 
