@@ -36,4 +36,4 @@ services/homepage/config/logs/
 .scannerwork/
 
 # Pentest campaign scope: private and tailnet addresses, never committed
-docs/security/scope.yaml
+docs/security/scope.yaml*

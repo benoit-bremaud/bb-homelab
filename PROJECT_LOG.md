@@ -1768,3 +1768,4 @@ was done and why, by date.
 - **Open**: #207 tracks every card not run (Caddy virtual hosts out of
   scope, same-subnet scan, `sudo` outputs, tailnet ACL export, restore
   drill, maintenance-window cards).
+- **Refs**: #200 to #207 (#207 stays open: it tracks the cards not run)
