@@ -4,7 +4,7 @@
 - Commit: 6a1f50c (round 4); rounds 1 to 3 on ced7b96, 6a7c4e9, 622cf90
 - Scope: branch diff `origin/main...HEAD` (runbook `storage/DOCKER-STORAGE-MOVE.md`,
   ADR 0008, `docs/decisions/README.md`, `storage/LAYOUT.md`, `storage/README.md`)
-- Checks run: adversarial (Opus, 4 rounds) · docs · security (diff read, gitleaks) · CI mirror
+- Checks run: adversarial (4 rounds) · docs · security (diff read, gitleaks) · CI mirror
   (markdownlint); design, tests and containers not applicable (documentation only; facts on
   the Pi gathered read-only)
 - Verdict: ship as-is · Must 0 · Should 0 · Nice 0 open
@@ -16,7 +16,7 @@
   Nice 6 · Push gate: open
 - Round 3 on `622cf90`: 7 fixed · 1 regressed (ADR matrix totals) · Push gate: open
 - Round 4 on `6a1f50c`: 1 fixed · new findings 0 · **Push gate: open**
-- Hosted reviewers (filled at the pre-merge run): Copilot pending · Codex optional
+- Hosted automated reviews (filled at the pre-merge run): pending
 
 ## Pre-merge gate (head SHA 6a1f50c)
 

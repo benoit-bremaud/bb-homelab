@@ -53,11 +53,14 @@ de toute la pile : voir #206 et la surveillance SMART (#11).
   sudo smartctl -H "/dev/$(lsblk -no PKNAME "$(findmnt -no SOURCE /mnt/appdata)")"
   ```
 
-- Sauvegardes de la nuit présentes (une archive de moins de 24 h par
-  service) :
+- Sauvegardes de la nuit présentes : une archive de moins de 24 h pour
+  chaque service attendu, sinon ne pas commencer :
 
   ```bash
-  for d in ~/backups/*/ ~/vaultwarden-backups/; do ls -1t "$d"*.tar.gz | head -n 1; done
+  for d in ~/backups/n8n ~/backups/caddy ~/backups/uptime-kuma ~/backups/jellyfin ~/vaultwarden-backups; do
+    f="$(find "$d" -maxdepth 1 -name '*.tar.gz' -mmin -1440 2>/dev/null | head -n 1)"
+    echo "${f:-MANQUANT ${d}}"
+  done   # attendu : cinq archives, aucune ligne MANQUANT
   ```
 
   Ces sauvegardes ne couvrent pas les volumes nommés Docker
