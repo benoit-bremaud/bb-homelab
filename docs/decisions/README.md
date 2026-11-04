@@ -17,3 +17,4 @@ decision is reversed, write a new ADR that supersedes the previous one.
 - [0005 — Vaultwarden as the self-hosted password vault](0005-vaultwarden-deployment.md)
 - [0006 — Homepage as the landing dashboard](0006-homepage-dashboard.md)
 - [0007 — Docker-published ports bound to loopback and the tailnet](0007-docker-published-ports-binding.md)
+- [0008 — Docker storage on the appdata disk](0008-docker-storage-on-appdata-disk.md)

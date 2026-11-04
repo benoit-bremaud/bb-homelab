@@ -17,7 +17,7 @@ modèle de disque (un disque peut être remplacé sans renommer le chemin).
 
 | Point de montage | Rôle | Contenu | Disque |
 |---|---|---|---|
-| `/mnt/appdata` | `appdata` | Volumes applicatifs vivants : n8n, Caddy, futurs Postgres / Kuma… | Disque A (rapide) |
+| `/mnt/appdata` | `appdata` | Volumes applicatifs vivants : n8n, Caddy, futurs Postgres / Kuma… ; stockage Docker `containerd/` et `docker/` ([ADR 0008](../docs/decisions/0008-docker-storage-on-appdata-disk.md)) | Disque A (rapide) |
 | `/mnt/archive` | `archive` | Documents admin (T0), photos (T1), vidéos (T2) | Disque A (rapide) |
 | `/mnt/media` | `media` | Films, séries, musique (Jellyfin) | Disque B (média) |
 | `/mnt/backup` | `backup` | Snapshots restic, dumps SQLite n8n | Disque C (backup) |
