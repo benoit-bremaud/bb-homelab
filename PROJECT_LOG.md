@@ -1761,11 +1761,12 @@ was done and why, by date.
 - **Findings**: #200 (shared proxy network reaches Vaultwarden directly,
   Medium), #201 (fixable Critical CVEs in service images, Medium), #202
   (SD card at 83 %, no disk alert, Medium), #203, #204, #205, #206 (Low).
-- **Active cards** (one owner go each): tailnet scan done, only expected
-  or tracked ports open; LAN scan partial (routed from another subnet, all
+- **Active cards** (one owner go each): tailnet scan partial (top 1000
+  TCP, only expected or tracked ports open); LAN scan partial (routed from another subnet, all
   filtered); web apps partial (by address only); lateral probe refused by
   the scope guard, not worked around.
 - **Open**: #207 tracks every card not run (Caddy virtual hosts out of
-  scope, same-subnet scan, `sudo` outputs, tailnet ACL export, restore
-  drill, maintenance-window cards).
+  scope, same-subnet scan, tailnet full range, SSH audit rerun, Shodan /
+  Censys, `sudo` outputs, tailnet ACL export, restore drill,
+  maintenance-window cards).
 - **Refs**: #200 to #207 (#207 stays open: it tracks the cards not run)
