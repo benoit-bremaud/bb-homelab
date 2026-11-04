@@ -1,67 +1,67 @@
-# Local review — bb-homelab (fix/202-sd-card-disk-alert)
+# Local review — bb-homelab (docs/202-docker-storage-move)
 
 - Date: 2026-11-04
-- Commit: 494be7d (round 3), round 1 on 91e6731, round 2 on cd23fbf
-- Scope: branch diff `origin/main...HEAD` (disk usage check script, `storage/DISK-ALERT.md`,
-  activity diagram, `storage/README.md` row, `docs/security/AUDIT.md` risk R3)
-- Checks run: adversarial (3 rounds) · docs · security (diff read, gitleaks) · CI mirror
-  (shellcheck, markdownlint); design and tests proportional (one script, no test suite in the
-  repository), containers not applicable
+- Commit: 6a1f50c (round 4); rounds 1 to 3 on ced7b96, 6a7c4e9, 622cf90
+- Scope: branch diff `origin/main...HEAD` (runbook `storage/DOCKER-STORAGE-MOVE.md`,
+  ADR 0008, `docs/decisions/README.md`, `storage/LAYOUT.md`, `storage/README.md`)
+- Checks run: adversarial (4 rounds) · docs · security (diff read, gitleaks) · CI mirror
+  (markdownlint); design, tests and containers not applicable (documentation only; facts on
+  the Pi gathered read-only)
 - Verdict: ship as-is · Must 0 · Should 0 · Nice 0 open
 
 ## Adversarial review
 
-- Round 1 on `91e6731`: Must 1 · Should 4 · Nice 6 · unverified 2 · Push gate: closed
-- Round 2 on `cd23fbf` (91e6731 squashed, unpushed): 10 fixed · 0 not fixed · 0 regressed ·
-  new Must 0 · new Nice 3 (one round 1 Nice partly fixed) · Push gate: open
-- Round 3 on `494be7d`: 4 fixed · 0 not fixed · 0 regressed · new findings 0 ·
-  **Push gate: open**
+- Round 1 on `ced7b96`: Must 1 · Should 9 · Nice 6 · unverified 2 · Push gate: closed
+- Round 2 on `6a7c4e9`: all round 1 items fixed but one (backup check) · new Should 2 · new
+  Nice 6 · Push gate: open
+- Round 3 on `622cf90`: 7 fixed · 1 regressed (ADR matrix totals) · Push gate: open
+- Round 4 on `6a1f50c`: 1 fixed · new findings 0 · **Push gate: open**
 - Hosted automated reviews (filled at the pre-merge run): pending
 
-## Pre-merge gate (head SHA 494be7d)
+## Pre-merge gate (head SHA 6a1f50c)
 
 | Step | Result |
 |---|---|
-| 0 CI mirror | ✅ shellcheck 0.10.0 (`-e SC1091`, as CI) clean · ✅ markdownlint, 0 error on the changed files (MD060 known false positive on pre-existing tables) · yamllint: no YAML in the diff · CodeQL, Scorecard, dependency review: CI-only |
-| 1 Tests | n/a: no test suite; script run by hand in 7 cases (under threshold, over threshold, missing mount, no `df` figure, URL with a query, `down` and `up` push through a local stub) |
-| 2 Coverage | n/a: project deviation in `CLAUDE.md` (linters and docs instead) |
+| 0 CI mirror | ✅ markdownlint, 0 error on the changed files (MD060 known false positive) · shellcheck, yamllint, hadolint: no file in scope · CodeQL, Scorecard, dependency review: CI-only |
+| 1 Tests | n/a: documentation only; the runbook runs later on the Pi with the owner |
+| 2 Coverage | n/a: project deviation in `CLAUDE.md` |
 | 3 SonarQube | ⏸ deferred to the pre-merge run (`--push`) |
-| 4 Secrets | ✅ gitleaks clean (`origin/main..HEAD`) · no tracked `.env` · diff read: no token, URL or address |
+| 4 Secrets | ✅ gitleaks clean (`origin/main..HEAD`) · no tracked `.env` · diff read: no secret, tunnel name or AI tool name |
 | 5 E2E/smoke | n/a: no runnable product in the diff |
 
 - Gate: `--push`: **pre-push green**, SonarQube deferred (never GREEN)
 
 ## 🔴 Must Have
 
-- `storage/scripts/disk-usage-check.sh:8`, `storage/DISK-ALERT.md`, diagram, commit body
-  `[adversarial]` · coverage overstated: Kuma shares the Pi and `/mnt/appdata`, so a dead Pi or
-  a missing HDD stops Kuma too (ADR 0004 layer 2) · "Ce qui n'est pas couvert" section, commit
-  reworded — fixed in cd23fbf
+- `storage/DOCKER-STORAGE-MOVE.md` `[adversarial]` · a Docker restart changes the quick-tunnel
+  URL, so the "Kuma all green" check would trigger a needless rollback · conditional tunnel
+  step, tunnel monitor excluded from the rollback criterion — fixed in 6a7c4e9
+- `storage/DOCKER-STORAGE-MOVE.md` `[docs]` · broken link to `DISK-ALERT.md` (only in #212),
+  unchecked copy, fragile rollback, free-hand containerd edit · fixed in 6a7c4e9
 
 ## 🟡 Should Have
 
-- Empty `df` figure counted as ok; `~/.cache` may be missing; 1800 s interval too tight (now
-  2700 s); install while `/` is over 80 % hides other causes; "au-delà" vs `-ge`; threshold
-  unexplained (risk R3); no "when the alert fires" section `[adversarial|docs]` · all fixed in
-  cd23fbf
+- Copy check before the move, leftover shims and mounts (`-x`), config written before `mv`,
+  `mv -T`, same-day vs later rollback, backup and #168 preconditions, backup window, disk by
+  mount, 1.5x space, orphan volume moved to the cleanup, indexes and ADR 0008
+  `[adversarial|docs]` · fixed in 6a7c4e9
+- UAS journal filter, archives instead of logs `[adversarial]` · fixed in 622cf90
+- ADR 0008 matrix totals and sensitivity `[adversarial]` · fixed in 6a1f50c
 
 ## 🔵 Nice to Have
 
-- `down` push naming the mount point, inode check, failure-only log, first-UP test, risk R3
-  detection, duplicated note `[adversarial|docs]` · fixed in cd23fbf
-- Diagram final nodes and failed-push branch, `msg` sanitising, missing URL logged, hot-unplugged
-  HDD gap documented `[adversarial]` · fixed in 494be7d
+- Two-pass copy, `du -x`, names-only diff, `daemon.json` command and validation, run-state
+  note, guard before `rm -rf`, docs link, run date in `PROJECT_LOG.md`, boot diagnostics
+  (6a7c4e9); idempotent containerd line, smartctl on the disk, full tunnel rotation, SD space
+  before a later rollback (622cf90) `[adversarial|docs]` · all fixed
 
 ## ⚪ Disagree / Intentional
 
-- `disk-usage-check.sh`: exit on a failed push, unlike `appdata-backup.sh` · here the push is
-  the whole output
-- Hard-coded `/home/benoit/...` cron paths · same convention as `APPDATA-BACKUP.md`
+_None._
 
 ## Per-dimension summary
 
-- Adversarial: one Must in round 1, all findings fixed by round 3 · Docs: wording and an
-  alert-handling section, fixed · Security: no leak, URL on stdin and validated · Design, tests:
-  proportional, nothing to add
-- Out of scope, pre-existing, filed: recovery message vs ADR 0004 (#209), `storage/README.md`
-  stale and in English (#210), local shellcheck command narrower than CI (#211)
+- Adversarial: one Must in round 1, all findings fixed by round 4 · Docs: link, rollback and
+  check gaps fixed · Security: no leak · Design, tests: not applicable
+- Out of scope, filed: the Docker and containerd settings and drop-ins are not tracked in
+  `bootstrap/` (#213); `docs/security/AUDIT.md` risk R3 to update when #202 closes
