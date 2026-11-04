@@ -20,7 +20,8 @@ Uptime Kuma tourne sur le même Pi, avec ses données sur `/mnt/appdata`. Un
 Pi éteint ou un HDD absent au démarrage arrêtent donc Kuma lui-même, et
 personne n'alerte. Ces cas relèvent du veilleur externe (couche 2 de
 l'[ADR 0004](../docs/decisions/0004-monitoring-architecture.md), pas encore
-en place).
+en place). Un HDD décroché à chaud peut aussi rester monté avec des erreurs
+d'entrée-sortie : ce cas n'est pas détecté.
 
 ## Installation sur le Pi (une fois)
 
@@ -77,6 +78,8 @@ tail -n 5 ~/.cache/disk-usage-check.log
   [LAYOUT.md](LAYOUT.md)).
 - `% space` ou `% inodes` au-dessus du seuil : libérer de la place
   (`docker system df`, `journalctl --disk-usage`).
+- `no KUMA_PUSH_URL` : le fichier d'URL est absent ou vide
+  (`ls -l ~/.config/bb-homelab/kuma-push-disk-usage`).
 - Journal vide et moniteur DOWN : le cron ne tourne plus (`crontab -l`).
 
 ## Réglages

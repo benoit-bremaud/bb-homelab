@@ -55,14 +55,16 @@ done
 
 if [ -n "${failed}" ]; then
   status="down"
-  msg="$(printf '%s' "${failed# }" | tr ' /' '_-')"
+  msg="$(printf '%s' "${failed# }" | tr ' /' '_-' | tr -c 'A-Za-z0-9_.:-' '_')"
 else
   status="up"
   msg="OK"
 fi
 
 # -K - keeps the token out of the process list (same as appdata-backup.sh).
-if [ -n "${KUMA_PUSH_URL:-}" ]; then
+if [ -z "${KUMA_PUSH_URL:-}" ]; then
+  log "no KUMA_PUSH_URL, nothing pushed" >&2
+else
   printf 'url = "%s?status=%s&msg=%s&ping="\n' "${KUMA_PUSH_URL}" "${status}" "${msg}" \
     | curl -fsS -m 10 --retry 2 -o /dev/null -K - \
     || die "push to Uptime Kuma failed"

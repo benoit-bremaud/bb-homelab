@@ -21,7 +21,8 @@ flowchart TD
     loop -- oui --> mounted{monté ?}
     mounted -- non --> fail[échec noté dans le journal]
     mounted -- oui --> df{df répond ?}
-    df -- non --> abort([arrêt en erreur, aucun signal])
+    df -- non --> abort[arrêt en erreur, aucun signal]
+    abort --> endfail
     df -- oui --> usage{espace et inodes sous le seuil ?}
     usage -- non --> fail
     usage -- oui --> loop
@@ -30,7 +31,8 @@ flowchart TD
     anyfail -- oui --> down[signal down, disque en cause]
     anyfail -- non --> up[signal up]
     down --> endfail([sortie 1])
-    up --> endok([sortie 0])
+    up -- envoi réussi --> endok([sortie 0])
+    up -- envoi échoué --> endfail
   end
   subgraph Kuma["Uptime Kuma"]
     k1[moniteur disk-usage]
