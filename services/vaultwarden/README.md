@@ -30,7 +30,8 @@ derrière Caddy avec la CA interne (ADR 0002).
   response does not contain a valid KDF type », issue #146). Ne pas
   descendre sous le tag épinglé sans relire ces notes.
 - **Aucun port hôte publié** : Caddy l'atteint comme `vaultwarden:8080` via
-  le réseau partagé `bb-homelab-proxy`. Surface d'attaque minimale pour
+  son propre réseau `bb-homelab-proxy-vaultwarden`, partagé avec Caddy
+  seul (ADR 0009). Surface d'attaque minimale pour
   la machine qui stocke tous les mots de passe.
 - Données persistantes : bind-mount `/mnt/appdata/vaultwarden` (HDD,
   Pattern Y, rôle `appdata`) → `/data` dans le conteneur. Persiste tout
@@ -40,7 +41,8 @@ derrière Caddy avec la CA interne (ADR 0002).
   `create_host_path: false`, donc si le disque n'est pas monté
   Vaultwarden refuse de démarrer (échec bruyant) au lieu de démarrer
   silencieusement sur une DB vide.
-- Réseau : `bb-homelab-proxy` (partagé avec Caddy) + `default`.
+- Réseau : `bb-homelab-proxy-vaultwarden` (partagé avec Caddy seul, ADR 0009)
+  et `default`.
 - URL interne : `https://vaultwarden.bb-homelab.local` (via Caddy).
 
 Voir [BACKUP.md](BACKUP.md) pour la procédure de sauvegarde &
@@ -60,8 +62,8 @@ cd services/vaultwarden
 
 # 1. Pré-vol : HDD monté + réseau proxy présent.
 mountpoint -q /mnt/appdata || { echo "ERREUR : /mnt/appdata non monté"; exit 1; }
-docker network inspect bb-homelab-proxy >/dev/null 2>&1 \
-  || docker network create bb-homelab-proxy
+docker network inspect bb-homelab-proxy-vaultwarden >/dev/null 2>&1 \
+  || docker network create bb-homelab-proxy-vaultwarden
 
 # 2. Créer la cible du bind-mount sur le HDD (répertoire « crown jewels »).
 #    Le conteneur tourne en 1000:1000 (`user:` du compose), donc le dir
@@ -134,7 +136,8 @@ docker compose up -d
 #    dans .env).
 ```
 
-Enfin, enregistrer une sonde Uptime Kuma sur `http://vaultwarden:8080/alive`
+Enfin, enregistrer une sonde Uptime Kuma sur `https://vaultwarden.bb-homelab.local/alive`
+(via Caddy, ADR 0009)
 (moniteur HTTP « status / keyword » attendant un code 200 — **pas** un
 moniteur « JSON query » : `/alive` renvoie une simple chaîne timestamp,
 pas un objet JSON), et lancer le premier backup (voir [BACKUP.md](BACKUP.md)).

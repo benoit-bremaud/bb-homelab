@@ -12,7 +12,7 @@ musique diffusés en streaming sur le tailnet, sans compte tiers ni cloud.
   - `/mnt/appdata/jellyfin/config` → `/config` (base, réglages, comptes)
   - `/mnt/appdata/jellyfin/cache` → `/cache` (transcodage, vignettes)
   - `/mnt/appdata/jellyfin/media` → `/media` (médiathèque, **temporaire**)
-- Réseau : `bb-homelab-proxy` (partagé avec Caddy) + port `8096` publié
+- Réseau : `bb-homelab-proxy-jellyfin` (partagé avec Caddy seul, ADR 0009) + port `8096` publié
   pour l'accès direct.
 - Accès : `https://jellyfin.bb-homelab.local` (via Caddy) ou direct
   `http://bb-homelab:8096` (tailnet uniquement, port lié à `127.0.0.1` et à l'IP tailnet —

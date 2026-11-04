@@ -1,6 +1,6 @@
 ---
 name: new-service
-description: Scaffold a new Docker service under services/<name>/ for bb-homelab. Creates docker-compose.yml (pinned image, joins bb-homelab-proxy network, HDD bind-mount per Pattern Y, healthcheck), README.md (French per docs-conventions), .env.example (placeholder values). Optionally appends a Caddy route. Invoke with /new-service <name> for any new container deployment.
+description: Scaffold a new Docker service under services/<name>/ for bb-homelab. Creates docker-compose.yml (pinned image, joins its own bb-homelab-proxy-<name> network, HDD bind-mount per Pattern Y, healthcheck), README.md (French per docs-conventions), .env.example (placeholder values). Optionally appends a Caddy route. Invoke with /new-service <name> for any new container deployment.
 disable-model-invocation: true
 ---
 
@@ -42,7 +42,8 @@ Before writing any file, gather these via `AskUserQuestion`:
    volumes).
 
 6. **Network needs**:
-   - Just `bb-homelab-proxy` (typical web service)?
+   - Just its own `bb-homelab-proxy-<name>` network shared with Caddy
+     (typical web service, ADR 0009)? Never another service's network.
    - Plus other dependencies (e.g. Postgres)?
 
 7. **Caddy route?**
@@ -103,7 +104,10 @@ networks:
   default:
     driver: bridge
   proxy:
-    name: bb-homelab-proxy
+    # Own network, shared with Caddy only (ADR 0009). Create once with
+    # `docker network create bb-homelab-proxy-<name>`, then declare it in
+    # services/caddy/docker-compose.yml.
+    name: bb-homelab-proxy-<name>
     external: true
 ```
 
@@ -124,7 +128,8 @@ values from Q&A.
   `.env`).
 - Données persistantes : bind-mount `/mnt/<role>/<name>/` (HDD,
   Pattern Y).
-- Réseau : `bb-homelab-proxy` (partagé avec Caddy).
+- Réseau : `bb-homelab-proxy-<name>` (partagé avec Caddy seul,
+  ADR 0009).
 - URL interne : `https://<name>.bb-homelab.local` (via Caddy).
 
 ## Bootstrap

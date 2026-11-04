@@ -53,8 +53,8 @@ services:
         bind:
           create_host_path: false
     networks:
-      # `proxy` is the shared external network on which Caddy reaches
-      # this service via DNS name `jellyfin:8096` (see services/caddy/).
+      # `proxy` is the dedicated external network on which Caddy reaches
+      # this service via DNS name `jellyfin:8096` (see services/caddy/ + ADR 0009).
       - default
       - proxy
     healthcheck:
@@ -71,5 +71,8 @@ networks:
   default:
     driver: bridge
   proxy:
-    name: bb-homelab-proxy
+    # This service's own proxy network, shared with Caddy only (ADR 0009,
+    # #200): no other backend can reach it. Created once on the host with
+    # `docker network create bb-homelab-proxy-jellyfin`.
+    name: bb-homelab-proxy-jellyfin
     external: true

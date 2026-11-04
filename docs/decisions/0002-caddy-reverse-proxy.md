@@ -31,7 +31,9 @@ traffic, with the following four sub-decisions:
    today, Let's Encrypt tomorrow), one-line route blocks. We don't
    need the granularity of nginx and we want to avoid Traefik's
    coupling to Docker labels.
-2. **Shared external Docker network `bb-homelab-proxy`.** Created once
+2. **Shared external Docker network `bb-homelab-proxy`.** *(Superseded
+   by [ADR 0009](0009-per-backend-proxy-networks.md): one network per
+   backend.)* Created once
    on the host (`docker network create bb-homelab-proxy`). Every
    backend service joins it via `external: true` in its own
    `docker-compose.yml`. Caddy and backends can be torn down /

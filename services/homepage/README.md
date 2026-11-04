@@ -16,7 +16,8 @@ affiche leur statut via Uptime Kuma. Choix de l'outil documenté dans
   dashboard démarre même HDD démonté (cf. ADR 0006).
 - Logs : `LOG_TARGETS=stdout` → aucun fichier écrit dans le dossier
   `config/` suivi par git ; logs via `docker compose logs -f homepage`.
-- Réseau : `bb-homelab-proxy` (partagé avec Caddy) + `default`.
+- Réseau : `bb-homelab-proxy-homepage` (partagé avec Caddy seul, ADR 0009)
+  et `default`.
 - URL interne : `https://home.bb-homelab.local` (via Caddy,
   `tls internal`, tailnet-only).
 

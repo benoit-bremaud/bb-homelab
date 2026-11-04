@@ -11,7 +11,9 @@ système — suivra).
   `.env`).
 - Données persistantes : bind-mount `/mnt/appdata/uptime-kuma/` (HDD,
   Pattern Y) → `/app/data` dans le conteneur (SQLite + config).
-- Réseau : `bb-homelab-proxy` (partagé avec Caddy) + `default`.
+- Réseau : `bb-homelab-proxy-uptime-kuma` (partagé avec Caddy seul,
+  ADR 0009) + `default`. Kuma fait confiance à la CA interne de Caddy
+  (`root.crt` seul, monté en lecture seule).
 - URL interne : `https://status.bb-homelab.local` (via Caddy).
 
 ## Bootstrap
@@ -55,9 +57,15 @@ redémarrer les conteneurs qui en gardent une copie (ex.
 
 1. Créer le compte administrateur (login + mot de passe → gestionnaire
    de mots de passe). Aucun secret n'est stocké dans `.env`.
-2. Ajouter une sonde par service interne, ex. :
-   - n8n : `http://n8n:5678/healthz` (réseau `bb-homelab-proxy`)
-   - Caddy : `http://caddy:80` (ou la racine d'un service routé)
+2. Ajouter une sonde par service interne, **via Caddy en HTTPS**
+   (ADR 0009) : Kuma n'a plus accès direct aux autres backends. Seul
+   le chemin de santé exact de chaque site est ouvert hors tailnet ;
+   régler chaque sonde à au moins deux essais (une recréation de Caddy
+   les fait toutes tomber ensemble). Ex. :
+   - n8n : `https://n8n.bb-homelab.local/healthz`
+   - Jellyfin : `https://jellyfin.bb-homelab.local/health`
+   - Vaultwarden : `https://vaultwarden.bb-homelab.local/alive`
+   - Homepage : `https://home.bb-homelab.local/api/healthcheck`
 3. Brancher le canal de notification Telegram (token bot + chat ID
    depuis le gestionnaire de mots de passe).
 

@@ -28,8 +28,8 @@ flowchart LR
       n8n["n8n"]
       caddy["Caddy"]
       hcping["hc-ping job — systemd timer"]
-      kuma --> n8n
-      kuma --> caddy
+      kuma -->|"HTTPS via Caddy (ADR 0009)"| caddy
+      caddy --> n8n
     end
     subgraph pi3 ["Pi 3 — planned"]
       xwatch["cross-watch prober"]

@@ -1770,3 +1770,30 @@ was done and why, by date.
   Censys, `sudo` outputs, tailnet ACL export, restore drill,
   maintenance-window cards).
 - **Refs**: #200 to #207 (#207 stays open: it tracks the cards not run)
+
+### Security: one proxy network per backend (#200)
+
+- **What**: the shared `bb-homelab-proxy` bridge is replaced by one
+  external network per backend, `bb-homelab-proxy-<svc>`, joined by that
+  backend and Caddy only; Caddy gets its own `edge` bridge for its
+  default route; every Caddy site is tailnet-only (`tailnet_only`
+  snippet) except its exact health path, plus `/api/push/*` on Kuma for
+  the Pi's own pushes; Uptime Kuma probes the backends through Caddy over
+  HTTPS and trusts only Caddy's `root.crt`. ADR 0009 supersedes point 2
+  of ADR 0002; deployment diagram
+  `docs/architecture/diagrams/network-isolation/08-deployment.md`.
+- **Why**: pentest finding #200 (Medium): any compromised backend reached
+  `vaultwarden:8080` directly, skipping Caddy's tailnet and `/admin`
+  rules, and could spoof `X-Real-IP`. MCDA choices validated by the
+  owner: per-backend networks (430/500), probes via Caddy (410/500),
+  tailnet filter on every site (390/500), `bb-homelab-proxy-<svc>`
+  naming (420/500).
+- **Design review**: automated review (Must Have): host-network
+  containers bypass bridge isolation (follow-up #216), no wildcard
+  Docker aliases, Caddy needs its own gateway network, new ADR required;
+  all fixed in the design before implementation.
+- **Pending (manual on Pi, owner present)**: inventory Kuma monitors and
+  n8n workflows, create the five networks, recreate Caddy then each
+  backend, switch Kuma probes to the Caddy names, remove
+  `bb-homelab-proxy`, re-run card LATERAL by IP.
+- **Refs**: #200, #216, ADR 0009
