@@ -34,3 +34,6 @@ services/homepage/config/logs/
 
 # Local SonarQube scanner working directory
 .scannerwork/
+
+# Pentest campaign scope: private and tailnet addresses, never committed
+docs/security/scope.yaml*

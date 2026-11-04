@@ -10,7 +10,7 @@ The hub services run on this Pi but are tested from their own repository (owner 
 
 | Target | Repository | Plan |
 |---|---|---|
-| Host and network: internet exposure, n8n tunnel, tailnet, OS, Docker daemon, SSH, LAN announcements, SD card | this repository | [pentest-plan.md](pentest-plan.md) |
+| Host and network: internet exposure, n8n tunnel, tailnet, OS, Docker daemon and container isolation, this repository's web apps, SSH, LAN announcements, restore drill, SD card | this repository | [pentest-plan.md](pentest-plan.md) |
 | Hub services: Mosquitto, Home Assistant, go2rtc, Zigbee2MQTT, Zigbee gateway, ESPHome nodes, curing-chamber resilience | `home-assistant` | [home-assistant `docs/security/`](https://github.com/benoit-bremaud/home-assistant/tree/main/docs/security) |
 
 The 2026-10-23 configuration audit, its risk register and roadmap stay in
@@ -18,6 +18,9 @@ The 2026-10-23 configuration audit, its risk register and roadmap stay in
 
 ## Rules of engagement
 
+- **Scope file.** Each campaign runs under a private, owner-confirmed `docs/security/scope.yaml`
+  (gitignored: targets, maximum risk, expiry); a hook refuses network tools aimed outside it, and
+  a refusal is reported, never worked around.
 - **Production only.** The Pi has no other tier: every test runs against the live services.
 - **Owner's go per test** in chat before any active test (risk *Low* or above). *None* tests
   (read-only) run without asking.
@@ -34,5 +37,6 @@ The 2026-10-23 configuration audit, its risk register and roadmap stay in
 
 | Date | Report |
 |---|---|
+| 2026-11-04 | [Pentest session 2 — campaign cards](reports/2026-11-04-pentest.md) |
 | 2026-11-03 | [Pentest session 1 — host and network](reports/2026-11-03-pentest.md) |
 | 2026-10-23 | [Configuration audit](AUDIT.md) |
