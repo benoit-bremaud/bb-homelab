@@ -44,20 +44,20 @@ de toute la pile : voir #206 et la surveillance SMART (#11).
   depuis la correction :
 
   ```bash
-  sudo journalctl -k --since 2026-10-30 | grep -iE 'reset|I/O error|uas'   # attendu : rien
+  sudo journalctl -k --since 2026-10-30 | grep -iE 'reset|I/O error|uas' | grep -viE 'UAS is ignored|interface driver uas'   # attendu : rien
   ```
 
 - HDD sain :
 
   ```bash
-  sudo smartctl -H "$(readlink -f /dev/disk/by-label/bb-appdata)"
+  sudo smartctl -H "/dev/$(lsblk -no PKNAME "$(findmnt -no SOURCE /mnt/appdata)")"
   ```
 
 - Sauvegardes de la nuit présentes (une archive de moins de 24 h par
   service) :
 
   ```bash
-  for d in ~/backups/*/ ~/vaultwarden-backups/; do ls -1t "$d" | head -n 1; done
+  for d in ~/backups/*/ ~/vaultwarden-backups/; do ls -1t "$d"*.tar.gz | head -n 1; done
   ```
 
   Ces sauvegardes ne couvrent pas les volumes nommés Docker
@@ -119,10 +119,10 @@ de toute la pile : voir #206 et la surveillance SMART (#11).
    côté : un démarrage prématuré tombera ainsi sur la copie du HDD.
 
    ```bash
-   sudo sed -i '1i root = "/mnt/appdata/containerd"' /etc/containerd/config.toml
+   grep -q '^root' /etc/containerd/config.toml || sudo sed -i '1i root = "/mnt/appdata/containerd"' /etc/containerd/config.toml
    printf '{\n  "data-root": "/mnt/appdata/docker"\n}\n' | sudo tee /etc/docker/daemon.json
    sudo dockerd --validate --config-file /etc/docker/daemon.json
-   sudo containerd config dump | grep '^root'          # attendu : root = "/mnt/appdata/containerd"
+   sudo containerd config dump | grep '^root'          # attendu : /mnt/appdata/containerd
    sudo install -d /etc/systemd/system/containerd.service.d
    printf '[Unit]\nRequiresMountsFor=/mnt/appdata\n' | sudo tee /etc/systemd/system/containerd.service.d/appdata-mount.conf
    sudo systemctl daemon-reload
@@ -146,7 +146,8 @@ de toute la pile : voir #206 et la surveillance SMART (#11).
 7. Tunnel n8n, seulement s'il tournait avant : un redémarrage de Docker lui
    donne une nouvelle adresse `trycloudflare`. Suivre la rotation décrite
    dans [AUDIT.md](../docs/security/AUDIT.md) (nouvelle adresse dans
-   `WEBHOOK_URL` et `N8N_HOST`, n8n recréé, moniteur Kuma repointé).
+   `WEBHOOK_URL` et `N8N_HOST`, n8n recréé, moniteur Kuma et widget
+   Impropedia repointés, webhook testé de bout en bout).
 
 ## Vérifier
 
@@ -186,8 +187,10 @@ il n'y a pas de `.old`, seules les lignes `daemon.json` et `config.toml`
 sont à retirer. Le drop-in de containerd peut rester.
 
 **Les jours suivants** : les `.old` sont périmés (volumes nommés, nouvelles
-images). Revenir en arrière en recopiant le HDD vers la SD, démons
-arrêtés : `sudo rsync -aHAXSx --numeric-ids --delete /mnt/appdata/containerd/ /var/lib/containerd.old/`
+images). Vérifier d'abord que la SD peut recevoir la différence
+(`df -h /` contre `sudo du -shx /mnt/appdata/containerd /mnt/appdata/docker`
+et la taille des `.old`). Revenir ensuite en arrière en recopiant le HDD
+vers la SD, démons arrêtés : `sudo rsync -aHAXSx --numeric-ids --delete /mnt/appdata/containerd/ /var/lib/containerd.old/`
 (idem pour `docker`), puis les commandes ci-dessus.
 
 ## Nettoyage, une semaine plus tard
