@@ -1770,3 +1770,26 @@ was done and why, by date.
   Censys, `sudo` outputs, tailnet ACL export, restore drill,
   maintenance-window cards).
 - **Refs**: #200 to #207 (#207 stays open: it tracks the cards not run)
+
+### Storage: disk fill-up alert and Docker storage move runbook (#202)
+
+- **What**: PR #212 adds `storage/scripts/disk-usage-check.sh` and
+  `storage/DISK-ALERT.md` (cron every 15 min, push to an Uptime Kuma
+  monitor, space and inodes on `/` and `/mnt/appdata`, threshold 80 %)
+  with an activity diagram. PR #214 adds `storage/DOCKER-STORAGE-MOVE.md`
+  (move `/var/lib/docker` and `/var/lib/containerd` to `/mnt/appdata`:
+  preconditions, two-pass copy, config validated before the move,
+  same-day and later rollback, one-week cleanup including the orphan
+  `bb-homelab-n8n-data` volume) and ADR 0008.
+- **Why**: pentest finding H11 (#202, SD card at 83 %, no disk
+  alert). Docker 29 uses the containerd image store, so images live
+  outside `data-root`: both stores must move. Owner MCDA (2026-11-04):
+  move to the HDD 385/500 against cleanup only 330 and booting the Pi
+  from SSD or HDD (#29) 285; consequence: no container starts without
+  the HDD.
+- **Open**: nothing has run on the Pi yet. Order: runbook with the owner
+  present once #168 is closed or its journal stays clean, cleanup one
+  week later, then install the alert; #213 tracks the Docker and
+  containerd settings in `bootstrap/`.
+- **Merge**: `8e55131` (#212), `a0bd751` (#214)
+- **Refs**: #202 (stays open until `/` is under 80 % and the alert runs)
