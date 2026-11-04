@@ -1,70 +1,67 @@
-# Local review — bb-homelab (branch diff origin/main...HEAD)
+# Local review — bb-homelab (fix/202-sd-card-disk-alert)
 
 - Date: 2026-11-04
-- Commit: 3194246 (round 3), round 1 on aa636e2, round 2 on af0c173
-- Scope: branch `docs/207-pentest-session-2-report`, diff `origin/main...HEAD` (pentest report,
-  plan, security README, `PROJECT_LOG.md`, `.gitignore`)
-- Checks run: adversarial (2 rounds) · docs · security (diff read, gitleaks) · CI mirror
-  (markdownlint); design, tests and containers not applicable (documentation only)
+- Commit: 494be7d (round 3), round 1 on 91e6731, round 2 on cd23fbf
+- Scope: branch diff `origin/main...HEAD` (disk usage check script, `storage/DISK-ALERT.md`,
+  activity diagram, `storage/README.md` row, `docs/security/AUDIT.md` risk R3)
+- Checks run: adversarial (3 rounds) · docs · security (diff read, gitleaks) · CI mirror
+  (shellcheck, markdownlint); design and tests proportional (one script, no test suite in the
+  repository), containers not applicable
 - Verdict: ship as-is · Must 0 · Should 0 · Nice 0 open
 
 ## Adversarial review
 
-- Round 1 on `aa636e2`: Must 2 · Should 7 · Nice 3 · unverified 0 · Push gate: closed
-- Round 2 on `af0c173`: 13 fixed · 0 not fixed · 0 regressed · new Must 0 · new Should 1 ·
-  new Nice 2 · Push gate: open
-- Round 3 on `3194246`: 3 fixed · 0 not fixed · 0 regressed · new Must 0 · **Push gate: open**
-- Hosted automated reviews (pre-merge run on be215e0): none posted (review requests not
-  recorded during the GitHub Pull Requests incident, or quota refused); owner rule: handle
-  their comments when posted, do not block on them
+- Round 1 on `91e6731`: Must 1 · Should 4 · Nice 6 · unverified 2 · Push gate: closed
+- Round 2 on `cd23fbf` (91e6731 squashed, unpushed): 10 fixed · 0 not fixed · 0 regressed ·
+  new Must 0 · new Nice 3 (one round 1 Nice partly fixed) · Push gate: open
+- Round 3 on `494be7d`: 4 fixed · 0 not fixed · 0 regressed · new findings 0 ·
+  **Push gate: open**
+- Hosted automated reviews (filled at the pre-merge run): pending
 
-## Pre-merge gate (head SHA be215e0)
+## Pre-merge gate (head SHA 494be7d)
 
 | Step | Result |
 |---|---|
-| 0 CI mirror | ✅ markdownlint (4 changed `.md` files, MD060 known false positive); yamllint, shellcheck, hadolint: no file in scope; CodeQL, Scorecard, dependency review: CI-only |
-| 1 Tests | n/a — documentation only, no test suite in the repository |
-| 2 Coverage | n/a — no code; docs coverage replaced by linters (project deviation in `CLAUDE.md`) |
-| 3 SonarQube | ✅ PASSED (local scan, quality gate wait, project `bb-homelab`) |
-| 4 Secrets | ✅ gitleaks clean (`origin/main..be215e0`, base `b0de086` = current `main`) · no tracked `.env` · diff read: no address, tailnet or tunnel name, token, or tool name; `docs/security/scope.yaml*` gitignored |
-| 5 E2E/smoke | n/a — no runnable product in the diff |
+| 0 CI mirror | ✅ shellcheck 0.10.0 (`-e SC1091`, as CI) clean · ✅ markdownlint, 0 error on the changed files (MD060 known false positive on pre-existing tables) · yamllint: no YAML in the diff · CodeQL, Scorecard, dependency review: CI-only |
+| 1 Tests | n/a: no test suite; script run by hand in 7 cases (under threshold, over threshold, missing mount, no `df` figure, URL with a query, `down` and `up` push through a local stub) |
+| 2 Coverage | n/a: project deviation in `CLAUDE.md` (linters and docs instead) |
+| 3 SonarQube | ⏸ deferred to the pre-merge run (`--push`) |
+| 4 Secrets | ✅ gitleaks clean (`origin/main..HEAD`) · no tracked `.env` · diff read: no token, URL or address |
+| 5 E2E/smoke | n/a: no runnable product in the diff |
 
-- Gate: **GREEN — ready for the merge question** (CI 7/7 green on GitHub; no attestation
-  script in this repository); this report commit changes `docs/architecture/review-local.md`
-  only
+- Gate: `--push`: **pre-push green**, SonarQube deferred (never GREEN)
 
 ## 🔴 Must Have
 
-- `docs/security/reports/2026-11-04-pentest.md:3` `[adversarial|docs]` · lead contradicted the
-  body (active cards had run) · rewritten — fixed in af0c173
-- `docs/security/reports/2026-11-04-pentest.md:68` `[adversarial]` · total Critical CVE counts
-  labelled fixable · fixable / total counts from #201 — fixed in af0c173
-- `docs/security/pentest-plan.md:22` `[docs]` · E1 claimed an outside scan on 2026-11-03 ·
-  "outside scan not done" — fixed in af0c173
+- `storage/scripts/disk-usage-check.sh:8`, `storage/DISK-ALERT.md`, diagram, commit body
+  `[adversarial]` · coverage overstated: Kuma shares the Pi and `/mnt/appdata`, so a dead Pi or
+  a missing HDD stops Kuma too (ADR 0004 layer 2) · "Ce qui n'est pas couvert" section, commit
+  reworded — fixed in cd23fbf
 
 ## 🟡 Should Have
 
-- T2 and OSINT overstated as done; `ssh-audit`, Shodan and the T2 remainder untracked; Info
-  finding without an issue; scope file undocumented; no `Refs` line in `PROJECT_LOG.md`; stale
-  "tailnet scan done" in `PROJECT_LOG.md` · all fixed (af0c173 and the report commit), #207
-  updated
-- Shared test IDs missing from the home-assistant plan header · tracked in
-  home-assistant#97
+- Empty `df` figure counted as ok; `~/.cache` may be missing; 1800 s interval too tight (now
+  2700 s); install while `/` is over 80 % hides other causes; "au-delà" vs `-ge`; threshold
+  unexplained (risk R3); no "when the alert fires" section `[adversarial|docs]` · all fixed in
+  cd23fbf
 
 ## 🔵 Nice to Have
 
-- EXT-APP risk, risk-scale mapping, `.gitignore` backup pattern, report lead wording,
-  `PROJECT_LOG.md` list of open items · all fixed
+- `down` push naming the mount point, inode check, failure-only log, first-UP test, risk R3
+  detection, duplicated note `[adversarial|docs]` · fixed in cd23fbf
+- Diagram final nodes and failed-push branch, `msg` sanitising, missing URL logged, hot-unplugged
+  HDD gap documented `[adversarial]` · fixed in 494be7d
 
 ## ⚪ Disagree / Intentional
 
-- New IDs H9–H12 and P5 overlap hub tests in substance · intentional per-repository scope split
-  (home-assistant#95), with the shared header tracked in home-assistant#97
+- `disk-usage-check.sh`: exit on a failed push, unlike `appdata-backup.sh` · here the push is
+  the whole output
+- Hard-coded `/home/benoit/...` cron paths · same convention as `APPDATA-BACKUP.md`
 
 ## Per-dimension summary
 
-- Adversarial: two Musts in round 1, all findings fixed, gate open in round 2 · Docs: one Must
-  (E1), consistency fixes applied · Security: no leak, scope file kept out of git · Design,
-  tests, correctness: not applicable to a documentation-only diff
-- Out of scope, pre-existing: the dead tunnel name in the public issue #143 and the login
-  account name in `docs/security/pentest-plan.md`
+- Adversarial: one Must in round 1, all findings fixed by round 3 · Docs: wording and an
+  alert-handling section, fixed · Security: no leak, URL on stdin and validated · Design, tests:
+  proportional, nothing to add
+- Out of scope, pre-existing, filed: recovery message vs ADR 0004 (#209), `storage/README.md`
+  stale and in English (#210), local shellcheck command narrower than CI (#211)
