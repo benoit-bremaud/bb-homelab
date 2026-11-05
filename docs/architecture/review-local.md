@@ -1,18 +1,19 @@
 # Local review — bb-homelab (fix/201-bump-images-critical-cves)
 
 - Date: 2026-11-05
-- Commit: a288ed8
+- Commit: 9adf5b2 (round 1 on a288ed8)
 - Scope: branch diff main...HEAD (`--push`)
-- Checks run: adversarial (Opus, round 1) · containers (docker-auditor) · security (gitleaks + diff read) · lint (CI versions)
-- Verdict: fix Must Have first · Must 5 · Should 7 · Nice 2
+- Checks run: adversarial (2 rounds) · containers (docker-auditor) · security (gitleaks + diff read) · lint (CI versions)
+- Verdict: ship (pre-push) · Must 0 open (5 fixed) · Should 0 open (7 fixed) · Nice 1 open
 
-## Adversarial review (#236)
+## Adversarial review
 
 - Round 1 on `a288ed8`: Must 3 · Should 5 · Nice 2 · unverified 1 · Push gate: closed
-- Round 2: pending (after the fix commit)
+- Round 2 on `9adf5b2`: 11 fixed · 0 not fixed · 0 regressed · new Must 0 · **Push gate: open**
+- Open Nice: `.trivyignore.yaml:91-92` tar is also imported by `extra/release/lib.mjs` (build/release scripts only); wording fix left for #219.
 - Hosted reviewers (filled at the pre-merge run): pending
 
-## Pre-merge gate (head SHA a288ed8)
+## Pre-merge gate (head SHA 9adf5b2)
 
 | Step | Result |
 |---|---|
@@ -23,7 +24,7 @@
 | 4 Secrets | ✅ gitleaks clean (main..HEAD) · no tracked .env · diff read: nothing sensitive |
 | 5 E2E/smoke | ⏸ deferred: Pi redeploy + Uptime Kuma green after merge |
 
-- Gate: `--push`: **not green** — Must open
+- Gate: `--push`: **pre-push green** — lint, gitleaks and waiver re-scan pass; SonarQube and the Pi smoke check deferred to the pre-merge run
 
 ## 🔴 Must Have
 
@@ -57,4 +58,4 @@
 
 ## Per-dimension summary
 
-- Adversarial: three Must (stale diagram, false protobufjs claim, scan never fails) · Containers: waiver format (`paths`, follow-up issue) · Security: clean · Lint: clean on CI versions.
+- Adversarial: round 1 three Must, all fixed in round 2 (stale diagram, false protobufjs claim, scan never fails) · Containers: waiver format (`paths`, follow-up issue) · Security: clean · Lint: clean on CI versions.
