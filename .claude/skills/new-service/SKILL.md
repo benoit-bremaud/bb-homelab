@@ -172,19 +172,34 @@ docker compose logs -f <name>
 
 ## Caddy route (if applicable)
 
-Append to `services/caddy/Caddyfile`:
+Every site is tailnet-only (ADR 0009). Three edits, in this order:
 
-```caddyfile
-<name>.bb-homelab.local {
-    tls internal
-    reverse_proxy <name>:<port>
-}
-```
+1. Create the service's own network once on the host:
 
-Then reload Caddy:
+   ```bash
+   docker network create bb-homelab-proxy-<name>
+   ```
+
+2. In `services/caddy/docker-compose.yml`, declare it: add
+   `proxy-<name>: {}` under the Caddy service `networks:` and an
+   external `proxy-<name>` entry (`name: bb-homelab-proxy-<name>`) in the
+   top-level `networks:`.
+3. Append to `services/caddy/Caddyfile`, listing in `tailnet_only` the
+   exact health path Uptime Kuma probes (the only path left open):
+
+   ```caddyfile
+   <name>.bb-homelab.local {
+       tls internal
+       import tailnet_only /<health-path>
+       reverse_proxy <name>:<port>
+   }
+   ```
+
+A new network is only attached when the container is recreated (a
+Caddyfile reload is not enough):
 
 ```bash
-docker exec bb-homelab-caddy caddy reload --config /etc/caddy/Caddyfile
+cd services/caddy && docker compose up -d --force-recreate caddy
 ```
 
 And on each client device, add to `/etc/hosts`:

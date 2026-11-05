@@ -161,9 +161,13 @@ Ajoutée à [`services/caddy/Caddyfile`](../caddy/Caddyfile) :
 ```caddyfile
 jellyfin.bb-homelab.local {
     tls internal
+    import tailnet_only /health
     reverse_proxy jellyfin:8096
 }
 ```
+
+`tailnet_only` refuse (403) tout client hors tailnet, sauf le chemin
+`/health` que Uptime Kuma sonde ([ADR 0009](../../docs/decisions/0009-per-backend-proxy-networks.md)).
 
 Recharger Caddy après modification :
 

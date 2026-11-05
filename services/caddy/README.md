@@ -45,9 +45,9 @@ for s in vaultwarden n8n jellyfin uptime-kuma homepage; do
   docker network create "bb-homelab-proxy-$s"
 done
 
-# 2. Attach every backend service to that network. For n8n, this
-#    is already declared in services/n8n/docker-compose.yml — just
-#    re-up the stack:
+# 2. Attach each backend to its own network. Every backend compose
+#    already declares its network (n8n: services/n8n/docker-compose.yml,
+#    and likewise for the others) — just re-up each stack, for example:
 cd services/n8n && docker compose up -d && cd -
 
 # 3. Verify the HDD is actually mounted, THEN create the bind-mount
