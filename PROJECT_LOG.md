@@ -1815,11 +1815,25 @@ was done and why, by date.
   containers bypass bridge isolation (follow-up #216), no wildcard
   Docker aliases, Caddy needs its own gateway network, new ADR required;
   all fixed in the design before implementation.
-- **Pending (manual on Pi, owner present)**: inventory Kuma monitors, n8n
-  workflows and Home Assistant calls, check that `*.bb-homelab.local`
-  resolves to the IPv4 tailnet address only, create the five networks,
-  recreate Caddy then each backend, switch Kuma probes to the Caddy
-  names, remove `bb-homelab-proxy`, re-run card LATERAL by IP.
+- **Cutover (2026-11-05, remote, owner away, one owner go per step)**:
+  read-only preflight first (Docker 29.9.2, Compose 5.6.1; Kuma probes,
+  pushes, n8n workflows and Home Assistant calls inventoried: only the
+  n8n and Vaultwarden probes used Docker names, every push goes through
+  `status.bb-homelab.local` on `127.0.0.1`); branch checked out on the
+  Pi; five networks created (`172.27`–`172.31.0.0/16`); Caddy and the
+  five backends recreated, all healthy; `caddy_edge` got
+  `192.168.16.0/20` because the default `172` pool is exhausted (#217);
+  n8n and Vaultwarden probes switched to the Caddy names (2 retries),
+  200 OK. Card LATERAL by IP: only Caddy reaches Vaultwarden.
+- **Incident**: `docker compose up -d` in `services/n8n` also restarted
+  `bb-homelab-cloudflared` (`restart: unless-stopped`), stopped since
+  2026-11-03 for #196: the quick tunnel ran from 12:29 to 13:16 CET
+  before it was stopped by hand; its logs show no registered tunnel URL.
+  Runbook fixed: re-up `n8n` alone.
+- **Pending**: remove the empty `bb-homelab-proxy` once the nightly
+  backup pushes are green; put the Pi checkout back on `main` after the
+  merge; the client-side check that `*.bb-homelab.local` resolves to the
+  IPv4 tailnet address only was not run.
 - **Follow-up**: #217 (restrict the Kuma `/api/push/*` exemption to
   the `edge` gateway).
 - **Refs**: #200, #216, #217, ADR 0009

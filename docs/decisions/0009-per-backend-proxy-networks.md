@@ -138,7 +138,9 @@ Ordre sur le Pi, en présence du propriétaire :
    tailnet sur les clients (aucun port n'est publié en IPv6 : la
    connexion serait refusée).
 2. Créer les cinq réseaux, puis recréer Caddy (alias inclus).
-3. Recréer chaque backend sur son réseau, puis basculer les sondes Kuma
+3. Recréer chaque backend sur son réseau (pour n8n,
+   `docker compose up -d n8n` seul : un `up -d` complet relance aussi
+   le tunnel public cloudflared, arrêté depuis #196), puis basculer les sondes Kuma
    vers les noms Caddy (Kuma ne les résout qu'une fois recréé), puis
    supprimer `bb-homelab-proxy`.
 4. Rejouer la carte LATERAL **par IP** depuis n8n, Jellyfin, Kuma et

@@ -53,7 +53,9 @@ done
 # 2. Attach each backend to its own network. Every backend compose
 #    already declares its network (n8n: services/n8n/docker-compose.yml,
 #    and likewise for the others) — just re-up each stack, for example:
-cd services/n8n && docker compose up -d && cd -
+#    For n8n, re-up the n8n service only: a plain `up -d` also restarts
+#    cloudflared, the public quick tunnel, kept stopped since #196.
+cd services/n8n && docker compose up -d n8n && cd -
 #    Exception: uptime-kuma mounts Caddy's root.crt, which exists only
 #    after Caddy's first start; re-up it after step 4.
 
