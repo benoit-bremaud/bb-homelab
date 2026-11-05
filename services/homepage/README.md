@@ -1,8 +1,8 @@
 # services/homepage
 
 Tableau de bord d'accueil du homelab : un point d'entrée unique qui
-liste les services (`*.bb-homelab.local`) et — à partir de la PR2 —
-affiche leur statut via Uptime Kuma. Choix de l'outil documenté dans
+liste les services (`*.bb-homelab.local`) ; l'affichage de leur statut
+via Uptime Kuma (PR2) est bloqué par l'ADR 0009. Choix de l'outil documenté dans
 [ADR 0006](../../docs/decisions/0006-homepage-dashboard.md).
 
 ## Stack
@@ -16,7 +16,8 @@ affiche leur statut via Uptime Kuma. Choix de l'outil documenté dans
   dashboard démarre même HDD démonté (cf. ADR 0006).
 - Logs : `LOG_TARGETS=stdout` → aucun fichier écrit dans le dossier
   `config/` suivi par git ; logs via `docker compose logs -f homepage`.
-- Réseau : `bb-homelab-proxy` (partagé avec Caddy) + `default`.
+- Réseau : `bb-homelab-proxy-homepage` (partagé avec Caddy seul, ADR 0009)
+  et `default`.
 - URL interne : `https://home.bb-homelab.local` (via Caddy,
   `tls internal`, tailnet-only).
 
@@ -70,7 +71,10 @@ Les fichiers `docker.yaml`, `kubernetes.yaml`, `proxmox.yaml`,
 les fichiers manquants au démarrage, donc les committer empêche toute
 génération de squelette dans le dossier suivi par git.
 
-**Prérequis PR2 (niveau 2 — widget de statut).** Avant d'ajouter le
+**Prérequis PR2 (niveau 2 — widget de statut).** Bloqué par
+[ADR 0009](../../docs/decisions/0009-per-backend-proxy-networks.md) :
+Homepage n'atteint plus Kuma que par Caddy, qui répond 403 sur la page
+de statut ; décision à rouvrir (ADR 0009) avant de reprendre le widget. Avant d'ajouter le
 widget Uptime Kuma à `services.yaml`, créer dans Uptime Kuma une
 *status page* (slug `bb-homelab`) listant les sondes existantes. Le
 widget lit cette page publique par slug — sans clé API ni login.

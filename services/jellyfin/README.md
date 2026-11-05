@@ -12,7 +12,7 @@ musique diffusés en streaming sur le tailnet, sans compte tiers ni cloud.
   - `/mnt/appdata/jellyfin/config` → `/config` (base, réglages, comptes)
   - `/mnt/appdata/jellyfin/cache` → `/cache` (transcodage, vignettes)
   - `/mnt/appdata/jellyfin/media` → `/media` (médiathèque, **temporaire**)
-- Réseau : `bb-homelab-proxy` (partagé avec Caddy) + port `8096` publié
+- Réseau : `bb-homelab-proxy-jellyfin` (partagé avec Caddy seul, ADR 0009) + port `8096` publié
   pour l'accès direct.
 - Accès : `https://jellyfin.bb-homelab.local` (via Caddy) ou direct
   `http://bb-homelab:8096` (tailnet uniquement, port lié à `127.0.0.1` et à l'IP tailnet —
@@ -161,9 +161,13 @@ Ajoutée à [`services/caddy/Caddyfile`](../caddy/Caddyfile) :
 ```caddyfile
 jellyfin.bb-homelab.local {
     tls internal
+    import tailnet_only /health
     reverse_proxy jellyfin:8096
 }
 ```
+
+`tailnet_only` refuse (403) tout client hors tailnet, sauf le chemin
+`/health` que Uptime Kuma sonde ([ADR 0009](../../docs/decisions/0009-per-backend-proxy-networks.md)).
 
 Recharger Caddy après modification :
 

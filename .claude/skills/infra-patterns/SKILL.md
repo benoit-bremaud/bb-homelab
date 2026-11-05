@@ -1,6 +1,6 @@
 ---
 name: infra-patterns
-description: Infrastructure patterns for bb-homelab. Defines shell script standards (`set -euo pipefail`, idempotent, lock-out-proof), Docker compose patterns (pinned images, shared external network `bb-homelab-proxy`, hardened images), fstab convention (UUID + nofail, `/mnt/<role>/<service>/` layout), systemd defaults, and SSH-to-Pi conventions. Apply when authoring or reviewing shell scripts, `docker-compose.yml`, fstab edits, or anything that interacts with the Pi infrastructure.
+description: Infrastructure patterns for bb-homelab. Defines shell script standards (`set -euo pipefail`, idempotent, lock-out-proof), Docker compose patterns (pinned images, one external network per backend `bb-homelab-proxy-<svc>`, hardened images), fstab convention (UUID + nofail, `/mnt/<role>/<service>/` layout), systemd defaults, and SSH-to-Pi conventions. Apply when authoring or reviewing shell scripts, `docker-compose.yml`, fstab edits, or anything that interacts with the Pi infrastructure.
 ---
 
 # Infrastructure patterns — bb-homelab
@@ -51,10 +51,11 @@ Per-service `docker-compose.yml` files in `services/<name>/`.
 - **Override via env var**: `image: name:${SERVICE_IMAGE_TAG:-X.Y.Z}`
   so a bump is a deliberate `.env` change, never a silent `:latest` pull.
 - **Named volumes for persistence**: `volumes: { name: bb-homelab-<service>-data }`.
-- **External shared network for inter-service routing**:
-  `bb-homelab-proxy` (cf. [ADR 0002](../../../docs/decisions/0002-caddy-reverse-proxy.md)).
-  - Created once on host: `docker network create bb-homelab-proxy`.
-  - Backend services join via `external: true` in their compose.
+- **One external network per backend for Caddy routing**:
+  `bb-homelab-proxy-<svc>` (cf. [ADR 0009](../../../docs/decisions/0009-per-backend-proxy-networks.md)).
+  - Created once on host: `docker network create bb-homelab-proxy-<svc>`.
+  - The backend and Caddy join it via `external: true`; no other
+    backend ever does (no lateral path to Vaultwarden, #200).
   - Caddy reaches them by service name as hostname (e.g. `n8n:5678`).
 - **Hardened images preferred** when available (e.g. Alpine 3.22+ for
   n8n). Be aware that hardened images often lack `sqlite3`, `wget`,

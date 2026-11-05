@@ -11,39 +11,59 @@
 # See services/caddy/README.md for the full install procedure.
 # (no global options block — admin API listens on its default
 # localhost:2019 inside the container only; not exposed to the host
-# or to the bb-homelab-proxy network. Required by `caddy reload` to
+# or to any backend network. Required by `caddy reload` to
 # apply Caddyfile changes without restarting the container.)
 
+# ---- Tailnet-only guard (ADR 0009, #200) ----
+# Every site refuses clients outside the Tailscale ranges with a 403. A
+# compromised backend shares a network with Caddy and arrives from a
+# Docker IP, so it gains nothing by going through Caddy beyond the health
+# paths and Kuma's token-gated push (#217). The arguments
+# are the paths left open: the service's exact health path, so Uptime
+# Kuma (also on a Docker IP) can probe it, and, on Kuma only, the push
+# endpoints the Pi's own scripts call through 127.0.0.1 (#161), which
+# Caddy sees from the Docker gateway IP.
+(tailnet_only) {
+	@outside_tailnet {
+		not remote_ip 100.64.0.0/10 fd7a:115c:a1e0::/48
+		not path {args[:]}
+	}
+	respond @outside_tailnet 403
+}
+
 # ---- n8n ----
-# n8n.bb-homelab.local → n8n container on the shared proxy network.
+# n8n.bb-homelab.local → n8n container on its own proxy network.
 # Client devices add a single /etc/hosts entry pointing *.bb-homelab.local
 # to the Pi's Tailscale IP; routing is handled here.
 n8n.bb-homelab.local {
 	tls internal
+	import tailnet_only /healthz
 	reverse_proxy n8n:5678
 }
 
 # ---- jellyfin ----
-# jellyfin.bb-homelab.local → Jellyfin media server on the shared proxy
+# jellyfin.bb-homelab.local → Jellyfin media server on its own proxy
 # network. Browsers that trust the internal CA use this hostname; TV /
 # mobile apps that cannot install the CA use the direct port instead
 # (http://bb-homelab:8096, published by services/jellyfin/).
 jellyfin.bb-homelab.local {
 	tls internal
+	import tailnet_only /health
 	reverse_proxy jellyfin:8096
 }
 
 # ---- Uptime Kuma ----
 # status.bb-homelab.local → uptime-kuma container (Stack B monitoring,
-# issue #44). Reached over the shared bb-homelab-proxy network.
+# issue #44). Reached over its own proxy network.
 status.bb-homelab.local {
 	tls internal
+	import tailnet_only /api/entry-page /api/push/*
 	reverse_proxy uptime-kuma:3001
 }
 
 # ---- Vaultwarden ----
 # vaultwarden.bb-homelab.local → vaultwarden container (password manager,
-# issue #25). Reached over the shared bb-homelab-proxy network. A single
+# issue #25). Reached over its own proxy network. A single
 # reverse_proxy is sufficient: since Vaultwarden 1.31 the WebSocket
 # (/notifications/hub) is served by Rocket on the same port 8080, and Caddy
 # upgrades WebSocket connections automatically — no separate hub block.
@@ -53,14 +73,13 @@ status.bb-homelab.local {
 # Tailnet-only: Caddy publishes 80/443 on every host interface (LAN and
 # global IPv6), and Docker-published ports bypass ufw. Any client whose
 # source IP is outside the Tailscale ranges gets a 403 before reaching
-# the vault (bb-vault#20).
+# the vault (bb-vault#20), except on the exact /alive health path.
 vaultwarden.bb-homelab.local {
 	tls internal
 	# HSTS: browsers refuse plain HTTP for a year after the first visit
 	# (bb-vault#24). No preload: .local cannot be on the preload list.
 	header Strict-Transport-Security "max-age=31536000"
-	@outside_tailnet not remote_ip 100.64.0.0/10 fd7a:115c:a1e0::/48
-	respond @outside_tailnet 403
+	import tailnet_only /alive
 	# The /admin panel can disable 2FA and delete users: only the admin
 	# PC (vev-xps-15-9530) may reach it; everyone else sees a 404
 	# (bb-vault#21). Update the IP if that device is re-enrolled.
@@ -76,11 +95,12 @@ vaultwarden.bb-homelab.local {
 
 # ---- Homepage (landing dashboard) ----
 # home.bb-homelab.local → homepage container (link launcher + status,
-# issue #125). Reached over the shared bb-homelab-proxy network. The
+# issue #125). Reached over its own proxy network. The
 # upstream is the compose SERVICE name `homepage` (like uptime-kuma:3001),
 # not the hostname `home`.
 home.bb-homelab.local {
 	tls internal
+	import tailnet_only /api/healthcheck
 	reverse_proxy homepage:3000
 }
 

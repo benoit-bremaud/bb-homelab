@@ -32,7 +32,7 @@ flowchart LR
   subgraph home ["Home site — no public ingress (decision #28)"]
     subgraph pi5 ["Pi 5 — always-on host"]
       caddy["Caddy — reverse proxy (internal CA)"]
-      jelly["Jellyfin — container :8096 (bb-homelab-proxy net)"]
+      jelly["Jellyfin — container :8096 (net bb-homelab-proxy-jellyfin)"]
       caddy -->|"reverse_proxy jellyfin:8096"| jelly
 
       subgraph storage ["Storage — Disque A (appdata), Pattern Y"]

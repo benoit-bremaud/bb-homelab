@@ -1,67 +1,48 @@
-# Local review — bb-homelab (docs/202-docker-storage-move)
+# Local review — bb-homelab (fix/200-per-backend-proxy-networks)
 
-- Date: 2026-11-04
-- Commit: 6a1f50c (round 4); rounds 1 to 3 on ced7b96, 6a7c4e9, 622cf90
-- Scope: branch diff `origin/main...HEAD` (runbook `storage/DOCKER-STORAGE-MOVE.md`,
-  ADR 0008, `docs/decisions/README.md`, `storage/LAYOUT.md`, `storage/README.md`)
-- Checks run: adversarial (4 rounds) · docs · security (diff read, gitleaks) · CI mirror
-  (markdownlint); design, tests and containers not applicable (documentation only; facts on
-  the Pi gathered read-only)
-- Verdict: ship as-is · Must 0 · Should 0 · Nice 0 open
+- Date: 2026-11-05
+- Commit: 2228f2f (polish after round 3); round 1 on 533eff6, round 2 on f228f00, round 3 on
+  a835e56
+- Scope: branch diff `main...HEAD` (one proxy network per backend: compose files of Caddy and
+  the five backends, `Caddyfile` `tailnet_only` snippet, ADR 0009, ADR 0002 status, deployment
+  diagram `network-isolation/08-deployment.md`, service READMEs, skills `infra-patterns` and
+  `new-service`, `PROJECT_LOG.md`)
+- Checks run: adversarial (3 rounds) · design · docker · docs · security (diff read, gitleaks) ·
+  CI mirror (markdownlint, yamllint, `docker compose config`); tests not applicable (no
+  application code)
+- Verdict: ship as-is · Must 0 · Should 0 · Nice 0 open · 1 deferred to #217
 
 ## Adversarial review
 
-- Round 1 on `ced7b96`: Must 1 · Should 9 · Nice 6 · unverified 2 · Push gate: closed
-- Round 2 on `6a7c4e9`: all round 1 items fixed but one (backup check) · new Should 2 · new
-  Nice 6 · Push gate: open
-- Round 3 on `622cf90`: 7 fixed · 1 regressed (ADR matrix totals) · Push gate: open
-- Round 4 on `6a1f50c`: 1 fixed · new findings 0 · **Push gate: open**
+- Round 1 on `533eff6`: Must 3 (docs) · Should 8 · Nice 5 · Push gate: closed
+- Round 2 on `f228f00`: 11 of 13 fixed · 1 regressed (`root.crt` check needs `sudo`) ·
+  new Must 2 · Should 8 · Nice 4 · Push gate: closed
+- Round 3 on `a835e56`: every round 2 item fixed (Nice 4 not applied, accepted) · Must 0 ·
+  Should 1 · Nice 4 · **Push gate: open**
+- Round 3 Should and Nice fixed in `2228f2f` (wording only)
 - Hosted automated reviews (filled at the pre-merge run): pending
 
-## Pre-merge gate (head SHA 6a1f50c)
+## Deferred and accepted
+
+- Pin the `edge` subnet and restrict the Kuma `/api/push/*` exemption to its gateway: needs a
+  free subnet chosen on the Pi; tracked in #217, cited in ADR 0009 and `PROJECT_LOG.md`.
+- Docker Engine ≥ 28 for `gw_priority`: not documented (unverified); the Pi runs Docker 29.
+- `Bascule et retour arrière` placed after Refs in ADR 0009: an extra trailing section, allowed
+  by `docs-conventions.md` (the required sections keep their order).
+
+## Pre-merge gate (head SHA 2228f2f)
 
 | Step | Result |
 |---|---|
-| 0 CI mirror | ✅ markdownlint, 0 error on the changed files (MD060 known false positive) · shellcheck, yamllint, hadolint: no file in scope · CodeQL, Scorecard, dependency review: CI-only |
-| 1 Tests | n/a: documentation only; the runbook runs later on the Pi with the owner |
+| 0 CI mirror | ✅ markdownlint 0 error on the changed files (MD060 known false positive) · yamllint 0 error (line-length warnings, one pre-existing) · `docker compose config -q` passes for Caddy and Uptime Kuma · shellcheck, hadolint: no file in scope · CodeQL, Scorecard, dependency review: CI-only |
+| 1 Tests | n/a: no application code; Caddy matchers adapted offline with `caddy:2.11.7` |
 | 2 Coverage | n/a: project deviation in `CLAUDE.md` |
-| 3 SonarQube | ⏸ deferred to the pre-merge run (`--push`) |
-| 4 Secrets | ✅ gitleaks clean (`origin/main..HEAD`) · no tracked `.env` · diff read: no secret, tunnel name or AI tool name |
-| 5 E2E/smoke | n/a: no runnable product in the diff |
+| 3 SonarQube | ⏸ deferred to the pre-merge run |
+| 4 Secrets | ✅ gitleaks clean (`main..HEAD`) · no tracked `.env` · diff read: no secret, no AI tool name in docs |
+| 5 E2E/smoke | ⏸ manual on the Pi with the owner: cutover steps of ADR 0009, then card LATERAL by IP |
 
-- Gate: `--push`: **pre-push green**, SonarQube deferred (never GREEN)
+## Out of scope (pre-existing)
 
-## 🔴 Must Have
-
-- `storage/DOCKER-STORAGE-MOVE.md` `[adversarial]` · a Docker restart changes the quick-tunnel
-  URL, so the "Kuma all green" check would trigger a needless rollback · conditional tunnel
-  step, tunnel monitor excluded from the rollback criterion — fixed in 6a7c4e9
-- `storage/DOCKER-STORAGE-MOVE.md` `[docs]` · broken link to `DISK-ALERT.md` (only in #212),
-  unchecked copy, fragile rollback, free-hand containerd edit · fixed in 6a7c4e9
-
-## 🟡 Should Have
-
-- Copy check before the move, leftover shims and mounts (`-x`), config written before `mv`,
-  `mv -T`, same-day vs later rollback, backup and #168 preconditions, backup window, disk by
-  mount, 1.5x space, orphan volume moved to the cleanup, indexes and ADR 0008
-  `[adversarial|docs]` · fixed in 6a7c4e9
-- UAS journal filter, archives instead of logs `[adversarial]` · fixed in 622cf90
-- ADR 0008 matrix totals and sensitivity `[adversarial]` · fixed in 6a1f50c
-
-## 🔵 Nice to Have
-
-- Two-pass copy, `du -x`, names-only diff, `daemon.json` command and validation, run-state
-  note, guard before `rm -rf`, docs link, run date in `PROJECT_LOG.md`, boot diagnostics
-  (6a7c4e9); idempotent containerd line, smartctl on the disk, full tunnel rotation, SD space
-  before a later rollback (622cf90) `[adversarial|docs]` · all fixed
-
-## ⚪ Disagree / Intentional
-
-_None._
-
-## Per-dimension summary
-
-- Adversarial: one Must in round 1, all findings fixed by round 4 · Docs: link, rollback and
-  check gaps fixed · Security: no leak · Design, tests: not applicable
-- Out of scope, filed: the Docker and containerd settings and drop-ins are not tracked in
-  `bootstrap/` (#213); `docs/security/AUDIT.md` risk R3 to update when #202 closes
+- The `{ …; exit 1; }` guards in service READMEs close an interactive SSH shell when pasted.
+- `services/caddy/README.md` is in English although `services/*/README.md` is Category A
+  (French).

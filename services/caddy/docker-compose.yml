@@ -40,14 +40,32 @@ services:
         bind:
           create_host_path: false
     networks:
-      - proxy
+      # `edge` carries Caddy's default route and published ports, so no
+      # backend sits on its gateway path (ADR 0009, #200). Each backend has
+      # its own proxy network shared with Caddy only.
+      edge:
+        gw_priority: 1
+      proxy-vaultwarden: {}
+      proxy-n8n: {}
+      proxy-jellyfin: {}
+      proxy-homepage: {}
+      proxy-uptime-kuma:
+        # Kuma probes the other backends through Caddy over HTTPS. Docker
+        # aliases are literal names (no wildcard): keep this list in sync
+        # with the site names in the Caddyfile.
+        aliases:
+          - n8n.bb-homelab.local
+          - jellyfin.bb-homelab.local
+          - status.bb-homelab.local
+          - vaultwarden.bb-homelab.local
+          - home.bb-homelab.local
     # Caddy is the frontal reverse proxy (80/443) for the whole homelab, so
     # it gets a liveness probe like every backend. It hits the plain-HTTP
     # /healthz route defined in the Caddyfile (a localhost-only site), proving
     # the port-80 data plane is serving — more representative than pinging the
     # admin API. wget ships in the Alpine/busybox caddy image (as for n8n).
-    # No depends_on to the backends: separate compose projects joined by the
-    # external bb-homelab-proxy network, and depends_on does not cross them.
+    # No depends_on to the backends: separate compose projects joined by
+    # external networks, and depends_on does not cross them.
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost/healthz || exit 1"]
       interval: 30s
@@ -56,11 +74,26 @@ services:
       start_period: 10s
 
 networks:
-  proxy:
-    # External network shared with every backend service (n8n, future
-    # Jellyfin / Kuma / etc.). Must be created once by hand on the host:
-    #   docker network create bb-homelab-proxy
-    # External-first design so Caddy and the backend services can be
-    # torn down / upgraded independently without losing the shared bridge.
-    name: bb-homelab-proxy
+  # Caddy's own bridge, joined by no backend (ADR 0009).
+  edge:
+    driver: bridge
+  # One external network per backend, shared with that backend only.
+  # Each must be created once by hand on the host before Caddy starts
+  # (loop in services/caddy/README.md, Bootstrap step 1).
+  # External-first design so Caddy and each backend can be torn down /
+  # upgraded independently without losing the bridge (ADR 0002).
+  proxy-vaultwarden:
+    name: bb-homelab-proxy-vaultwarden
+    external: true
+  proxy-n8n:
+    name: bb-homelab-proxy-n8n
+    external: true
+  proxy-jellyfin:
+    name: bb-homelab-proxy-jellyfin
+    external: true
+  proxy-uptime-kuma:
+    name: bb-homelab-proxy-uptime-kuma
+    external: true
+  proxy-homepage:
+    name: bb-homelab-proxy-homepage
     external: true

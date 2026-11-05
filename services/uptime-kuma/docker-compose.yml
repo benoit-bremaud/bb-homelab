@@ -8,6 +8,9 @@ services:
     restart: unless-stopped
     environment:
       - TZ=${TZ:-Europe/Paris}
+      # Probes reach the other backends through Caddy over HTTPS (ADR 0009),
+      # so Node must trust Caddy's internal root CA.
+      - NODE_EXTRA_CA_CERTS=/etc/caddy-root.crt
     volumes:
       # Host bind-mount on the HDD (Pattern Y, role appdata). Single
       # volume → the service dir is mounted directly. create_host_path:
@@ -20,9 +23,18 @@ services:
         target: /app/data
         bind:
           create_host_path: false
+      # Only the public root certificate, read-only. Never mount the PKI
+      # directory: it also holds the CA private keys. Restart Kuma if the
+      # internal CA is ever regenerated.
+      - type: bind
+        source: /mnt/appdata/caddy/data/caddy/pki/authorities/local/root.crt
+        target: /etc/caddy-root.crt
+        read_only: true
+        bind:
+          create_host_path: false
     networks:
-      # `proxy` is the shared external network on which Caddy reaches
-      # this service via DNS name `uptime-kuma:3001` (see services/caddy/).
+      # `proxy` is the dedicated external network on which Caddy reaches
+      # this service via DNS name `uptime-kuma:3001` (see services/caddy/ + ADR 0009).
       - default
       - proxy
     healthcheck:
@@ -36,5 +48,8 @@ networks:
   default:
     driver: bridge
   proxy:
-    name: bb-homelab-proxy
+    # This service's own proxy network, shared with Caddy only (ADR 0009,
+    # #200): no other backend can reach it. Created once on the host with
+    # `docker network create bb-homelab-proxy-uptime-kuma`.
+    name: bb-homelab-proxy-uptime-kuma
     external: true

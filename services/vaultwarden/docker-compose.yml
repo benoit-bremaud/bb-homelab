@@ -26,9 +26,10 @@ services:
     pids_limit: 256
     mem_limit: 512m
     # No host port published. Unlike n8n (which binds 127.0.0.1 for
-    # cloudflared), Vaultwarden is reached ONLY by Caddy over the shared
-    # bb-homelab-proxy network as `vaultwarden:8080`. Smallest possible
-    # attack surface for the box that stores every password.
+    # cloudflared), Vaultwarden is reached ONLY by Caddy over its own
+    # bb-homelab-proxy-vaultwarden network as `vaultwarden:8080`
+    # (ADR 0009). Smallest possible attack surface for the box that
+    # stores every password.
     environment:
       # Public origin. MUST match the Caddy hostname exactly (scheme +
       # host) or the Web Vault, push, and WebAuthn/2FA origins break.
@@ -115,8 +116,8 @@ services:
     networks:
       # `default` — local bridge (no host port, but keeps egress for push
       # if it is ever enabled).
-      # `proxy` — shared external network; Caddy reaches this service as
-      # `vaultwarden:8080` (see services/caddy/ + ADR 0002).
+      # `proxy` — dedicated external network; Caddy reaches this service as
+      # `vaultwarden:8080` (see services/caddy/ + ADR 0009).
       - default
       - proxy
 
@@ -124,7 +125,8 @@ networks:
   default:
     driver: bridge
   proxy:
-    # Shared external network with services/caddy/. Created once on the
-    # host with: `docker network create bb-homelab-proxy`.
-    name: bb-homelab-proxy
+    # This service's own proxy network, shared with Caddy only (ADR 0009,
+    # #200): no other backend can reach it. Created once on the host with
+    # `docker network create bb-homelab-proxy-vaultwarden`.
+    name: bb-homelab-proxy-vaultwarden
     external: true

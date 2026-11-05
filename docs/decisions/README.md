@@ -18,3 +18,4 @@ decision is reversed, write a new ADR that supersedes the previous one.
 - [0006 — Homepage as the landing dashboard](0006-homepage-dashboard.md)
 - [0007 — Docker-published ports bound to loopback and the tailnet](0007-docker-published-ports-binding.md)
 - [0008 — Docker storage on the appdata disk](0008-docker-storage-on-appdata-disk.md)
+- [0009 — One proxy network per backend](0009-per-backend-proxy-networks.md)

@@ -1,6 +1,6 @@
 ---
 name: new-service
-description: Scaffold a new Docker service under services/<name>/ for bb-homelab. Creates docker-compose.yml (pinned image, joins bb-homelab-proxy network, HDD bind-mount per Pattern Y, healthcheck), README.md (French per docs-conventions), .env.example (placeholder values). Optionally appends a Caddy route. Invoke with /new-service <name> for any new container deployment.
+description: Scaffold a new Docker service under services/<name>/ for bb-homelab. Creates docker-compose.yml (pinned image, joins its own bb-homelab-proxy-<name> network, HDD bind-mount per Pattern Y, healthcheck), README.md (French per docs-conventions), .env.example (placeholder values). Optionally appends a Caddy route. Invoke with /new-service <name> for any new container deployment.
 disable-model-invocation: true
 ---
 
@@ -42,7 +42,8 @@ Before writing any file, gather these via `AskUserQuestion`:
    volumes).
 
 6. **Network needs**:
-   - Just `bb-homelab-proxy` (typical web service)?
+   - Just its own `bb-homelab-proxy-<name>` network shared with Caddy
+     (typical web service, ADR 0009)? Never another service's network.
    - Plus other dependencies (e.g. Postgres)?
 
 7. **Caddy route?**
@@ -103,7 +104,10 @@ networks:
   default:
     driver: bridge
   proxy:
-    name: bb-homelab-proxy
+    # Own network, shared with Caddy only (ADR 0009). Create once with
+    # `docker network create bb-homelab-proxy-<name>`, then declare it in
+    # services/caddy/docker-compose.yml.
+    name: bb-homelab-proxy-<name>
     external: true
 ```
 
@@ -124,7 +128,8 @@ values from Q&A.
   `.env`).
 - Données persistantes : bind-mount `/mnt/<role>/<name>/` (HDD,
   Pattern Y).
-- Réseau : `bb-homelab-proxy` (partagé avec Caddy).
+- Réseau : `bb-homelab-proxy-<name>` (partagé avec Caddy seul,
+  ADR 0009).
 - URL interne : `https://<name>.bb-homelab.local` (via Caddy).
 
 ## Bootstrap
@@ -167,19 +172,37 @@ docker compose logs -f <name>
 
 ## Caddy route (if applicable)
 
-Append to `services/caddy/Caddyfile`:
+Every site is tailnet-only (ADR 0009). Three edits, in this order:
 
-```caddyfile
-<name>.bb-homelab.local {
-    tls internal
-    reverse_proxy <name>:<port>
-}
-```
+1. Create the service's own network once on the host:
 
-Then reload Caddy:
+   ```bash
+   docker network create bb-homelab-proxy-<name>
+   ```
+
+2. In `services/caddy/docker-compose.yml`, declare it: add
+   `proxy-<name>: {}` under the Caddy service `networks:` and an
+   external `proxy-<name>` entry (`name: bb-homelab-proxy-<name>`) in the
+   top-level `networks:`. If Uptime Kuma probes the service, also add
+   `<name>.bb-homelab.local` to the `aliases:` of `proxy-uptime-kuma`
+   (Docker aliases are literal names, no wildcard).
+3. Append to `services/caddy/Caddyfile`, listing in `tailnet_only` the
+   exact health path Uptime Kuma probes (the only path left open):
+
+   ```caddyfile
+   <name>.bb-homelab.local {
+       tls internal
+       import tailnet_only /<health-path>
+       reverse_proxy <name>:<port>
+   }
+   ```
+
+A new network is only attached when the container is recreated (a
+Caddyfile reload is not enough). `docker compose up -d` detects the
+changed `networks:` and recreates Caddy by itself:
 
 ```bash
-docker exec bb-homelab-caddy caddy reload --config /etc/caddy/Caddyfile
+cd services/caddy && docker compose up -d
 ```
 
 And on each client device, add to `/etc/hosts`:

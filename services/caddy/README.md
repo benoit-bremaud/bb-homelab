@@ -3,8 +3,8 @@
 Caddy is the single entry point for tailnet traffic to every backend
 service in the homelab. It terminates HTTPS (with its own internal CA
 in phase 1) and routes host-based requests (`n8n.bb-homelab.local`,
-future `kuma.bb-homelab.local`, `jellyfin.bb-homelab.local`, …) to
-the right container over a shared Docker network.
+`status.bb-homelab.local`, `jellyfin.bb-homelab.local`, …) to the right
+container over that backend's own Docker network (ADR 0009).
 
 Public webhooks (Impropedia widget → n8n) continue to travel through
 `cloudflared` directly, untouched by this layer. The two paths are
@@ -13,9 +13,14 @@ independent by design — see [ADR 0002](../../docs/decisions/0002-caddy-reverse
 ## Stack
 
 - **Caddy 2.11.7** (pinned) — HTTPS termination + host-based routing.
-- **Shared Docker network `bb-homelab-proxy`** — external, created
-  once on the host. Every backend service that Caddy needs to reach
-  (n8n, future Kuma / Jellyfin / …) joins this network.
+- **One Docker network per backend, `bb-homelab-proxy-<svc>`** —
+  external, created once on the host, shared by that backend and Caddy
+  only (ADR 0009, #200). Caddy also has its own `edge` bridge for its
+  default route and published ports (`gw_priority` needs Docker
+  Compose ≥ v2.33.1). Every site is tailnet-only except its exact health
+  path; Uptime Kuma also keeps `/api/push/*` open, because the Pi's own
+  scripts push through `127.0.0.1` and Caddy sees them from the Docker
+  gateway IP.
 - **Bind-mount `/mnt/appdata/caddy/data`** — persists the internal CA
   root and issued certificates on the HDD (Pattern Y, like n8n). **Must
   survive container restarts** or Caddy regenerates a brand new root CA
@@ -38,13 +43,21 @@ independent by design — see [ADR 0002](../../docs/decisions/0002-caddy-reverse
 Pre-requisite: Docker + Compose v2 on the host.
 
 ```bash
-# 1. Create the shared proxy network (once per host).
-docker network create bb-homelab-proxy
+# 1. Create one proxy network per backend (once per host, skipping
+#    those that already exist).
+for s in vaultwarden n8n jellyfin uptime-kuma homepage; do
+  docker network inspect "bb-homelab-proxy-$s" >/dev/null 2>&1 \
+    || docker network create "bb-homelab-proxy-$s"
+done
 
-# 2. Attach every backend service to that network. For n8n, this
-#    is already declared in services/n8n/docker-compose.yml — just
-#    re-up the stack:
-cd services/n8n && docker compose up -d && cd -
+# 2. Attach each backend to its own network. Every backend compose
+#    already declares its network (n8n: services/n8n/docker-compose.yml,
+#    and likewise for the others) — just re-up each stack, for example:
+#    For n8n, re-up the n8n service only: a plain `up -d` also restarts
+#    cloudflared, the public quick tunnel, kept stopped since #196.
+cd services/n8n && docker compose up -d n8n && cd -
+#    Exception: uptime-kuma mounts Caddy's root.crt, which exists only
+#    after Caddy's first start; re-up it after step 4.
 
 # 3. Verify the HDD is actually mounted, THEN create the bind-mount
 #    target dirs. The guard matters: `mkdir -p` on an unmounted
@@ -132,25 +145,32 @@ Double-click the `.crt`, choose "Install Certificate" → "Local Machine"
 
 ## Adding a new route
 
-1. Add the backend service to the shared `bb-homelab-proxy` network
-   in its own `docker-compose.yml` (see `services/n8n/docker-compose.yml`
-   for the pattern).
-2. Append a block to `services/caddy/Caddyfile`:
+1. Create the service's own network on the host
+   (`docker network create bb-homelab-proxy-<svc>`) and join it from the
+   service's `docker-compose.yml` (see `services/n8n/docker-compose.yml`
+   for the pattern). Never join another service's network.
+2. Declare that network in `services/caddy/docker-compose.yml`, and add
+   the new site name to the aliases on `proxy-uptime-kuma` if Kuma
+   probes it.
+3. Append a block to `services/caddy/Caddyfile`, with the service's
+   exact health path:
 
    ```caddyfile
-   kuma.bb-homelab.local {
+   <svc>.bb-homelab.local {
        tls internal
-       reverse_proxy kuma:3001
+       import tailnet_only /health
+       reverse_proxy <svc>:<port>
    }
    ```
 
-3. Reload Caddy without downtime:
+4. Recreate Caddy (a new network needs more than a reload; `up -d`
+   detects the changed `networks:` and recreates the container):
 
    ```bash
-   docker exec bb-homelab-caddy caddy reload --config /etc/caddy/Caddyfile
+   cd services/caddy && docker compose up -d
    ```
 
-4. Add the `kuma.bb-homelab.local` line to the client's `/etc/hosts`.
+5. Add the `<svc>.bb-homelab.local` line to the client's `/etc/hosts`.
 
 ## Phase 2 — migrating to public HTTPS when a domain is bought
 
@@ -161,11 +181,13 @@ ACME auto-HTTPS:
 # Before (phase 1)
 n8n.bb-homelab.local {
     tls internal
+    import tailnet_only /healthz
     reverse_proxy n8n:5678
 }
 
-# After (phase 2)
+# After (phase 2) — keep the tailnet filter
 n8n.example.com {
+    import tailnet_only /healthz
     reverse_proxy n8n:5678
 }
 ```
@@ -178,7 +200,7 @@ internal CA root can then be uninstalled from every client device.
 ## Security notes
 
 - **Admin API enabled on `localhost:2019`, inside the container only.** It
-  is not published to any host port or to the `bb-homelab-proxy` network, and
+  is not published to any host port or to any backend network, and
   `caddy reload` relies on it to apply Caddyfile changes without a restart.
   The Docker healthcheck probes a plain-HTTP `/healthz` route (not the admin
   API) — see `docker-compose.yml`.
@@ -187,8 +209,10 @@ internal CA root can then be uninstalled from every client device.
   these from the tailnet CIDR but not from the internet. On a
   tailnet-only deploy this is already the default — UFW blocks
   inbound from outside `tailscale0`.
-- **No basic auth at this layer yet.** Access control is delegated
-  to Tailscale (only devices on the tailnet can resolve the IP).
+- **No basic auth at this layer yet.** Caddy enforces network access
+  itself: the `tailnet_only` snippet answers 403 to any client outside
+  the Tailscale ranges, except each site's exact health path and `/api/push/*` on Kuma
+  (ADR 0009, #217).
   When adding services with stronger auth needs (Vaultwarden, etc.),
   layer Caddy's `basicauth` or forward-auth directives per-route.
 
