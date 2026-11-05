@@ -5,7 +5,7 @@ musique diffusés en streaming sur le tailnet, sans compte tiers ni cloud.
 
 ## Stack
 
-- Image : `jellyfin/jellyfin:10.11.9` (épinglée — bump délibéré via
+- Image : `jellyfin/jellyfin:10.11.11` (épinglée — bump délibéré via
   `.env`). Manifeste multi-arch : l'ARM64 est tiré automatiquement sur
   le Pi 5.
 - Données persistantes (bind-mounts HDD, Pattern Y, rôle `appdata`) :

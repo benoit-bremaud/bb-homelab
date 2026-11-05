@@ -7,8 +7,10 @@ système — suivra).
 
 ## Stack
 
-- Image : `louislam/uptime-kuma:2.5.7` (épinglée — bump délibéré via
-  `.env`).
+- Image : `louislam/uptime-kuma:2.5.9-slim` (variante sans Chromium ni
+  MariaDB intégré : aucune sonde « real browser », base SQLite ; épinglée —
+  bump délibéré via `.env`). Retour arrière : tag sans `-slim` (requis si
+  une sonde « real browser » est ajoutée).
 - Données persistantes : bind-mount `/mnt/appdata/uptime-kuma/` (HDD,
   Pattern Y) → `/app/data` dans le conteneur (SQLite + config).
 - Réseau : `bb-homelab-proxy-uptime-kuma` (partagé avec Caddy seul,

@@ -1837,3 +1837,43 @@ was done and why, by date.
 - **Follow-up**: #217 (restrict the Kuma `/api/push/*` exemption to
   the `edge` gateway).
 - **Refs**: #200, #216, #217, ADR 0009
+
+## 2026-11-05
+
+### Security: service image bumps and Critical CVE waivers (#201)
+
+- **What**: bumped every service image to its newest patch release:
+  Uptime Kuma 2.5.7 → 2.5.9-slim, Jellyfin 10.11.9 → 10.11.11,
+  Vaultwarden 1.37.4 → 1.37.5, n8n 2.44.6 → 2.47.2, Caddy 2.11.7 →
+  2.11.8, cloudflared 2026.10.3 → 2026.10.7 (container stays stopped,
+  #196); Homepage v2.7.0 was already current. Added `.trivyignore.yaml`
+  with one purl-scoped, dated waiver per remaining fixable Critical.
+- **Why**: the 2026-11-04 pentest counted 22 fixable Critical CVEs on the
+  running images.
+- **Result** (`trivy image --platform linux/arm64 --scanners vuln
+  --severity CRITICAL --ignore-unfixed --exit-code 1 --ignorefile
+  .trivyignore.yaml`, Trivy 0.76.1): Caddy, Homepage, cloudflared and
+  Vaultwarden 0; Uptime Kuma 5, Jellyfin 6, n8n 1, all waived (12
+  entries). The scan exits 1 without the ignore file and 0 with it.
+- **Decisions** (MCDA validated by the owner): n8n to the latest minor
+  2.47.2 rather than staying on 2.44.x (430/500); Uptime Kuma on the
+  `-slim` variant, which drops Chromium and the embedded MariaDB, after
+  a read-only check on the Pi (SQLite, no real-browser monitor), and
+  Jellyfin ASP.NET Core waivers tied to the 12.x migration (415/500);
+  waivers scoped by exact `purls` (440/500); the reachable `protobufjs`
+  waived with a short expiry (465/500).
+- **Reachable waivers**, a deliberate exception to "unreachable only":
+  Jellyfin ASP.NET Core 9.0.16 (direct on the tailnet IP :8096 and via
+  Caddy; the 10.11 branch is frozen, fix is #142) and Kuma `protobufjs`
+  (admin-only, through a gRPC monitor proto; none configured), both until
+  2027-01-04; n8n `brotli-libs` (libcurl via git, freetype via
+  graphicsmagick) until 2026-12-05. Other waivers until 2027-02-03.
+- **Review**: automated review (Must Have): stale deployment diagram,
+  false "not reachable" claim on `protobufjs`, a scan command that never
+  failed without `--exit-code 1`, waivers without a follow-up issue; all
+  fixed.
+- **Rollout (pending)**: remove or update the image-tag overrides in the
+  Pi `.env` files, cold backup of n8n and Vaultwarden first (Vaultwarden
+  1.37.5 adds a SQLite migration), recreate one service at a time.
+- **Follow-up**: #219 (review waivers before expiry).
+- **Refs**: #201, #219, #142, #90, #130

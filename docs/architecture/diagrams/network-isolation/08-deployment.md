@@ -31,19 +31,19 @@ flowchart TB
   subgraph pi5 ["«device» Raspberry Pi 5"]
     subgraph docker ["«executionEnvironment» Docker 29"]
       subgraph edge ["edge (bridge, route par défaut de Caddy)"]
-        caddy["«artifact» caddy:2.11.7"]
+        caddy["«artifact» caddy:2.11.8"]
       end
       subgraph netvw ["bb-homelab-proxy-vaultwarden"]
-        vw["«artifact» vaultwarden/server:1.37.4"]
+        vw["«artifact» vaultwarden/server:1.37.5"]
       end
       subgraph netn8n ["bb-homelab-proxy-n8n"]
         n8n["«artifact» n8nio/n8n"]
       end
       subgraph netjf ["bb-homelab-proxy-jellyfin"]
-        jf["«artifact» jellyfin/jellyfin:10.11.9"]
+        jf["«artifact» jellyfin/jellyfin:10.11.11"]
       end
       subgraph netkuma ["bb-homelab-proxy-uptime-kuma"]
-        kuma["«artifact» louislam/uptime-kuma:2.5.7"]
+        kuma["«artifact» louislam/uptime-kuma:2.5.9-slim"]
       end
       subgraph nethp ["bb-homelab-proxy-homepage"]
         hp["«artifact» gethomepage/homepage:v2.7.0"]

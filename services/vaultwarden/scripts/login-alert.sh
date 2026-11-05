@@ -35,7 +35,7 @@ case "${THRESHOLD}" in ''|0|*[!0-9]*) die "THRESHOLD must be a positive integer"
 case "${WINDOW}" in ''|*[!0-9smh]*) die "WINDOW must match [0-9]+[smh]" ;; esac
 case "${KUMA_PUSH_URL}" in *[\"\\?]*|*$'\n'*) die "KUMA_PUSH_URL must have no query string or quotes" ;; esac
 
-# Vaultwarden 1.37.4 messages (ERROR level); re-check on every upgrade.
+# Vaultwarden 1.37.5 messages (ERROR level); re-check on every upgrade.
 PATTERN='Username or (password|access code) is incorrect|Invalid admin token|Invalid or expired admin JWT|Invalid TOTP code|Token is invalid!|Two-step token is invalid|Invalid Yubikey OTP|Credential not present|Can.t recover login challenge'
 
 # grep -c exits 1 on zero matches; that is a valid result, not an error.
