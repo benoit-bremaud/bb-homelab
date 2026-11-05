@@ -1884,17 +1884,24 @@ was done and why, by date.
   pre-pulled, then recreated one service at a time: Caddy 2.11.8, Uptime
   Kuma 2.5.9-slim, Vaultwarden 1.37.5, n8n 2.47.2 (`up -d n8n` alone;
   cloudflared stayed stopped, #196). All healthy, every site answers
-  through Caddy, 12 of 14 Kuma monitors green.
+  through Caddy, 12 of 14 Kuma monitors green (checked before the
+  Jellyfin stop; Kuma has no Jellyfin HTTP probe, only `backup-jellyfin`).
+  Merge gate on the PR head `1d9c55c`: CI 7/7, local SonarQube passed,
+  hosted review with no findings; the Pi smoke check ran after the merge.
 - **Backups**: cold archives before the database migrations, in
   `~/backups/` on the Pi (`/mnt/appdata` is root-writable only, and
   `sudo` needs a password): `vaultwarden-pre-1.37.5-2026-11-05.tar.gz`,
-  `n8n-pre-2.47.2-2026-11-05.tar.gz`. n8n migrations ran cleanly; the 2
+  `n8n-pre-2.47.2-2026-11-05.tar.gz`, mode 600, SD card only (the PC pull
+  copies per-service folders only): delete them once the new versions
+  have run a week without trouble. n8n migrations ran cleanly; the 2
   active workflows are identical before and after.
 - **Jellyfin stopped**: owner decision (MCDA, option C 360/500): Jellyfin
   will be replaced by PopcornTV, so it is stopped (`docker compose stop`)
   instead of upgraded. Its nightly backup cron line was removed (copy of
   the crontab kept on the Pi) and the `backup-jellyfin` Kuma monitor is
-  paused by the owner. The two ASP.NET Core waivers stay until the image
+  paused. The Homepage tile and the Caddy route now return 502, as
+  expected. The #202 runbook expects four nightly archives instead of
+  five. The two ASP.NET Core waivers stay until the image
   leaves the compose files.
 - **Disk**: the SD card was at 95 % (1.6 GB free) with old and new images
   side by side; removing the five unused images by explicit tag

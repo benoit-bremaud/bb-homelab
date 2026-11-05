@@ -11,7 +11,7 @@
 - Round 1 on `a288ed8`: Must 3 · Should 5 · Nice 2 · unverified 1 · Push gate: closed
 - Round 2 on `9adf5b2`: 11 fixed · 0 not fixed · 0 regressed · new Must 0 · **Push gate: open**
 - Open Nice: `.trivyignore.yaml:91-92` tar is also imported by `extra/release/lib.mjs` (build/release scripts only); wording fix left for #219.
-- Hosted reviewers: Codex posted on `1d9c55c`, no findings · Copilot not posted (non-blocking for this repo)
+- Hosted reviewers (filled at the pre-merge run): pending
 
 ## Pre-merge gate (head SHA 9adf5b2)
 
@@ -20,11 +20,11 @@
 | 0 CI mirror | ✅ markdownlint-cli2 0.13.0 (action v16) 0 errors · ✅ yamllint (2 pre-existing line-length warnings) · ✅ shellcheck · ✅ gitleaks · CodeQL, Scorecard, dependency-review CI-only · hadolint n/a (no Dockerfile) |
 | 1 Tests | n/a (no application code; repo deviation in CLAUDE.md) |
 | 2 Coverage | n/a (same deviation) |
-| 3 SonarQube | ✅ PASSED on `1d9c55c` (local instance) |
+| 3 SonarQube | ⏸ deferred to the pre-merge run (`--push`) |
 | 4 Secrets | ✅ gitleaks clean (main..HEAD) · no tracked .env · diff read: nothing sensitive |
-| 5 E2E/smoke | ✅ after merge on the Pi: all services healthy, sites 200/302 through Caddy, Kuma green except two monitors red before the rollout |
+| 5 E2E/smoke | ⏸ deferred: Pi redeploy + Uptime Kuma green after merge |
 
-- Gate: **GREEN** on `1d9c55c` (CI 7/7, SonarQube passed); merged as `c538756`
+- Gate: `--push`: **pre-push green** — lint, gitleaks and waiver re-scan pass; SonarQube and the Pi smoke check deferred to the pre-merge run
 
 ## 🔴 Must Have
 
