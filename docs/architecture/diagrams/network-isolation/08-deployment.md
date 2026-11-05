@@ -84,8 +84,9 @@ arêtes.
   une IP tailnet.
 - **Filtre tailnet partout** : chaque site Caddy refuse les IP hors
   tailnet, sauf le chemin de santé exact du service (`/alive` pour
-  Vaultwarden) et, sur Kuma, `/api/push/*` pour les pushes du Pi. Un backend compromis ne gagne donc rien à passer par
-  Caddy. `/admin` reste réservé au PC admin.
+  Vaultwarden) et, sur Kuma, `/api/push/*` pour les pushes du Pi. Un backend compromis ne gagne donc
+  rien à passer par Caddy, hors ces chemins de santé et le push Kuma
+  (jeton requis, #217). `/admin` reste réservé au PC admin.
 - **Sondes Kuma via Caddy** : sur le réseau de Kuma, Caddy porte un
   alias par nom de site, listé explicitement (Docker n'accepte pas de
   joker). Kuma ne monte que `root.crt` de la CA interne, jamais le

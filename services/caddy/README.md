@@ -53,9 +53,9 @@ done
 # 2. Attach each backend to its own network. Every backend compose
 #    already declares its network (n8n: services/n8n/docker-compose.yml,
 #    and likewise for the others) — just re-up each stack, for example:
+cd services/n8n && docker compose up -d && cd -
 #    Exception: uptime-kuma mounts Caddy's root.crt, which exists only
 #    after Caddy's first start; re-up it after step 4.
-cd services/n8n && docker compose up -d && cd -
 
 # 3. Verify the HDD is actually mounted, THEN create the bind-mount
 #    target dirs. The guard matters: `mkdir -p` on an unmounted
@@ -165,7 +165,7 @@ Double-click the `.crt`, choose "Install Certificate" → "Local Machine"
    detects the changed `networks:` and recreates the container):
 
    ```bash
-   docker compose up -d
+   cd services/caddy && docker compose up -d
    ```
 
 5. Add the `<svc>.bb-homelab.local` line to the client's `/etc/hosts`.
@@ -209,7 +209,8 @@ internal CA root can then be uninstalled from every client device.
   inbound from outside `tailscale0`.
 - **No basic auth at this layer yet.** Caddy enforces network access
   itself: the `tailnet_only` snippet answers 403 to any client outside
-  the Tailscale ranges, except each site's exact health path (ADR 0009).
+  the Tailscale ranges, except each site's exact health path and `/api/push/*` on Kuma
+  (ADR 0009, #217).
   When adding services with stronger auth needs (Vaultwarden, etc.),
   layer Caddy's `basicauth` or forward-auth directives per-route.
 

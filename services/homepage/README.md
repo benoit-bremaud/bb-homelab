@@ -74,7 +74,7 @@ génération de squelette dans le dossier suivi par git.
 **Prérequis PR2 (niveau 2 — widget de statut).** Bloqué par
 [ADR 0009](../../docs/decisions/0009-per-backend-proxy-networks.md) :
 Homepage n'atteint plus Kuma que par Caddy, qui répond 403 sur la page
-de statut ; à rouvrir avant de reprendre le widget. Avant d'ajouter le
+de statut ; décision à rouvrir (ADR 0009) avant de reprendre le widget. Avant d'ajouter le
 widget Uptime Kuma à `services.yaml`, créer dans Uptime Kuma une
 *status page* (slug `bb-homelab`) listant les sondes existantes. Le
 widget lit cette page publique par slug — sans clé API ni login.

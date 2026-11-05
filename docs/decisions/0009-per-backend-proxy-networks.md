@@ -79,8 +79,9 @@ le filtre B passerait devant si le périmètre pesait plus de 40.
 
 - Parmi les conteneurs sur bridge, seul Caddy atteint Vaultwarden ;
   `X-Real-IP` ne peut plus venir que de Caddy, qui l'écrase.
-- Un backend compromis ne gagne rien à passer par Caddy : il arrive
-  d'une IP Docker et reçoit un 403 sur tous les sites.
+- Un backend compromis ne gagne rien à passer par Caddy, hors les
+  chemins de santé et le push Kuma (jeton requis, #217) : il arrive
+  d'une IP Docker et reçoit un 403 partout ailleurs.
 - Les sondes Kuma testent aussi Caddy et TLS, de bout en bout.
 
 **Negative:**

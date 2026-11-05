@@ -17,7 +17,8 @@
 # ---- Tailnet-only guard (ADR 0009, #200) ----
 # Every site refuses clients outside the Tailscale ranges with a 403. A
 # compromised backend shares a network with Caddy and arrives from a
-# Docker IP, so it gains nothing by going through Caddy. The arguments
+# Docker IP, so it gains nothing by going through Caddy beyond the health
+# paths and Kuma's token-gated push (#217). The arguments
 # are the paths left open: the service's exact health path, so Uptime
 # Kuma (also on a Docker IP) can probe it, and, on Kuma only, the push
 # endpoints the Pi's own scripts call through 127.0.0.1 (#161), which
