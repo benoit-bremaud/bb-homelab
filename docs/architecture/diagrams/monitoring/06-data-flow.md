@@ -19,7 +19,7 @@ It does **not** cover component boundaries (see `03-component.md`).
 
 ```mermaid
 flowchart LR
-  kuma["Uptime Kuma"] -->|"active probe (HTTP/TCP)"| svc["Pi services — n8n, Caddy"]
+  kuma["Uptime Kuma"] -->|"active probe (HTTPS via Caddy)"| svc["Pi services — n8n, Caddy"]
   svc -.->|"response → derived up/down"| kuma
   timer["Pi 5 timer"] -->|"heartbeat: check id + timestamp"| hc["Healthchecks.io"]
 

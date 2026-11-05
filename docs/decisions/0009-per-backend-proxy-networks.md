@@ -93,26 +93,22 @@ le filtre B passerait devant si le périmètre pesait plus de 40.
   Caddyfile.
 - Kuma doit être redémarré si la CA interne est régénérée.
 
+- Le widget de statut Uptime Kuma prévu en L2 de l'[ADR 0006](0006-homepage-dashboard.md)
+  est bloqué : Homepage n'atteint plus Kuma que par Caddy, et la page de
+  statut y reçoit un 403. À rouvrir si le widget est repris.
+- Écart avec l'[ADR 0001](0001-dip-layering.md) : Uptime Kuma (supervision)
+  lit le `root.crt` de Caddy (réseau), ce qui crée une dépendance
+  d'une couche vers une autre ; limitée à ce seul fichier public.
+
+**Risque résiduel** : l'exemption `/api/push/*` de Kuma est ouverte
+aux appels qui arrivent depuis l'IP de la passerelle Docker, donc aussi à
+un backend compromis qui passerait par Caddy ; un jeton de push valide
+reste nécessaire.
+
 **Risque résiduel** : les conteneurs en `network_mode: host`
 (cloudflared, Home Assistant) partagent l'espace réseau de l'hôte,
 passerelle de tous les bridges, et joignent l'IP du conteneur
 Vaultwarden. Hors du périmètre de #200 ; suivi dans #216.
-
-## Bascule et retour arrière
-
-Ordre sur le Pi, en présence du propriétaire :
-
-1. Inventorier les sondes Kuma et les workflows n8n qui appellent un
-   autre service par son nom Docker.
-2. Créer les cinq réseaux, recréer Caddy (alias inclus), puis basculer
-   les sondes Kuma vers les noms Caddy.
-3. Recréer chaque backend sur son réseau, puis supprimer
-   `bb-homelab-proxy`.
-4. Rejouer la carte LATERAL **par IP** depuis n8n, Jellyfin, Kuma et
-   Homepage : la connexion à Vaultwarden:8080 doit échouer.
-
-Retour arrière : `git revert` du changement, `docker network create
-bb-homelab-proxy`, recréer les six conteneurs.
 
 ## Alternatives considered
 
@@ -131,3 +127,22 @@ bb-homelab-proxy`, recréer les six conteneurs.
 - [ADR 0007](0007-docker-published-ports-binding.md) — liaison des ports
 - Diagramme
   [`08-deployment.md`](../architecture/diagrams/network-isolation/08-deployment.md)
+
+## Bascule et retour arrière
+
+Ordre sur le Pi, en présence du propriétaire :
+
+1. Inventorier les sondes Kuma, les workflows n8n et les appels de Home
+   Assistant qui joignent un autre service par son nom Docker ou son
+   IP, et vérifier que `*.bb-homelab.local` ne résout qu'en IPv4
+   tailnet sur les clients (une résolution IPv6 hors tailnet recevrait
+   un 403).
+2. Créer les cinq réseaux, recréer Caddy (alias inclus), puis basculer
+   les sondes Kuma vers les noms Caddy.
+3. Recréer chaque backend sur son réseau, puis supprimer
+   `bb-homelab-proxy`.
+4. Rejouer la carte LATERAL **par IP** depuis n8n, Jellyfin, Kuma et
+   Homepage : la connexion à Vaultwarden:8080 doit échouer.
+
+Retour arrière : `git revert` du changement, `docker network create
+bb-homelab-proxy`, recréer les six conteneurs.

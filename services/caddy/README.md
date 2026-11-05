@@ -16,8 +16,11 @@ independent by design — see [ADR 0002](../../docs/decisions/0002-caddy-reverse
 - **One Docker network per backend, `bb-homelab-proxy-<svc>`** —
   external, created once on the host, shared by that backend and Caddy
   only (ADR 0009, #200). Caddy also has its own `edge` bridge for its
-  default route and published ports. Every site is tailnet-only except
-  its exact health path.
+  default route and published ports (`gw_priority` needs Docker
+  Compose ≥ v2.33.1). Every site is tailnet-only except its exact health
+  path; Uptime Kuma also keeps `/api/push/*` open, because the Pi's own
+  scripts push through `127.0.0.1` and Caddy sees them from the Docker
+  gateway IP.
 - **Bind-mount `/mnt/appdata/caddy/data`** — persists the internal CA
   root and issued certificates on the HDD (Pattern Y, like n8n). **Must
   survive container restarts** or Caddy regenerates a brand new root CA
@@ -40,9 +43,11 @@ independent by design — see [ADR 0002](../../docs/decisions/0002-caddy-reverse
 Pre-requisite: Docker + Compose v2 on the host.
 
 ```bash
-# 1. Create one proxy network per backend (once per host).
+# 1. Create one proxy network per backend (once per host, skipping
+#    those that already exist).
 for s in vaultwarden n8n jellyfin uptime-kuma homepage; do
-  docker network create "bb-homelab-proxy-$s"
+  docker network inspect "bb-homelab-proxy-$s" >/dev/null 2>&1 \
+    || docker network create "bb-homelab-proxy-$s"
 done
 
 # 2. Attach each backend to its own network. Every backend compose
