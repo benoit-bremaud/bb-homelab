@@ -1837,3 +1837,31 @@ was done and why, by date.
 - **Follow-up**: #217 (restrict the Kuma `/api/push/*` exemption to
   the `edge` gateway).
 - **Refs**: #200, #216, #217, ADR 0009
+
+## 2026-11-05
+
+### Security: service image bumps and Critical CVE waivers (#201)
+
+- **What**: bumped every service image to its newest patch release:
+  Uptime Kuma 2.5.7 → 2.5.9-slim, Jellyfin 10.11.9 → 10.11.11,
+  Vaultwarden 1.37.4 → 1.37.5, n8n 2.44.6 → 2.47.2, Caddy 2.11.7 →
+  2.11.8, cloudflared 2026.10.3 → 2026.10.7 (container stays stopped,
+  #196); Homepage v2.7.0 was already current. Added `.trivyignore.yaml`
+  with one purl-scoped, dated waiver per remaining fixable Critical.
+- **Why**: the 2026-11-04 pentest counted 22 fixable Critical CVEs on the
+  running images.
+- **Result** (`trivy image --platform linux/arm64 --severity CRITICAL
+  --ignore-unfixed`): Caddy, Homepage, cloudflared and Vaultwarden 0;
+  Uptime Kuma 4, Jellyfin 6, n8n 1, all waived. The scan exits 1 without
+  the ignore file and 0 with it.
+- **Decisions** (MCDA validated by the owner): n8n to the latest minor
+  2.47.2 rather than staying on 2.44.x (430/500); Uptime Kuma on the
+  `-slim` variant, which drops Chromium and the embedded MariaDB, after
+  a read-only check on the Pi (SQLite, no real-browser monitor), and
+  Jellyfin ASP.NET Core waivers tied to the 12.x migration (415/500).
+- **Waivers**: Jellyfin ASP.NET Core 9.0.16 is reachable on the tailnet
+  but the 10.11 branch is frozen: waiver until 2027-01-04, fix is #142.
+  n8n `brotli-libs` may be reachable through the Alpine Node build:
+  waiver until 2026-12-05. Other waivers (Perl, brotli, Go stdlib of the
+  Kuma healthcheck, protobufjs, tar) are unreachable: until 2027-02-03.
+- **Refs**: #201, #142, #90, #130

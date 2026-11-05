@@ -4,7 +4,7 @@ services:
     # testing. :latest avoided so a background pull cannot drag in a
     # breaking change. Multi-arch manifest → the arm64 variant is
     # pulled automatically on the Pi 5.
-    image: jellyfin/jellyfin:${JELLYFIN_IMAGE_TAG:-10.11.9}
+    image: jellyfin/jellyfin:${JELLYFIN_IMAGE_TAG:-10.11.11}
     container_name: bb-homelab-jellyfin
     restart: unless-stopped
     environment:
