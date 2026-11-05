@@ -183,7 +183,9 @@ Every site is tailnet-only (ADR 0009). Three edits, in this order:
 2. In `services/caddy/docker-compose.yml`, declare it: add
    `proxy-<name>: {}` under the Caddy service `networks:` and an
    external `proxy-<name>` entry (`name: bb-homelab-proxy-<name>`) in the
-   top-level `networks:`.
+   top-level `networks:`. If Uptime Kuma probes the service, also add
+   `<name>.bb-homelab.local` to the `aliases:` of `proxy-uptime-kuma`
+   (Docker aliases are literal names, no wildcard).
 3. Append to `services/caddy/Caddyfile`, listing in `tailnet_only` the
    exact health path Uptime Kuma probes (the only path left open):
 

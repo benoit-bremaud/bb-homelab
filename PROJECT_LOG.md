@@ -1815,8 +1815,11 @@ was done and why, by date.
   containers bypass bridge isolation (follow-up #216), no wildcard
   Docker aliases, Caddy needs its own gateway network, new ADR required;
   all fixed in the design before implementation.
-- **Pending (manual on Pi, owner present)**: inventory Kuma monitors and
-  n8n workflows, create the five networks, recreate Caddy then each
-  backend, switch Kuma probes to the Caddy names, remove
-  `bb-homelab-proxy`, re-run card LATERAL by IP.
-- **Refs**: #200, #216, ADR 0009
+- **Pending (manual on Pi, owner present)**: inventory Kuma monitors, n8n
+  workflows and Home Assistant calls, check that `*.bb-homelab.local`
+  resolves to the IPv4 tailnet address only, create the five networks,
+  recreate Caddy then each backend, switch Kuma probes to the Caddy
+  names, remove `bb-homelab-proxy`, re-run card LATERAL by IP.
+- **Follow-up**: #217 (restrict the Kuma `/api/push/*` exemption to
+  the `edge` gateway).
+- **Refs**: #200, #216, #217, ADR 0009

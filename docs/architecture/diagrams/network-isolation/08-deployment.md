@@ -60,6 +60,7 @@ flowchart TB
   caddy -->|"HTTP :3000 via proxy-homepage"| hp
   kuma -.->|"HTTPS :443 chemins de santé (alias explicites)"| caddy
   hostns -->|"HTTP 127.0.0.1:5678"| n8n
+  hostns -->|"push HTTPS 127.0.0.1:443 /api/push/*"| caddy
   tailnet -->|"HTTP :8096 (apps TV)"| jf
   hostns -.->|"risque résiduel : IP du conteneur"| vw
 ```
@@ -83,7 +84,7 @@ arêtes.
   une IP tailnet.
 - **Filtre tailnet partout** : chaque site Caddy refuse les IP hors
   tailnet, sauf le chemin de santé exact du service (`/alive` pour
-  Vaultwarden). Un backend compromis ne gagne donc rien à passer par
+  Vaultwarden) et, sur Kuma, `/api/push/*` pour les pushes du Pi. Un backend compromis ne gagne donc rien à passer par
   Caddy. `/admin` reste réservé au PC admin.
 - **Sondes Kuma via Caddy** : sur le réseau de Kuma, Caddy porte un
   alias par nom de site, listé explicitement (Docker n'accepte pas de

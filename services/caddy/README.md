@@ -3,8 +3,8 @@
 Caddy is the single entry point for tailnet traffic to every backend
 service in the homelab. It terminates HTTPS (with its own internal CA
 in phase 1) and routes host-based requests (`n8n.bb-homelab.local`,
-future `kuma.bb-homelab.local`, `jellyfin.bb-homelab.local`, …) to
-the right container over a shared Docker network.
+`status.bb-homelab.local`, `jellyfin.bb-homelab.local`, …) to the right
+container over that backend's own Docker network (ADR 0009).
 
 Public webhooks (Impropedia widget → n8n) continue to travel through
 `cloudflared` directly, untouched by this layer. The two paths are
@@ -53,6 +53,8 @@ done
 # 2. Attach each backend to its own network. Every backend compose
 #    already declares its network (n8n: services/n8n/docker-compose.yml,
 #    and likewise for the others) — just re-up each stack, for example:
+#    Exception: uptime-kuma mounts Caddy's root.crt, which exists only
+#    after Caddy's first start; re-up it after step 4.
 cd services/n8n && docker compose up -d && cd -
 
 # 3. Verify the HDD is actually mounted, THEN create the bind-mount
@@ -159,10 +161,11 @@ Double-click the `.crt`, choose "Install Certificate" → "Local Machine"
    }
    ```
 
-4. Recreate Caddy (a new network needs more than a reload):
+4. Recreate Caddy (a new network needs more than a reload; `up -d`
+   detects the changed `networks:` and recreates the container):
 
    ```bash
-   docker compose up -d --force-recreate caddy
+   docker compose up -d
    ```
 
 5. Add the `<svc>.bb-homelab.local` line to the client's `/etc/hosts`.
@@ -176,11 +179,13 @@ ACME auto-HTTPS:
 # Before (phase 1)
 n8n.bb-homelab.local {
     tls internal
+    import tailnet_only /healthz
     reverse_proxy n8n:5678
 }
 
-# After (phase 2)
+# After (phase 2) — keep the tailnet filter
 n8n.example.com {
+    import tailnet_only /healthz
     reverse_proxy n8n:5678
 }
 ```
@@ -202,8 +207,9 @@ internal CA root can then be uninstalled from every client device.
   these from the tailnet CIDR but not from the internet. On a
   tailnet-only deploy this is already the default — UFW blocks
   inbound from outside `tailscale0`.
-- **No basic auth at this layer yet.** Access control is delegated
-  to Tailscale (only devices on the tailnet can resolve the IP).
+- **No basic auth at this layer yet.** Caddy enforces network access
+  itself: the `tailnet_only` snippet answers 403 to any client outside
+  the Tailscale ranges, except each site's exact health path (ADR 0009).
   When adding services with stronger auth needs (Vaultwarden, etc.),
   layer Caddy's `basicauth` or forward-auth directives per-route.
 

@@ -19,12 +19,13 @@ système — suivra).
 ## Bootstrap
 
 Prérequis : Caddy a démarré au moins une fois (il génère `root.crt`,
-que Kuma monte en lecture seule) et le réseau
+que Kuma monte en lecture seule ; ses dossiers sont réservés à root,
+d'où le `sudo` du contrôle) et le réseau
 `bb-homelab-proxy-uptime-kuma` existe (voir `services/caddy/README.md`).
 
 ```bash
 cd services/uptime-kuma
-test -f /mnt/appdata/caddy/data/caddy/pki/authorities/local/root.crt \
+sudo test -f /mnt/appdata/caddy/data/caddy/pki/authorities/local/root.crt \
   || { echo "ERREUR : root.crt absent, démarrer Caddy d'abord"; exit 1; }
 cp .env.example .env
 # Éditer .env si besoin (TZ, tag d'image)

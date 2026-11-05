@@ -51,7 +51,7 @@ restauration et le gate break-glass / Tier-0.
 ## Bootstrap
 
 Pré-requis : Docker + Compose v2 (`bootstrap/bootstrap.sh`), le HDD monté
-sur `/mnt/appdata`, le réseau proxy partagé présent, et la CA interne
+sur `/mnt/appdata`, le réseau `bb-homelab-proxy-vaultwarden` présent, et la CA interne
 Caddy installée sur ton client (voir
 [services/caddy/README.md](../caddy/README.md)).
 

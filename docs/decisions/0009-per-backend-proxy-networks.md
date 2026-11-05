@@ -92,18 +92,17 @@ le filtre B passerait devant si le périmètre pesait plus de 40.
 - La liste des alias Caddy sur le réseau de Kuma doit suivre le
   Caddyfile.
 - Kuma doit être redémarré si la CA interne est régénérée.
-
 - Le widget de statut Uptime Kuma prévu en L2 de l'[ADR 0006](0006-homepage-dashboard.md)
   est bloqué : Homepage n'atteint plus Kuma que par Caddy, et la page de
   statut y reçoit un 403. À rouvrir si le widget est repris.
-- Écart avec l'[ADR 0001](0001-dip-layering.md) : Uptime Kuma (supervision)
-  lit le `root.crt` de Caddy (réseau), ce qui crée une dépendance
-  d'une couche vers une autre ; limitée à ce seul fichier public.
+- Écart avec l'[ADR 0001](0001-dip-layering.md) : Uptime Kuma dépend du
+  chemin de stockage de Caddy (`root.crt` sous `/mnt/appdata/caddy/`)
+  et non d'une abstraction ; limité à ce seul fichier public.
 
-**Risque résiduel** : l'exemption `/api/push/*` de Kuma est ouverte
-aux appels qui arrivent depuis l'IP de la passerelle Docker, donc aussi à
-un backend compromis qui passerait par Caddy ; un jeton de push valide
-reste nécessaire.
+**Risque résiduel** : l'exemption `/api/push/*` de Kuma ne dépend que
+du chemin : tout client qui atteint Caddy, backend compromis inclus,
+peut appeler le push ; un jeton valide reste nécessaire. Restreindre
+cette exemption à la passerelle `edge` : #217.
 
 **Risque résiduel** : les conteneurs en `network_mode: host`
 (cloudflared, Home Assistant) partagent l'espace réseau de l'hôte,
@@ -135,12 +134,12 @@ Ordre sur le Pi, en présence du propriétaire :
 1. Inventorier les sondes Kuma, les workflows n8n et les appels de Home
    Assistant qui joignent un autre service par son nom Docker ou son
    IP, et vérifier que `*.bb-homelab.local` ne résout qu'en IPv4
-   tailnet sur les clients (une résolution IPv6 hors tailnet recevrait
-   un 403).
-2. Créer les cinq réseaux, recréer Caddy (alias inclus), puis basculer
-   les sondes Kuma vers les noms Caddy.
-3. Recréer chaque backend sur son réseau, puis supprimer
-   `bb-homelab-proxy`.
+   tailnet sur les clients (aucun port n'est publié en IPv6 : la
+   connexion serait refusée).
+2. Créer les cinq réseaux, puis recréer Caddy (alias inclus).
+3. Recréer chaque backend sur son réseau, puis basculer les sondes Kuma
+   vers les noms Caddy (Kuma ne les résout qu'une fois recréé), puis
+   supprimer `bb-homelab-proxy`.
 4. Rejouer la carte LATERAL **par IP** depuis n8n, Jellyfin, Kuma et
    Homepage : la connexion à Vaultwarden:8080 doit échouer.
 
