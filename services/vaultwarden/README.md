@@ -137,10 +137,9 @@ docker compose up -d
 ```
 
 Enfin, enregistrer une sonde Uptime Kuma sur `https://vaultwarden.bb-homelab.local/alive`
-(via Caddy, ADR 0009)
-(moniteur HTTP « status / keyword » attendant un code 200 — **pas** un
-moniteur « JSON query » : `/alive` renvoie une simple chaîne timestamp,
-pas un objet JSON), et lancer le premier backup (voir [BACKUP.md](BACKUP.md)).
+(via Caddy, ADR 0009 ; moniteur HTTP « status / keyword » attendant un
+code 200 — **pas** un moniteur « JSON query » : `/alive` renvoie une
+simple chaîne timestamp, pas un objet JSON), et lancer le premier backup (voir [BACKUP.md](BACKUP.md)).
 
 ## Variables d'environnement
 

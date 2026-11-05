@@ -78,9 +78,8 @@ networks:
   edge:
     driver: bridge
   # One external network per backend, shared with that backend only.
-  # Each must be created once by hand on the host before Caddy starts:
-  #   for s in vaultwarden n8n jellyfin uptime-kuma homepage; do
-  #     docker network create "bb-homelab-proxy-$s"; done
+  # Each must be created once by hand on the host before Caddy starts
+  # (loop in services/caddy/README.md, Bootstrap step 1).
   # External-first design so Caddy and each backend can be torn down /
   # upgraded independently without losing the bridge (ADR 0002).
   proxy-vaultwarden:

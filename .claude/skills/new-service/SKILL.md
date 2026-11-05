@@ -196,10 +196,11 @@ Every site is tailnet-only (ADR 0009). Three edits, in this order:
    ```
 
 A new network is only attached when the container is recreated (a
-Caddyfile reload is not enough):
+Caddyfile reload is not enough). `docker compose up -d` detects the
+changed `networks:` and recreates Caddy by itself:
 
 ```bash
-cd services/caddy && docker compose up -d --force-recreate caddy
+cd services/caddy && docker compose up -d
 ```
 
 And on each client device, add to `/etc/hosts`:

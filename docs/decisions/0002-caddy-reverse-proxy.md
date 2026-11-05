@@ -1,6 +1,6 @@
 # ADR 0002 — Caddy as the internal reverse proxy
 
-- **Status**: Accepted
+- **Status**: Accepted (point 2 superseded by [ADR 0009](0009-per-backend-proxy-networks.md))
 - **Date**: 2026-04-27
 
 ## Context
