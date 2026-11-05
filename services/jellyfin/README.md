@@ -3,6 +3,13 @@
 Serveur multimédia self-hosted (« Netflix maison ») : films, séries et
 musique diffusés en streaming sur le tailnet, sans compte tiers ni cloud.
 
+> **Arrêté depuis le 2026-11-05** (`docker compose stop`) en attendant son
+> remplacement par PopcornTV, l'application média maison. La sauvegarde
+> nocturne (cron 03:20) est retirée et le moniteur Kuma `backup-jellyfin`
+> est en pause. Pour le relancer : `docker compose up -d`, puis remettre la
+> ligne cron (copie : `~/backups/crontab-2026-11-05-before-jellyfin-stop.bak`
+> sur le Pi) et réactiver le moniteur.
+
 ## Stack
 
 - Image : `jellyfin/jellyfin:10.11.11` (épinglée — bump délibéré via

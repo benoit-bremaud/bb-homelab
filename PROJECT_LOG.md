@@ -1872,8 +1872,37 @@ was done and why, by date.
   false "not reachable" claim on `protobufjs`, a scan command that never
   failed without `--exit-code 1`, waivers without a follow-up issue; all
   fixed.
-- **Rollout (pending)**: remove or update the image-tag overrides in the
-  Pi `.env` files, cold backup of n8n and Vaultwarden first (Vaultwarden
-  1.37.5 adds a SQLite migration), recreate one service at a time.
+- **Rollout**: see the PR #220 deployment entry below.
 - **Follow-up**: #219 (review waivers before expiry).
 - **Refs**: #201, #219, #142, #90, #130
+
+### Deployment: PR #220 on the Pi, Jellyfin stopped (#201)
+
+- **What**: PR #220 (squash `c538756`) deployed remotely over Tailscale,
+  owner away, one owner go per step. Pi checkout fast-forwarded to
+  `c538756`; the `.env` tag overrides were already commented out. Images
+  pre-pulled, then recreated one service at a time: Caddy 2.11.8, Uptime
+  Kuma 2.5.9-slim, Vaultwarden 1.37.5, n8n 2.47.2 (`up -d n8n` alone;
+  cloudflared stayed stopped, #196). All healthy, every site answers
+  through Caddy, 12 of 14 Kuma monitors green.
+- **Backups**: cold archives before the database migrations, in
+  `~/backups/` on the Pi (`/mnt/appdata` is root-writable only, and
+  `sudo` needs a password): `vaultwarden-pre-1.37.5-2026-11-05.tar.gz`,
+  `n8n-pre-2.47.2-2026-11-05.tar.gz`. n8n migrations ran cleanly; the 2
+  active workflows are identical before and after.
+- **Jellyfin stopped**: owner decision (MCDA, option C 360/500): Jellyfin
+  will be replaced by PopcornTV, so it is stopped (`docker compose stop`)
+  instead of upgraded. Its nightly backup cron line was removed (copy of
+  the crontab kept on the Pi) and the `backup-jellyfin` Kuma monitor is
+  paused by the owner. The two ASP.NET Core waivers stay until the image
+  leaves the compose files.
+- **Disk**: the SD card was at 95 % (1.6 GB free) with old and new images
+  side by side; removing the five unused images by explicit tag
+  (`docker image rm`, no global prune) brought it to 77 % (6.4 GB free).
+  The move of Docker storage to the HDD (#202 runbook) is still pending.
+- **Known red monitors** (red for 6 hours before the rollout, unrelated):
+  `n8n tunnel (public)` (cloudflared stopped, #196) and `ZZ-TEST-alerte`
+  (test monitor).
+- **Notes**: n8n warns that `binaryData` becomes `storage` in v3; the
+  vaultwarden login-alert patterns still match 1.37.5 (upstream diff).
+- **Refs**: #201, #220, #196, #202, #219
