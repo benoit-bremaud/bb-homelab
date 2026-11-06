@@ -2,8 +2,8 @@
 
 n8n is the automation hub of the homelab. It runs workflows triggered
 by webhooks (e.g. the Impropedia feedback widget), scheduled jobs, or
-manual runs, and drives downstream services (Telegram notifications,
-GitHub Issue creation via Claude, etc.). It is the first service to
+manual runs, and drives downstream services (Telegram notifications today, see
+"Qui fait quoi" below). It is the first service to
 land under `services/` and the one that motivated starting the
 homelab.
 
@@ -80,8 +80,8 @@ All sensitive values live in `.env` (gitignored). Never commit `.env`.
 
 - n8n binds on loopback only. Any port exposed to the LAN or the
   internet goes through cloudflared.
-- Credentials (Telegram bot token, Anthropic API key, GitHub token)
-  are entered once via the n8n UI and stored encrypted inside the
+- Credentials (today only the Telegram bot token, see "Qui fait
+  quoi" below) are entered once via the n8n UI and stored encrypted inside the
   volume (protected by `N8N_ENCRYPTION_KEY`). They never appear in
   this repo.
 - On hosts running UFW, outbound is allowed by default (the
@@ -90,8 +90,23 @@ All sensitive values live in `.env` (gitignored). Never commit `.env`.
 
 ## Workflows
 
-JSON exports of n8n workflows live under [workflows/](workflows/).
-They document what's currently deployed and let a fresh install
-re-import them from the UI (Settings → Import from File). The binary
-volume is the source of truth at runtime; workflows JSON in this repo
-is the versioned reference.
+[workflows/](workflows/) is meant to hold JSON exports of the n8n
+workflows, re-importable from the UI (Settings → Import from File). No
+export is versioned yet: the n8n database on the Pi is the only source.
+
+### Qui fait quoi
+
+Inventaire en lecture seule du 2026-11-06 (#222), relevé par
+`n8n export:workflow --all` dans le conteneur `bb-homelab-n8n`. Les
+credentials sont listés par leur nom uniquement ; leurs valeurs restent
+dans l'interface n8n.
+
+| Workflow | Déclencheur | Actif | Services appelés | Credential | Bot | Chat Telegram | Dernière exécution | Décision |
+|---|---|---|---|---|---|---|---|---|
+| Impropedia — Feedback → Telegram | Webhook `POST /webhook/feedback` (tunnel cloudflared) | oui | Telegram (envoi d'un message texte) | `Telegram account` (`telegramApi`) | « Impropedia Feedback » (dédié) | chat du propriétaire (…7563) | 2026-10-24, succès | garder |
+
+C'est le seul workflow et le seul credential présents dans n8n
+(`n8n list:workflow`, actifs compris). Le tunnel cloudflared est arrêté
+depuis le 2026-11-03 (#196) : le webhook est injoignable de l'extérieur
+tant qu'il ne redémarre pas. Le Kaggle watcher ne tourne pas dans n8n ;
+l'ancien `n8n-watchdog` du portable a été retiré par l'ADR 0004.
