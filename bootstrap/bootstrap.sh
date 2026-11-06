@@ -394,9 +394,9 @@ step_docker_storage() {
   fi
   local current=/etc/docker/daemon.json tmp
   tmp="$(mktemp)"
-  trap 'rm -f "$tmp"' RETURN
   if [ -f "$current" ]; then
-    jq -s '.[0] * .[1]' "$current" <(printf '%s' "$wanted") > "$tmp"
+    jq -s '.[0] * .[1]' "$current" <(printf '%s' "$wanted") > "$tmp" \
+      || { rm -f "$tmp"; die "Cannot merge $current (invalid JSON?)."; }
   else
     printf '%s\n' "$wanted" > "$tmp"
   fi

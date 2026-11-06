@@ -158,7 +158,7 @@ files live in [`docker/`](docker/):
 
 `bootstrap.sh` installs them (step `step_docker_storage`, from a clone
 only, `jq` required) and ends with a check of the running daemon
-(`check_docker_storage`). It never restarts Docker. It sets `data-root` and
+(`check_docker_storage`: running Docker daemon and containerd config file). It never restarts Docker. It sets `data-root` and
 the containerd `root` only when `/mnt/appdata/docker` and
 `/mnt/appdata/containerd` already hold a copy and `/var/lib/docker` and
 `/var/lib/containerd` were set aside (runbook step 5); otherwise follow

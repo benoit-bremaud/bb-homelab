@@ -170,7 +170,8 @@ de toute la pile : voir #206 et la surveillance SMART (#11).
    doit rester arrêté), en vérifiant la santé entre deux piles :
 
    ```bash
-   docker compose up -d --force-recreate --no-deps $(docker compose ps --services --status running)
+   s="$(docker compose ps --services --status running)"
+   [ -n "$s" ] && docker compose up -d --force-recreate --no-deps $s   # pile sans service en marche : rien à faire
    docker ps -q | xargs -r docker inspect -f '{{.Name}} {{.HostConfig.LogConfig.Config}}'   # attendu : max-file:3 max-size:10m partout
    ```
 
