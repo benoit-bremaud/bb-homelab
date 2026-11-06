@@ -1976,3 +1976,24 @@ was done and why, by date.
 - **Open**: password-manager entry names, the bot used by `aristech`,
   the target chat of the non-homelab bots, and a `/mybots` cross-check.
 - **Refs**: #227, #222
+
+### PR #230 merged: Telegram bot inventory (#227)
+
+- **What**: squash `51e3f4e`; issue #227 closed. Docs only, no change
+  on the Pi.
+- **Merge gate** on the head `3369dc7`: CI 7/7, local CI mirror green
+  (markdownlint MD060 only, yamllint, gitleaks; shellcheck not run
+  locally, no shell file changed), local SonarQube passed, no open
+  comment.
+- **Review**: local adversarial review in two rounds (round 1: 2 Must,
+  5 Should, all fixed or answered; round 2: gate open); automated
+  review (no findings) on `3369dc7`. No second bot reviewer was
+  requested, since such requests registered nothing on #226.
+- **Pi checkout**: the pull pending since #226 was not
+  retried.
+- **Pending (owner)**: delete `@bb_homelab_bot` and
+  `@BalanceBotWeeklyBot` in BotFather after checking the Healthchecks.io
+  integrations.
+- **Follow-ups**: #229 (password-manager entry names, aristech bot,
+  target chats, `/mybots` cross-check, `@HealthchecksBot` integration).
+- **Refs**: #227, #230, #229
