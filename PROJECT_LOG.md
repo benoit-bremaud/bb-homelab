@@ -1989,7 +1989,7 @@ was done and why, by date.
   5 Should, all fixed or answered; round 2: gate open); automated
   review on `3369dc7`: no findings. No second bot reviewer was
   requested, since such requests registered nothing on #226.
-- **Pi checkout**: no change needed; the pull pending since #226 was not
+- **Pi checkout**: the pull pending since #226 was not
   retried.
 - **Pending (owner)**: delete `@bb_homelab_bot` and
   `@BalanceBotWeeklyBot` in BotFather after checking the Healthchecks.io
