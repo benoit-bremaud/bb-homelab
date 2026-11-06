@@ -1955,3 +1955,21 @@ was done and why, by date.
 - **Follow-ups**: #225 (stale `.env.example` variables, workflow name in
   `ARCHITECTURE.md`), #227 (sort all Telegram bots).
 - **Refs**: #222, #226, #225, #227
+
+### Telegram bot inventory and sort (#227)
+
+- **What**: new `docs/telegram-bots.md` lists the seven bots the owner
+  created (homelab and other projects), each with its user, last use
+  and decision; n8n and Uptime Kuma READMEs link to it. Read-only
+  survey: repo and Pi configs (variable names only), the Uptime Kuma
+  notification list, the Telegram Web chat list (no bot chat opened,
+  no token seen).
+- **Decisions** (owner, 2026-11-06): keep `@bb_infra_alerts_bot`
+  (Uptime Kuma alerts), `@impropedia_feedback_bot` (n8n),
+  `@kaggle_watcher_bb_bot` (Kaggle only), `@bbd_feedback_pipeline_bot`,
+  `@brasse_bouillon_notif_bot`; delete `@bb_homelab_bot` (unused since
+  2026-06-16) and `@BalanceBotWeeklyBot` (no longer used). The owner
+  deletes them in BotFather, which revokes their tokens.
+- **Open**: password-manager entry names and the bot used by
+  `aristech` are still to be filled in.
+- **Refs**: #227, #222

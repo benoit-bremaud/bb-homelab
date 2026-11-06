@@ -99,7 +99,8 @@ export is versioned yet: the n8n database on the Pi is the only source.
 Inventaire en lecture seule du 2026-11-06 (#222), relevé par
 `n8n export:workflow --all` dans le conteneur `bb-homelab-n8n`. Les
 credentials sont listés par leur nom uniquement ; leurs valeurs restent
-dans l'interface n8n.
+dans l'interface n8n. Tous les bots Telegram, n8n compris, sont
+inventoriés dans [Bots Telegram](../../docs/telegram-bots.md).
 
 | Workflow | Déclencheur | Actif | Services appelés | Credential | Bot | Chat Telegram | Dernière exécution | Décision |
 |---|---|---|---|---|---|---|---|---|
