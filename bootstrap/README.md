@@ -23,7 +23,9 @@ Raspberry Pi OS Lite 64-bit machine to the same baseline:
 - Swap configured (zram or 2 GB swapfile, depending on RAM).
 - Hostname + timezone set (Europe/Paris by default).
 - `unattended-upgrades` enabled for security packages only.
-- Useful CLI tools available: `htop`, `smartmontools`, `ufw`, `curl`.
+- Useful CLI tools available: `htop`, `smartmontools`, `ufw`, `curl`, `jq`.
+- Docker and containerd wait for the data HDD at boot, and container logs
+  are capped (see "Docker storage and log caps").
 
 ## Running the script
 
@@ -140,6 +142,41 @@ sudo install -D -m 0644 bootstrap/sysctl/99-bb-homelab-nonlocal-bind.conf \
 sudo sysctl -p /etc/sysctl.d/99-bb-homelab-nonlocal-bind.conf
 cat /proc/sys/net/ipv4/ip_nonlocal_bind   # 1
 ```
+
+## Docker storage and log caps (issues #145, #202, #213)
+
+Docker and containerd keep their data on the HDD (ADR 0008) and wait for
+it at boot; container logs are capped at 3 files of 10 MB. The versioned
+files live in [`docker/`](docker/):
+
+| File | Installed to |
+|---|---|
+| `daemon.json` | `/etc/docker/daemon.json` (merged with existing keys) |
+| `docker-appdata-mount.conf` | `/etc/systemd/system/docker.service.d/appdata-mount.conf` |
+| `containerd-appdata-mount.conf` | `/etc/systemd/system/containerd.service.d/appdata-mount.conf` |
+| (inline) | `root = "/mnt/appdata/containerd"` in `/etc/containerd/config.toml` |
+
+`bootstrap.sh` installs them (step `step_docker_storage`, from a clone
+only, `jq` required) and ends with a check of the running daemon
+(`check_docker_storage`: running Docker daemon and containerd config file). It never restarts Docker. It sets `data-root` and
+the containerd `root` only when `/mnt/appdata/docker` and
+`/mnt/appdata/containerd` already hold a copy and `/var/lib/docker` and
+`/var/lib/containerd` were set aside (runbook step 5); otherwise follow
+[`storage/DOCKER-STORAGE-MOVE.md`](../storage/DOCKER-STORAGE-MOVE.md)
+first.
+
+On a rebuilt Pi whose HDD still holds the stores, the Docker install
+recreates empty `/var/lib/docker` and `/var/lib/containerd`, so the step
+refuses the move. Check that they are fresh (`docker ps -aq` and
+`docker images -q` print nothing), then stop the daemons
+(`sudo systemctl stop docker.socket docker.service containerd.service`),
+set both folders aside (`sudo mv -T /var/lib/docker /var/lib/docker.fresh`,
+same for `containerd`) and re-run `bootstrap.sh`.
+The step never guesses that a store is disposable.
+
+The log caps only reach containers created after the restart:
+recreate the running services of each stack (stopped ones stay stopped; see
+the runbook, step 7).
 
 ## Manual procedure (without the script)
 

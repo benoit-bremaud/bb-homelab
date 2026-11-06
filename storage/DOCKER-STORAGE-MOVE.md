@@ -71,6 +71,8 @@ de toute la pile : voir #206 et la surveillance SMART (#11).
   (`docker volume ls`) : jusqu'au nettoyage, les dossiers `.old` en sont
   la seule copie de secours.
 
+- `jq` installé (`command -v jq`, sinon `sudo apt install jq`).
+
 - Place libre sur le HDD d'au moins 1,5 fois la taille à copier :
 
   ```bash
@@ -87,7 +89,7 @@ de toute la pile : voir #206 et la surveillance SMART (#11).
   ```
 
   Tout conteneur en marche sans `unless-stopped` ni `always` devra être
-  relancé à la main (`docker start`) après l'étape 7.
+  relancé à la main (`docker start`) après l'étape 6.
 
 ## Procédure
 
@@ -126,14 +128,27 @@ de toute la pile : voir #206 et la surveillance SMART (#11).
    côté : un démarrage prématuré tombera ainsi sur la copie du HDD.
 
    ```bash
-   grep -q '^root' /etc/containerd/config.toml || sudo sed -i '1i root = "/mnt/appdata/containerd"' /etc/containerd/config.toml
-   printf '{\n  "data-root": "/mnt/appdata/docker"\n}\n' | sudo tee /etc/docker/daemon.json
+   cd ~/bb-homelab/bootstrap/docker
+   sudo sed -i '/^root *=/d' /etc/containerd/config.toml   # remplace une ligne root existante
+   sudo sed -i '1i root = "/mnt/appdata/containerd"' /etc/containerd/config.toml
+   if [ -f /etc/docker/daemon.json ]; then
+     jq -s '.[0] * .[1]' /etc/docker/daemon.json daemon.json > /tmp/daemon.json \
+       && sudo install -m 0644 /tmp/daemon.json /etc/docker/daemon.json   # garde les clés existantes
+   else
+     sudo install -m 0644 daemon.json /etc/docker/daemon.json
+   fi
+   jq -er '."data-root"' /etc/docker/daemon.json       # attendu : /mnt/appdata/docker
    sudo dockerd --validate --config-file /etc/docker/daemon.json
    sudo containerd config dump | grep '^root'          # attendu : /mnt/appdata/containerd
-   sudo install -d /etc/systemd/system/containerd.service.d
-   printf '[Unit]\nRequiresMountsFor=/mnt/appdata\n' | sudo tee /etc/systemd/system/containerd.service.d/appdata-mount.conf
+   sudo install -D -m 0644 containerd-appdata-mount.conf /etc/systemd/system/containerd.service.d/appdata-mount.conf
+   sudo install -D -m 0644 docker-appdata-mount.conf /etc/systemd/system/docker.service.d/appdata-mount.conf
    sudo systemctl daemon-reload
    ```
+
+   Le `daemon.json` versionné pose aussi le plafond des journaux de
+   conteneurs (3 fichiers de 10 Mo, issue #145). Les fichiers viennent de
+   [`bootstrap/docker/`](../bootstrap/docker/) : le Pi doit être sur une
+   branche qui les contient.
 
 5. Mettre les anciens dossiers de côté, sans les supprimer :
 
@@ -150,7 +165,18 @@ de toute la pile : voir #206 et la surveillance SMART (#11).
    sudo systemctl start containerd.service docker.service
    ```
 
-7. Tunnel n8n, seulement s'il tournait avant : un redémarrage de Docker lui
+7. Plafond des journaux : il ne s'applique qu'aux conteneurs créés après
+   le redémarrage. Recréer, pile par pile, **uniquement les services en
+   marche** (un service arrêté à dessein, comme `cloudflared` ou Jellyfin,
+   doit rester arrêté), en vérifiant la santé entre deux piles :
+
+   ```bash
+   s="$(docker compose ps --services --status running)"
+   [ -n "$s" ] && docker compose up -d --force-recreate --no-deps $s   # pile sans service en marche : rien à faire
+   docker ps -q | xargs -r docker inspect -f '{{.Name}} {{.HostConfig.LogConfig.Config}}'   # attendu : max-file:3 max-size:10m partout
+   ```
+
+8. Tunnel n8n, seulement s'il tournait avant : un redémarrage de Docker lui
    donne une nouvelle adresse `trycloudflare`. Suivre la rotation décrite
    dans [AUDIT.md](../docs/security/AUDIT.md) (nouvelle adresse dans
    `WEBHOOK_URL` et `N8N_HOST`, n8n recréé, moniteur Kuma et widget
@@ -180,7 +206,7 @@ df -h / /mnt/appdata
 
 ```bash
 sudo systemctl stop docker.socket docker.service containerd.service
-sudo rm /etc/docker/daemon.json
+jq 'del(."data-root")' /etc/docker/daemon.json > /tmp/d.json && sudo install -m 0644 /tmp/d.json /etc/docker/daemon.json
 sudo sed -i '/^root = "\/mnt\/appdata\/containerd"$/d' /etc/containerd/config.toml
 grep -c '^root' /etc/containerd/config.toml       # attendu : 0
 sudo mv -T /var/lib/containerd.old /var/lib/containerd
@@ -190,7 +216,7 @@ sudo systemctl start containerd.service docker.service
 
 Si `mv -T` répond `Directory not empty`, un dossier a été recréé sur la SD :
 le renommer en `*.failed`, puis relancer le `mv`. Échec avant l'étape 5 :
-il n'y a pas de `.old`, seules les lignes `daemon.json` et `config.toml`
+il n'y a pas de `.old`, seules la clé `data-root` de `daemon.json` et la ligne de `config.toml`
 sont à retirer. Le drop-in de containerd peut rester.
 
 **Les jours suivants** : les `.old` sont périmés (volumes nommés, nouvelles
