@@ -1934,3 +1934,24 @@ was done and why, by date.
 - **Decision**: keep the workflow (owner, MCDA 425/500); no change on
   the Pi.
 - **Refs**: #222
+
+### PR #226 merged: n8n workflow inventory (#222)
+
+- **What**: squash `cd9e4ad`; issue #222 closed. Docs only, no change
+  on the Pi.
+- **Merge gate** on the head `a9139a4`: CI 7/7, local CI mirror green
+  (markdownlint MD060 only, yamllint, shellcheck, gitleaks full
+  history), local SonarQube passed, no open comment.
+- **Review**: automated review on `a9139a4`: no findings. The second
+  bot reviewer was requested but the request registered nothing (no
+  error, no pending request); the owner waived that review for this PR
+  (no issue).
+- **Pi checkout**: still on `c538756`. One `git pull --ff-only` with a
+  60 s timeout printed nothing and left the checkout on `c538756`. The
+  #201 session saw Pi → github.com fail with `curl` exit 35 (connection
+  reset by peer, DNS fine) six times over an hour that morning.
+  Networking left untouched; no tracking issue yet. Pull again once
+  github.com answers.
+- **Follow-ups**: #225 (stale `.env.example` variables, workflow name in
+  `ARCHITECTURE.md`), #227 (sort all Telegram bots).
+- **Refs**: #222, #226, #225, #227
