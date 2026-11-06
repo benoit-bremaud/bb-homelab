@@ -1997,3 +1997,38 @@ was done and why, by date.
 - **Follow-ups**: #229 (password-manager entry names, aristech bot,
   target chats, `/mybots` cross-check, `@HealthchecksBot` integration).
 - **Refs**: #227, #230, #229
+
+### Disk alert live, PR #238 merged: Docker settings versioned (#202, #145, #213)
+
+- **Disk alert (#202, step 1)**: Kuma push monitor `disk-usage`
+  (2700 s, 0 retry, `BB Infra Alerts`) created; URL in
+  `~/.config/bb-homelab/kuma-push-disk-usage` on the Pi (mode 600);
+  cron `*/15` installed (backup
+  `~/.config/bb-homelab/crontab-before-202.bak`). `/` at 77 %. Installed
+  before the storage move, unlike the 2026-11-04 plan: the alert needs
+  no owner window and `/` was already under 80 %.
+  Test with `THRESHOLD=10`: Kuma went DOWN (`-:77pct`), then back UP.
+  The Telegram notification failed (`read ECONNRESET`), so no alert
+  reached the owner: tracked in #237 with the Pi → github.com resets.
+  Kuma answers a `down` push only after the notification attempt, so the
+  script's 10 s `curl` timed out although the push was recorded.
+- **PR #238**: squash `cbf9f53`; #145 and #213 closed. Versions
+  `daemon.json` (`data-root`, `json-file` 10m x 3) and the docker /
+  containerd `RequiresMountsFor=/mnt/appdata` drop-ins under
+  `bootstrap/docker/`; `bootstrap.sh` installs them (jq merge, never
+  restarts Docker, storage roots only after a finished move); the move
+  runbook now recreates running services only.
+- **Merge gate** on `d3095a9`: CI 7/7, local SonarQube passed, gitleaks
+  full history clean, two automated review threads (P1, P2, on
+  `c31b4d8`) answered and resolved (containerd `root` replaced in the
+  runbook; rebuilt-Pi case documented, guard kept). Local adversarial
+  review in three rounds
+  (3 Must, then 2 Must incl. a RETURN-trap regression, then gate open);
+  the docs-only fix commit was not re-reviewed. The second bot reviewer
+  posted no review.
+- **Pi state**: nothing applied yet; checkout on `c538756` (pull blocked
+  by #237). Docker storage move + log caps wait for an owner window.
+- **Open on #202**: the Docker storage move (durable headroom: `/` is
+  under 80 % today but grew 19 points in 12 days), alert received on
+  Telegram (after #237).
+- **Refs**: #202, #145, #213, #237, #238, ADR 0008
