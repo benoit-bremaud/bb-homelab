@@ -41,7 +41,7 @@ le PC récupère ensuite les archives (voir [OFFPI-COPY.md](OFFPI-COPY.md)).
 
 1. Dans Uptime Kuma, créer trois moniteurs **Push** : `backup-caddy`,
    `backup-uptime-kuma`, `backup-jellyfin`, intervalle `93600` s, 0 retry,
-   notification `bb-homelab-alerts` (même réglage que `backup-n8n`).
+   notification `BB Infra Alerts` (même réglage que `backup-n8n`).
 2. Enregistrer chaque URL hors de git :
 
    ```bash

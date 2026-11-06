@@ -32,7 +32,7 @@ DOWN).
 1. Dans Uptime Kuma, créer un moniteur **Push** `disk-usage`, intervalle
    `2700` s (un passage manqué toléré, plus 15 min de marge : la sauvegarde
    de Kuma le met en pause à 03:15), 0 retry, notification
-   `bb-homelab-alerts`.
+   `BB Infra Alerts`.
 2. Enregistrer son URL hors de git, sans la partie après `?` :
 
    ```bash
