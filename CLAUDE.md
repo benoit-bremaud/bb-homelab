@@ -96,8 +96,8 @@ prompting.
 
 - Respond in English in code, commits, PRs, and tracked Category B/C
   docs. Human conversation may be in French; Category A docs (READMEs,
-  ARCHITECTURE.md, ADRs, bootstrap/network/services/storage/*.md) are
-  in French.
+  ARCHITECTURE.md, ADRs, bootstrap/network/services/storage/*.md,
+  docs/telegram-bots.md) are in French.
 - When asking the human a question, use the `AskUserQuestion` tool
   with ranked, clickable choices — never open-ended prose questions.
 - Plan before coding non-trivial changes. Present the plan, wait for

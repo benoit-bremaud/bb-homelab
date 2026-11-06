@@ -115,7 +115,7 @@ DOWN and alerts on Telegram after 26 h of silence (issue #133, diagrams in
 1. In Uptime Kuma: **Add New Monitor → Push**, name `backup-n8n`,
    heartbeat interval `93600` s (26 h: one night, plus 1 h for the
    autumn DST change and 1 h of margin), retries `0`, notification
-   `bb-homelab-alerts`.
+   `BB Infra Alerts`.
 2. Store the push URL outside git, readable by `benoit` only:
 
    ```bash

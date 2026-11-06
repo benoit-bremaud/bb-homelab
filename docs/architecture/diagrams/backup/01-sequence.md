@@ -26,7 +26,7 @@ sequenceDiagram
   participant ct as conteneur (n8n / Vaultwarden)
   participant sd as ~/backups (SD du Pi)
   participant kuma as Uptime Kuma (sonde Push)
-  participant tg as Telegram bb-homelab-alerts
+  participant tg as Telegram BB Infra Alerts
   participant pc as timer systemd (PC)
 
   cron->>bk: 03:00 n8n · 03:05 Vaultwarden

@@ -28,6 +28,7 @@ rules:
     `storage/*.md`
   - ADRs in `docs/decisions/`
   - `docs/architecture/**`, except the review artefacts below
+  - `docs/telegram-bots.md` (Telegram bot inventory)
 - **Category B — agent-facing : English**
   - `AGENTS.md` (read by any AI tooling), `CLAUDE.md`
   - The modular rules in this `.claude/rules/` directory

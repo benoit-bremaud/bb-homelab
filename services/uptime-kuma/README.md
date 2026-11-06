@@ -76,7 +76,8 @@ redémarrer les conteneurs qui en gardent une copie (ex.
    - Vaultwarden : `https://vaultwarden.bb-homelab.local/alive`
    - Homepage : `https://home.bb-homelab.local/api/healthcheck`
 3. Brancher le canal de notification Telegram (token bot + chat ID
-   depuis le gestionnaire de mots de passe).
+   depuis le gestionnaire de mots de passe). Le bot utilisé est
+   `@bb_infra_alerts_bot`, voir [Bots Telegram](../../docs/telegram-bots.md).
 
 ## Opérations
 
