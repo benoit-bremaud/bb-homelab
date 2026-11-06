@@ -2028,6 +2028,7 @@ was done and why, by date.
   posted no review.
 - **Pi state**: nothing applied yet; checkout on `c538756` (pull blocked
   by #237). Docker storage move + log caps wait for an owner window.
-- **Open on #202**: `/` under 80 % (storage move), alert received on
+- **Open on #202**: the Docker storage move (durable headroom: `/` is
+  under 80 % today but grew 19 points in 12 days), alert received on
   Telegram (after #237).
 - **Refs**: #202, #145, #213, #237, #238, ADR 0008
