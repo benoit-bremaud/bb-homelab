@@ -1920,13 +1920,17 @@ was done and why, by date.
 
 - **What**: read-only inventory of n8n on the Pi
   (`n8n export:workflow --all` in the container; last execution read
-  from a throwaway copy of the database). A French "Qui fait quoi"
+  from a copy of the database in a `mktemp -d` folder on the Pi, deleted
+  right after). A French "Qui fait quoi"
   table now sits in `services/n8n/README.md`.
 - **Finding**: n8n holds one workflow, `Impropedia — Feedback →
-  Telegram` (active, webhook `POST /feedback` → Telegram message, last
+  Telegram` (active, webhook `POST /webhook/feedback` → Telegram message, last
   run 2026-10-24), and one credential, `Telegram account`. The Kaggle
-  watcher and the watchdog do not run in n8n. The 2026-11-05 entry
-  counted "2 active workflows": the CLI lists one.
+  watcher does not run in n8n. The 2026-11-05 entry counted "2 active
+  workflows": `n8n list:workflow` (all and `--active=true`) lists one,
+  so that count was wrong. The webhook is unreachable while cloudflared
+  stays stopped (#196). The credential drives a dedicated bot,
+  "Impropedia Feedback" (identified by the owner), not the shared one.
 - **Decision**: keep the workflow (owner, MCDA 425/500); no change on
   the Pi.
 - **Refs**: #222
