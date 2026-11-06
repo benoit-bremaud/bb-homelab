@@ -163,7 +163,18 @@ the containerd `root` only when `/mnt/appdata/docker` and
 `/mnt/appdata/containerd` already hold a copy and `/var/lib/docker` and
 `/var/lib/containerd` were set aside (runbook step 5); otherwise follow
 [`storage/DOCKER-STORAGE-MOVE.md`](../storage/DOCKER-STORAGE-MOVE.md)
-first. The log caps only reach containers created after the restart:
+first.
+
+On a rebuilt Pi whose HDD still holds the stores, the Docker install
+recreates empty `/var/lib/docker` and `/var/lib/containerd`, so the step
+refuses the move. Check that they are fresh (`docker ps -aq` and
+`docker images -q` print nothing), then stop the daemons
+(`sudo systemctl stop docker.socket docker.service containerd.service`),
+set both folders aside (`sudo mv -T /var/lib/docker /var/lib/docker.fresh`,
+same for `containerd`) and re-run `bootstrap.sh`.
+The step never guesses that a store is disposable.
+
+The log caps only reach containers created after the restart:
 recreate the running services of each stack (stopped ones stay stopped; see
 the runbook, step 7).
 

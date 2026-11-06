@@ -129,7 +129,8 @@ de toute la pile : voir #206 et la surveillance SMART (#11).
 
    ```bash
    cd ~/bb-homelab/bootstrap/docker
-   grep -q '^root' /etc/containerd/config.toml || sudo sed -i '1i root = "/mnt/appdata/containerd"' /etc/containerd/config.toml
+   sudo sed -i '/^root *=/d' /etc/containerd/config.toml   # remplace une ligne root existante
+   sudo sed -i '1i root = "/mnt/appdata/containerd"' /etc/containerd/config.toml
    if [ -f /etc/docker/daemon.json ]; then
      jq -s '.[0] * .[1]' /etc/docker/daemon.json daemon.json > /tmp/daemon.json \
        && sudo install -m 0644 /tmp/daemon.json /etc/docker/daemon.json   # garde les clés existantes
