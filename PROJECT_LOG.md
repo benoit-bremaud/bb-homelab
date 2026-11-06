@@ -2020,10 +2020,12 @@ was done and why, by date.
   runbook now recreates running services only.
 - **Merge gate** on `d3095a9`: CI 7/7, local SonarQube passed, gitleaks
   full history clean, two automated review threads (P1, P2, on
-  `c31b4d8`) answered and resolved (containerd `root` replaced in the runbook; rebuilt-Pi case
-  documented, guard kept). Local adversarial review in three rounds
+  `c31b4d8`) answered and resolved (containerd `root` replaced in the
+  runbook; rebuilt-Pi case documented, guard kept). Local adversarial
+  review in three rounds
   (3 Must, then 2 Must incl. a RETURN-trap regression, then gate open);
-  the docs-only fix commit was not re-reviewed. The second bot reviewer posted no review.
+  the docs-only fix commit was not re-reviewed. The second bot reviewer
+  posted no review.
 - **Pi state**: nothing applied yet; checkout on `c538756` (pull blocked
   by #237). Docker storage move + log caps wait for an owner window.
 - **Open on #202**: `/` under 80 % (storage move), alert received on
