@@ -33,7 +33,7 @@ message visible dans la conversation avec le bot.
 
 | Bot | @username | Rôle | Utilisé par | Dernier usage | Entrée du gestionnaire | Décision |
 |---|---|---|---|---|---|---|
-| BB Infra Alerts | `@bb_infra_alerts_bot` | Alertes d'infrastructure (sondes, sauvegardes, disques, Pi injoignable) | Uptime Kuma (notification `BB Infra Alerts`) ; Healthchecks.io, intégration webhook en panne seulement (timers de `home-infra-watchdog`), ADR 0004 | 2026-11-05 | à compléter | garder |
+| BB Infra Alerts | `@bb_infra_alerts_bot` | Alertes d'infrastructure (sondes, sauvegardes, disques, Pi injoignable) | Uptime Kuma (notification `BB Infra Alerts`) ; Healthchecks.io, intégration webhook, alertes de panne uniquement (timers de `home-infra-watchdog`), ADR 0004 | 2026-11-05 | à compléter | garder |
 | BB Homelab | `@bb_homelab_bot` | Aucun connu | Aucun service trouvé (Healthchecks.io à vérifier avant suppression) | 2026-06-16 | à compléter | supprimer (2026-11-06) |
 | Impropedia Feedback | `@impropedia_feedback_bot` | Retours des correcteurs Impropedia | n8n, credential `Telegram account` ([services/n8n](../services/n8n/README.md)) | 2026-10-24 | à compléter | garder |
 | Kaggle Watcher | `@kaggle_watcher_bb_bot` | Surveillance Kaggle | `n8n-kaggle-watcher` (n8n local du portable) | 2026-10-24 | à compléter | garder, réservé à Kaggle |
