@@ -1987,7 +1987,7 @@ was done and why, by date.
   comment.
 - **Review**: local adversarial review in two rounds (round 1: 2 Must,
   5 Should, all fixed or answered; round 2: gate open); automated
-  review on `3369dc7`: no findings. No second bot reviewer was
+  review (no findings) on `3369dc7`. No second bot reviewer was
   requested, since such requests registered nothing on #226.
 - **Pi checkout**: the pull pending since #226 was not
   retried.
