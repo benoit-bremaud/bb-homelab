@@ -3,6 +3,12 @@
 Sauvegarde nocturne de la PKI Caddy, des données Uptime Kuma et de la
 configuration Jellyfin, avec la procédure de restauration (issue #138).
 
+> **Jellyfin : sauvegarde suspendue depuis le 2026-11-05.** Le service est
+> arrêté en attendant PopcornTV ; sa ligne cron (`20 3 * * *`, ci-dessous)
+> est retirée du crontab du Pi et le moniteur `backup-jellyfin` est en
+> pause. La dernière archive date de la nuit du 2026-11-05. Remettre la
+> ligne et réactiver le moniteur si le service est relancé.
+
 ## Ce qui est sauvegardé
 
 | Service | Conteneur | Chemin sauvegardé | Contenu | Dossier d'archive |

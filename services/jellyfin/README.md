@@ -3,9 +3,19 @@
 Serveur multimédia self-hosted (« Netflix maison ») : films, séries et
 musique diffusés en streaming sur le tailnet, sans compte tiers ni cloud.
 
+> **Arrêté depuis le 2026-11-05** (`docker compose stop`) en attendant son
+> remplacement par PopcornTV, l'application média maison. Le conteneur
+> arrêté est en 10.11.9 ; la sauvegarde nocturne est suspendue (voir
+> [APPDATA-BACKUP.md](../../storage/APPDATA-BACKUP.md)) et le moniteur Kuma
+> `backup-jellyfin` est en pause. Pour le relancer à l'identique :
+> `docker compose start` (et non `up -d`, qui recréerait le conteneur en
+> 10.11.11), puis remettre la ligne cron et réactiver le moniteur. Avant
+> un passage en 10.11.11, lancer d'abord une sauvegarde de `/config`.
+
 ## Stack
 
-- Image : `jellyfin/jellyfin:10.11.11` (épinglée — bump délibéré via
+- Image : `jellyfin/jellyfin:10.11.11` par défaut ; le conteneur arrêté
+  tourne encore en 10.11.9 (épinglée — bump délibéré via
   `.env`). Manifeste multi-arch : l'ARM64 est tiré automatiquement sur
   le Pi 5.
 - Données persistantes (bind-mounts HDD, Pattern Y, rôle `appdata`) :
@@ -150,7 +160,8 @@ flux 4K HEVC haut débit. Détail du raisonnement : voir
 - **Mise à jour** : bump `JELLYFIN_IMAGE_TAG` dans `.env`, puis
   `docker compose pull && docker compose up -d`.
 - **Sauvegarde** : `/config` contient toute la configuration (comptes,
-  bibliothèques, vues). Inclus dans la stratégie de backup `appdata`.
+  bibliothèques, vues). Stratégie de backup `appdata`, suspendue tant que
+  le service est arrêté (voir l'encadré en tête).
 - **Logs** : `docker compose logs -f jellyfin`.
 - **Santé** : `docker inspect --format '{{.State.Health.Status}}' bb-homelab-jellyfin`.
 
