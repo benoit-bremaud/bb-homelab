@@ -1982,11 +1982,15 @@ was done and why, by date.
 - **What**: squash `51e3f4e`; issue #227 closed. Docs only, no change
   on the Pi.
 - **Merge gate** on the head `3369dc7`: CI 7/7, local CI mirror green
-  (markdownlint MD060 only, yamllint, gitleaks), local SonarQube
-  passed, no open comment.
+  (markdownlint MD060 only, yamllint, gitleaks; shellcheck not run
+  locally, no shell file changed), local SonarQube passed, no open
+  comment.
 - **Review**: local adversarial review in two rounds (round 1: 2 Must,
   5 Should, all fixed or answered; round 2: gate open); automated
-  review on `3369dc7`: no findings.
+  review on `3369dc7`: no findings. No second bot reviewer was
+  requested, since such requests registered nothing on #226.
+- **Pi checkout**: no change needed; the pull pending since #226 was not
+  retried.
 - **Pending (owner)**: delete `@bb_homelab_bot` and
   `@BalanceBotWeeklyBot` in BotFather after checking the Healthchecks.io
   integrations.
