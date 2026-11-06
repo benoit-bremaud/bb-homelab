@@ -95,3 +95,18 @@ They document what's currently deployed and let a fresh install
 re-import them from the UI (Settings → Import from File). The binary
 volume is the source of truth at runtime; workflows JSON in this repo
 is the versioned reference.
+
+### Qui fait quoi
+
+Inventaire en lecture seule du 2026-11-06 (#222), relevé par
+`n8n export:workflow --all` dans le conteneur `bb-homelab-n8n`. Les
+credentials sont listés par leur nom uniquement ; leurs valeurs restent
+dans l'interface n8n.
+
+| Workflow | Déclencheur | Actif | Services appelés | Credential | Chat Telegram | Dernière exécution | Décision |
+|---|---|---|---|---|---|---|---|
+| Impropedia — Feedback → Telegram | Webhook `POST /feedback` (tunnel cloudflared) | oui | Telegram (envoi d'un message texte) | `Telegram account` (`telegramApi`) | chat du propriétaire (…7563) | 2026-10-24, succès | garder |
+
+C'est le seul workflow et le seul credential présents dans n8n. Le
+Kaggle watcher et le watchdog ne tournent pas dans n8n : ils envoient
+leurs messages via le bot partagé, hors de ce service.

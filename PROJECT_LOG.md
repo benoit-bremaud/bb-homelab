@@ -1913,3 +1913,20 @@ was done and why, by date.
 - **Notes**: n8n warns that `binaryData` becomes `storage` in v3; the
   vaultwarden login-alert patterns still match 1.37.5 (upstream diff).
 - **Refs**: #201, #220, #196, #202, #219
+
+## 2026-11-06
+
+### Docs: n8n workflow inventory (#222)
+
+- **What**: read-only inventory of n8n on the Pi
+  (`n8n export:workflow --all` in the container; last execution read
+  from a throwaway copy of the database). A French "Qui fait quoi"
+  table now sits in `services/n8n/README.md`.
+- **Finding**: n8n holds one workflow, `Impropedia — Feedback →
+  Telegram` (active, webhook `POST /feedback` → Telegram message, last
+  run 2026-10-24), and one credential, `Telegram account`. The Kaggle
+  watcher and the watchdog do not run in n8n. The 2026-11-05 entry
+  counted "2 active workflows": the CLI lists one.
+- **Decision**: keep the workflow (owner, MCDA 425/500); no change on
+  the Pi.
+- **Refs**: #222
