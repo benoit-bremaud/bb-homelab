@@ -337,6 +337,95 @@ step_nonlocal_bind() {
   sysctl -p "$dst" || warn "sysctl -p failed; the value applies at next boot."
 }
 
+step_docker_storage() {
+  # Versioned Docker/containerd settings (issues #145, #202, #213, ADR 0008):
+  # systemd drop-ins waiting for the HDD, log caps, and the storage move.
+  # Never restarts Docker: a restart stops every container.
+  local dir wanted merged=0 d
+  dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/docker"
+  if [ ! -f "$dir/daemon.json" ]; then
+    warn "$dir not found (script run outside a clone). Skipping Docker storage."
+    return
+  fi
+  if ! command -v jq >/dev/null 2>&1; then
+    warn "jq missing: cannot merge /etc/docker/daemon.json. Skipping Docker storage."
+    return
+  fi
+
+  for d in docker containerd; do
+    if ! cmp -s "$dir/$d-appdata-mount.conf" "/etc/systemd/system/$d.service.d/appdata-mount.conf"; then
+      log "Installing $d.service drop-in (waits for /mnt/appdata)…"
+      install -D -m 0644 "$dir/$d-appdata-mount.conf" "/etc/systemd/system/$d.service.d/appdata-mount.conf"
+      merged=1
+    fi
+  done
+  has_systemd && systemctl daemon-reload
+
+  # The storage move is only safe once the HDD holds a copy (runbook
+  # storage/DOCKER-STORAGE-MOVE.md); otherwise Docker would start empty.
+  local move=0
+  if mountpoint -q /mnt/appdata && [ -n "$(ls -A /mnt/appdata/docker 2>/dev/null)" ] \
+    && [ -n "$(ls -A /mnt/appdata/containerd 2>/dev/null)" ]; then
+    move=1
+  else
+    warn "No Docker copy on /mnt/appdata: data-root and containerd root NOT set. Follow storage/DOCKER-STORAGE-MOVE.md."
+  fi
+
+  # Repo keys win over existing ones; other existing keys are kept.
+  if [ "$move" = 1 ]; then
+    wanted="$(cat "$dir/daemon.json")"
+  else
+    wanted="$(jq 'del(."data-root")' "$dir/daemon.json")"
+  fi
+  local current=/etc/docker/daemon.json tmp
+  tmp="$(mktemp)"
+  if [ -f "$current" ]; then
+    jq -s '.[0] * .[1]' "$current" <(printf '%s' "$wanted") > "$tmp"
+  else
+    printf '%s\n' "$wanted" > "$tmp"
+  fi
+  if cmp -s "$tmp" "$current"; then
+    log "Docker daemon.json already up to date. Skipping."
+  else
+    log "Installing $current (log caps)…"
+    install -D -m 0644 "$tmp" "$current"
+    merged=1
+  fi
+  rm -f "$tmp"
+
+  if [ "$move" = 1 ] && ! grep -q '^root = "/mnt/appdata/containerd"$' /etc/containerd/config.toml; then
+    log "Setting containerd root in /etc/containerd/config.toml…"
+    sed -i '/^root *=/d' /etc/containerd/config.toml
+    sed -i '1i root = "/mnt/appdata/containerd"' /etc/containerd/config.toml
+    merged=1
+  fi
+
+  if [ "$merged" = 1 ]; then
+    warn "Docker settings changed on disk. They apply at the next 'systemctl restart containerd docker' (stops every container: ask the owner first)."
+    warn "Log caps only reach containers created afterwards: 'docker compose up -d --force-recreate' per stack."
+  fi
+}
+
+check_docker_storage() {
+  # Post-install check: what the running daemon uses, not what is on disk.
+  command -v docker >/dev/null 2>&1 || return 0
+  check_eq "DockerRootDir" "$(docker info --format '{{.DockerRootDir}}' 2>/dev/null)" /mnt/appdata/docker
+  check_eq "log driver" "$(docker info --format '{{.LoggingDriver}}' 2>/dev/null)" json-file
+  check_eq "containerd root" "$(containerd config dump 2>/dev/null | sed -n 's/^root = "\(.*\)"$/\1/p')" /mnt/appdata/containerd
+  if has_systemd; then
+    check_eq "docker RequiresMountsFor" "$(systemctl show -p RequiresMountsFor --value docker 2>/dev/null)" /mnt/appdata
+    check_eq "containerd RequiresMountsFor" "$(systemctl show -p RequiresMountsFor --value containerd 2>/dev/null)" /mnt/appdata
+  fi
+}
+
+check_eq() {
+  if [ "$2" = "$3" ]; then
+    log "OK   $1 = $2"
+  else
+    warn "$1 = ${2:-unknown} (expected $3)"
+  fi
+}
+
 # --- Main --------------------------------------------------------------------
 
 main() {
@@ -359,8 +448,10 @@ main() {
   step_enable_unattended_upgrades
   step_persistent_journal
   step_nonlocal_bind
+  step_docker_storage
 
   log "Bootstrap complete."
+  check_docker_storage
   log "Next steps:"
   log "  - Log out / log back in so the docker group takes effect."
   log "  - Run 'docker run --rm hello-world' to verify Docker."

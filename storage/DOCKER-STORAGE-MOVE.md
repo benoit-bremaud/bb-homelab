@@ -87,7 +87,7 @@ de toute la pile : voir #206 et la surveillance SMART (#11).
   ```
 
   Tout conteneur en marche sans `unless-stopped` ni `always` devra être
-  relancé à la main (`docker start`) après l'étape 7.
+  relancé à la main (`docker start`) après l'étape 6.
 
 ## Procédure
 
@@ -126,14 +126,25 @@ de toute la pile : voir #206 et la surveillance SMART (#11).
    côté : un démarrage prématuré tombera ainsi sur la copie du HDD.
 
    ```bash
+   cd ~/bb-homelab/bootstrap/docker
    grep -q '^root' /etc/containerd/config.toml || sudo sed -i '1i root = "/mnt/appdata/containerd"' /etc/containerd/config.toml
-   printf '{\n  "data-root": "/mnt/appdata/docker"\n}\n' | sudo tee /etc/docker/daemon.json
+   if [ -f /etc/docker/daemon.json ]; then
+     jq -s '.[0] * .[1]' /etc/docker/daemon.json daemon.json | sudo tee /etc/docker/daemon.json.new   # garde les clés existantes
+     sudo mv /etc/docker/daemon.json.new /etc/docker/daemon.json
+   else
+     sudo install -m 0644 daemon.json /etc/docker/daemon.json
+   fi
    sudo dockerd --validate --config-file /etc/docker/daemon.json
    sudo containerd config dump | grep '^root'          # attendu : /mnt/appdata/containerd
-   sudo install -d /etc/systemd/system/containerd.service.d
-   printf '[Unit]\nRequiresMountsFor=/mnt/appdata\n' | sudo tee /etc/systemd/system/containerd.service.d/appdata-mount.conf
+   sudo install -D -m 0644 containerd-appdata-mount.conf /etc/systemd/system/containerd.service.d/appdata-mount.conf
+   sudo install -D -m 0644 docker-appdata-mount.conf /etc/systemd/system/docker.service.d/appdata-mount.conf
    sudo systemctl daemon-reload
    ```
+
+   Le `daemon.json` versionné pose aussi le plafond des journaux de
+   conteneurs (3 fichiers de 10 Mo, issue #145). Les fichiers viennent de
+   [`bootstrap/docker/`](../bootstrap/docker/) : le Pi doit être sur une
+   branche qui les contient.
 
 5. Mettre les anciens dossiers de côté, sans les supprimer :
 
@@ -150,7 +161,17 @@ de toute la pile : voir #206 et la surveillance SMART (#11).
    sudo systemctl start containerd.service docker.service
    ```
 
-7. Tunnel n8n, seulement s'il tournait avant : un redémarrage de Docker lui
+7. Plafond des journaux : il ne s'applique qu'aux conteneurs créés après
+   le redémarrage. Recréer chaque pile, une à la fois, en vérifiant sa
+   santé entre deux (`docker compose up -d --force-recreate` dans le
+   dossier de la pile ; la pile n8n recrée aussi `bb-homelab-cloudflared`,
+   qui change alors d'adresse : voir l'étape 8), puis contrôler :
+
+   ```bash
+   docker ps -q | xargs docker inspect -f '{{.Name}} {{.HostConfig.LogConfig.Config}}'   # attendu : max-file:3 max-size:10m partout
+   ```
+
+8. Tunnel n8n, seulement s'il tournait avant : un redémarrage de Docker lui
    donne une nouvelle adresse `trycloudflare`. Suivre la rotation décrite
    dans [AUDIT.md](../docs/security/AUDIT.md) (nouvelle adresse dans
    `WEBHOOK_URL` et `N8N_HOST`, n8n recréé, moniteur Kuma et widget

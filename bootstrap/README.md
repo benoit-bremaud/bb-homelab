@@ -141,6 +141,28 @@ sudo sysctl -p /etc/sysctl.d/99-bb-homelab-nonlocal-bind.conf
 cat /proc/sys/net/ipv4/ip_nonlocal_bind   # 1
 ```
 
+## Docker storage and log caps (issues #145, #202, #213)
+
+Docker and containerd keep their data on the HDD (ADR 0008) and wait for
+it at boot; container logs are capped at 3 files of 10 MB. The versioned
+files live in [`docker/`](docker/):
+
+| File | Installed to |
+|---|---|
+| `daemon.json` | `/etc/docker/daemon.json` (merged with existing keys) |
+| `docker-appdata-mount.conf` | `/etc/systemd/system/docker.service.d/appdata-mount.conf` |
+| `containerd-appdata-mount.conf` | `/etc/systemd/system/containerd.service.d/appdata-mount.conf` |
+| (inline) | `root = "/mnt/appdata/containerd"` in `/etc/containerd/config.toml` |
+
+`bootstrap.sh` installs them (step `step_docker_storage`, from a clone
+only, `jq` required) and ends with a check of the running daemon
+(`check_docker_storage`). It never restarts Docker. It sets `data-root` and
+the containerd `root` only when `/mnt/appdata/docker` and
+`/mnt/appdata/containerd` already hold a copy; otherwise follow
+[`storage/DOCKER-STORAGE-MOVE.md`](../storage/DOCKER-STORAGE-MOVE.md)
+first. The log caps only reach containers created after the restart:
+recreate each stack with `docker compose up -d --force-recreate`.
+
 ## Manual procedure (without the script)
 
 If you'd rather do it by hand:
