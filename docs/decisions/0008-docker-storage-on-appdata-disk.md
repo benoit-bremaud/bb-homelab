@@ -56,4 +56,4 @@ reste le critère principal, ce qui est l'objet de l'issue.
 
 - Issue #202, PR #212 (alerte de remplissage)
 - ADR 0004 (supervision), issues #29, #168, #206
-- `storage/DOCKER-STORAGE-MOVE.md`, `storage/LAYOUT.md`
+- `storage/DOCKER-STORAGE-MOVE.md`, `storage/LAYOUT.md`, `bootstrap/docker/`

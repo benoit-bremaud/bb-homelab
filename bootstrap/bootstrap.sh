@@ -70,9 +70,9 @@ step_apt_upgrade() {
 }
 
 step_install_tools() {
-  log "Installing baseline tools (curl, htop, smartmontools, ufw, unattended-upgrades)…"
+  log "Installing baseline tools (curl, htop, jq, smartmontools, ufw, unattended-upgrades)…"
   DEBIAN_FRONTEND=noninteractive apt-get install -yqq \
-    ca-certificates curl htop smartmontools ufw unattended-upgrades
+    ca-certificates curl htop jq smartmontools ufw unattended-upgrades
 }
 
 step_install_docker() {
@@ -347,11 +347,6 @@ step_docker_storage() {
     warn "$dir not found (script run outside a clone). Skipping Docker storage."
     return
   fi
-  if ! command -v jq >/dev/null 2>&1; then
-    warn "jq missing: cannot merge /etc/docker/daemon.json. Skipping Docker storage."
-    return
-  fi
-
   for d in docker containerd; do
     if ! cmp -s "$dir/$d-appdata-mount.conf" "/etc/systemd/system/$d.service.d/appdata-mount.conf"; then
       log "Installing $d.service drop-in (waits for /mnt/appdata)…"
@@ -361,14 +356,34 @@ step_docker_storage() {
   done
   has_systemd && systemctl daemon-reload
 
-  # The storage move is only safe once the HDD holds a copy (runbook
-  # storage/DOCKER-STORAGE-MOVE.md); otherwise Docker would start empty.
+  if ! command -v jq >/dev/null 2>&1; then
+    warn "jq missing: cannot merge /etc/docker/daemon.json. Drop-ins installed, settings skipped."
+    return
+  fi
+
+  # The storage move is only safe once the HDD holds a copy and the SD
+  # side was set aside (runbook storage/DOCKER-STORAGE-MOVE.md, step 5);
+  # otherwise Docker would start on an empty or stale store.
   local move=0
   if mountpoint -q /mnt/appdata && [ -n "$(ls -A /mnt/appdata/docker 2>/dev/null)" ] \
-    && [ -n "$(ls -A /mnt/appdata/containerd 2>/dev/null)" ]; then
+    && [ -n "$(ls -A /mnt/appdata/containerd 2>/dev/null)" ] \
+    && [ ! -e /var/lib/docker ] && [ ! -e /var/lib/containerd ]; then
     move=1
   else
-    warn "No Docker copy on /mnt/appdata: data-root and containerd root NOT set. Follow storage/DOCKER-STORAGE-MOVE.md."
+    warn "No finished Docker move (copy on /mnt/appdata, /var/lib/{docker,containerd} set aside): data-root and containerd root NOT set. Follow storage/DOCKER-STORAGE-MOVE.md."
+  fi
+
+  # containerd first, so a failure never leaves Docker on the HDD alone.
+  if [ "$move" = 1 ] && ! grep -qx 'root = "/mnt/appdata/containerd"' /etc/containerd/config.toml 2>/dev/null; then
+    log "Setting containerd root in /etc/containerd/config.toml…"
+    if [ -s /etc/containerd/config.toml ]; then
+      sed -i '/^root *=/d' /etc/containerd/config.toml
+      sed -i '1i root = "/mnt/appdata/containerd"' /etc/containerd/config.toml
+    else
+      install -d /etc/containerd
+      printf 'root = "/mnt/appdata/containerd"\n' > /etc/containerd/config.toml
+    fi
+    merged=1
   fi
 
   # Repo keys win over existing ones; other existing keys are kept.
@@ -379,6 +394,7 @@ step_docker_storage() {
   fi
   local current=/etc/docker/daemon.json tmp
   tmp="$(mktemp)"
+  trap 'rm -f "$tmp"' RETURN
   if [ -f "$current" ]; then
     jq -s '.[0] * .[1]' "$current" <(printf '%s' "$wanted") > "$tmp"
   else
@@ -393,25 +409,19 @@ step_docker_storage() {
   fi
   rm -f "$tmp"
 
-  if [ "$move" = 1 ] && ! grep -q '^root = "/mnt/appdata/containerd"$' /etc/containerd/config.toml; then
-    log "Setting containerd root in /etc/containerd/config.toml…"
-    sed -i '/^root *=/d' /etc/containerd/config.toml
-    sed -i '1i root = "/mnt/appdata/containerd"' /etc/containerd/config.toml
-    merged=1
-  fi
-
   if [ "$merged" = 1 ]; then
     warn "Docker settings changed on disk. They apply at the next 'systemctl restart containerd docker' (stops every container: ask the owner first)."
-    warn "Log caps only reach containers created afterwards: 'docker compose up -d --force-recreate' per stack."
+    warn "Log caps only reach containers created afterwards: recreate each running service of each stack (see storage/DOCKER-STORAGE-MOVE.md, step 7); stopped services stay stopped."
   fi
 }
 
 check_docker_storage() {
-  # Post-install check: what the running daemon uses, not what is on disk.
+  # Post-install check. DockerRootDir and the log driver come from the
+  # running daemon; the containerd root is read from its config file.
   command -v docker >/dev/null 2>&1 || return 0
   check_eq "DockerRootDir" "$(docker info --format '{{.DockerRootDir}}' 2>/dev/null)" /mnt/appdata/docker
   check_eq "log driver" "$(docker info --format '{{.LoggingDriver}}' 2>/dev/null)" json-file
-  check_eq "containerd root" "$(containerd config dump 2>/dev/null | sed -n 's/^root = "\(.*\)"$/\1/p')" /mnt/appdata/containerd
+  check_eq "containerd root (config file)" "$(containerd config dump 2>/dev/null | sed -n 's/^root = "\(.*\)"$/\1/p')" /mnt/appdata/containerd
   if has_systemd; then
     check_eq "docker RequiresMountsFor" "$(systemctl show -p RequiresMountsFor --value docker 2>/dev/null)" /mnt/appdata
     check_eq "containerd RequiresMountsFor" "$(systemctl show -p RequiresMountsFor --value containerd 2>/dev/null)" /mnt/appdata

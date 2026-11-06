@@ -23,7 +23,9 @@ Raspberry Pi OS Lite 64-bit machine to the same baseline:
 - Swap configured (zram or 2 GB swapfile, depending on RAM).
 - Hostname + timezone set (Europe/Paris by default).
 - `unattended-upgrades` enabled for security packages only.
-- Useful CLI tools available: `htop`, `smartmontools`, `ufw`, `curl`.
+- Useful CLI tools available: `htop`, `smartmontools`, `ufw`, `curl`, `jq`.
+- Docker and containerd wait for the data HDD at boot, and container logs
+  are capped (see "Docker storage and log caps").
 
 ## Running the script
 
@@ -158,10 +160,12 @@ files live in [`docker/`](docker/):
 only, `jq` required) and ends with a check of the running daemon
 (`check_docker_storage`). It never restarts Docker. It sets `data-root` and
 the containerd `root` only when `/mnt/appdata/docker` and
-`/mnt/appdata/containerd` already hold a copy; otherwise follow
+`/mnt/appdata/containerd` already hold a copy and `/var/lib/docker` and
+`/var/lib/containerd` were set aside (runbook step 5); otherwise follow
 [`storage/DOCKER-STORAGE-MOVE.md`](../storage/DOCKER-STORAGE-MOVE.md)
 first. The log caps only reach containers created after the restart:
-recreate each stack with `docker compose up -d --force-recreate`.
+recreate the running services of each stack (stopped ones stay stopped; see
+the runbook, step 7).
 
 ## Manual procedure (without the script)
 
