@@ -1997,3 +1997,33 @@ was done and why, by date.
 - **Follow-ups**: #229 (password-manager entry names, aristech bot,
   target chats, `/mybots` cross-check, `@HealthchecksBot` integration).
 - **Refs**: #227, #230, #229
+
+## 2026-11-07
+
+### PR #242 merged: PopCornTV replaces Jellyfin (#240)
+
+- **What**: squash `a8ec3a7`; issue #240 closed. Adds
+  `services/popcorntv/` (image built on the Pi, own proxy network
+  `10.203.60.0/29`, `web-sync` into the `popcorntv-web` volume served by
+  Caddy), the Caddy site block, network and volume, the nightly backup
+  at 03:25 with the off-Pi pull, and moves the media to
+  `/mnt/appdata/media`. Jellyfin will be removed two weeks after cut-over.
+- **Pi (owner)**: media moved to `/mnt/appdata/media`; PopCornTV data,
+  cache and backup folders, network and volume created. Not yet done:
+  image build, compose up, Caddy recreate, Kuma monitors, cron line.
+- **Merge gate** on `c4d987e`: GitHub Actions is disabled (billing), so
+  the local mirror was the gate: yamllint, markdownlint, shellcheck,
+  gitleaks green, local SonarQube passed. CodeQL, Dependency Review,
+  hadolint and Scorecard were not run; merged with
+  `MERGE_GATE_WAIVER="github-actions-disabled-billing #240"` on the
+  owner's yes.
+- **Branch protection**: the 5 required status checks were removed from
+  `main` (owner MCDA, 400/500); PR, `enforce_admins` and the force-push
+  ban stay. Local attested gate tracked in #243.
+- **Review**: local adversarial review in two rounds (round 1: 3 Must,
+  all fixed, among them a `web-sync` `find -exec` that always exited 1,
+  also fixed in popcorntv PR #120); hosted automated review hit its
+  usage limit, none posted.
+- **Follow-ups**: #241 (Homepage tile, network diagram, ADR superseding
+  0003, `--ip-range`), #243 (local attested gate).
+- **Refs**: #240, #242, #241, #243
