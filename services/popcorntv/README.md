@@ -43,6 +43,8 @@ mountpoint -q /mnt/appdata || { echo "ERREUR : /mnt/appdata non monté"; exit 1;
 # 1. Sortir la médiathèque de l'arbre Jellyfin (même disque, instantané)
 [ -e /mnt/appdata/media ] || sudo mv /mnt/appdata/jellyfin/media /mnt/appdata/media
 sudo install -d -o 1000 -g 1000 /mnt/appdata/popcorntv/data /mnt/appdata/popcorntv/cache
+# Dossier de sauvegarde, attendu dès maintenant par la copie nocturne vers le PC
+install -d -m 700 ~/backups/popcorntv
 
 # 2. Construire l'image
 git clone https://github.com/benoit-bremaud/popcorntv.git ~/popcorntv

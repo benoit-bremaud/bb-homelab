@@ -60,11 +60,11 @@ de toute la pile : voir #206 et la surveillance SMART (#11).
   for d in ~/backups/n8n ~/backups/caddy ~/backups/uptime-kuma ~/backups/popcorntv ~/vaultwarden-backups; do
     f="$(find "$d" -maxdepth 1 -name '*.tar.gz' -mmin -1440 2>/dev/null | head -n 1)"
     echo "${f:-MANQUANT ${d}}"
-  done   # attendu : cinq archives (quatre avant la mise en service de PopCornTV), aucune ligne MANQUANT
+  done   # attendu : cinq archives (avant la mise en service de PopCornTV : MANQUANT pour ~/backups/popcorntv seulement), aucune ligne MANQUANT
   ```
 
   Jellyfin est arrêté depuis le 2026-11-05 et sa sauvegarde suspendue :
-  remettre `~/backups/jellyfin` dans la boucle (cinq archives) s'il est
+  remettre `~/backups/jellyfin` dans la boucle s'il est
   relancé (une archive de plus).
 
   Ces sauvegardes ne couvrent pas les volumes nommés Docker
