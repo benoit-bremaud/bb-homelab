@@ -41,7 +41,7 @@ Sur le Pi (`ssh benoit@bb-homelab`), le disque appdata monté :
 mountpoint -q /mnt/appdata || { echo "ERREUR : /mnt/appdata non monté"; exit 1; }
 
 # 1. Sortir la médiathèque de l'arbre Jellyfin (même disque, instantané)
-sudo mv /mnt/appdata/jellyfin/media /mnt/appdata/media
+[ -e /mnt/appdata/media ] || sudo mv /mnt/appdata/jellyfin/media /mnt/appdata/media
 sudo install -d -o 1000 -g 1000 /mnt/appdata/popcorntv/data /mnt/appdata/popcorntv/cache
 
 # 2. Construire l'image
@@ -66,7 +66,7 @@ le réseau et monte le volume. Lire le lien de configuration initiale dans
 les bibliothèques sous `/app/media`, lancer un scan.
 
 Uptime Kuma : moniteur HTTP sur
-`https://popcorntv.bb-homelab.local/api/health`.
+`https://popcorntv.bb-homelab.local/api/health`, au moins deux essais.
 
 Sur chaque client, ajouter à `/etc/hosts` :
 

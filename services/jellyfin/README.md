@@ -4,13 +4,12 @@ Serveur multimédia self-hosted (« Netflix maison ») : films, séries et
 musique diffusés en streaming sur le tailnet, sans compte tiers ni cloud.
 
 > **Arrêté depuis le 2026-11-05** (`docker compose stop`) en attendant son
-> remplacement par PopcornTV, l'application média maison. Le conteneur
+> remplacement par PopCornTV, l'application média maison. Le conteneur
 > arrêté est en 10.11.9 ; la sauvegarde nocturne est suspendue (voir
 > [APPDATA-BACKUP.md](../../storage/APPDATA-BACKUP.md)) et le moniteur Kuma
-> `backup-jellyfin` est en pause. Pour le relancer à l'identique :
-> `docker compose start` (et non `up -d`, qui recréerait le conteneur en
-> 10.11.11), puis remettre la ligne cron et réactiver le moniteur. Avant
-> un passage en 10.11.11, lancer d'abord une sauvegarde de `/config`.
+> `backup-jellyfin` est en pause. Pour le relancer, remettre ensuite la
+> ligne cron et réactiver le moniteur. Avant un passage en 10.11.11,
+> lancer d'abord une sauvegarde de `/config`.
 >
 > **Remplacé par [PopCornTV](../popcorntv/README.md) (#240).** La
 > médiathèque a quitté `/mnt/appdata/jellyfin/media` pour

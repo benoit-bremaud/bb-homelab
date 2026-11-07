@@ -5,7 +5,7 @@ base PopCornTV (#240) et de la configuration Jellyfin, avec la procédure
 de restauration (issue #138).
 
 > **Jellyfin : sauvegarde suspendue depuis le 2026-11-05.** Le service est
-> arrêté en attendant PopcornTV ; sa ligne cron (`20 3 * * *`, ci-dessous)
+> arrêté en attendant PopCornTV ; sa ligne cron (`20 3 * * *`, ci-dessous)
 > est retirée du crontab du Pi et le moniteur `backup-jellyfin` est en
 > pause. La dernière archive date de la nuit du 2026-11-05. Remettre la
 > ligne et réactiver le moniteur si le service est relancé. Jellyfin est

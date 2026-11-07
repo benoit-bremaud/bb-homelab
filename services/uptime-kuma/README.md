@@ -72,7 +72,7 @@ redémarrer les conteneurs qui en gardent une copie (ex.
    régler chaque sonde à au moins deux essais (une recréation de Caddy
    les fait toutes tomber ensemble). Ex. :
    - n8n : `https://n8n.bb-homelab.local/healthz`
-   - Jellyfin : `https://jellyfin.bb-homelab.local/health`
+   - PopCornTV : `https://popcorntv.bb-homelab.local/api/health`
    - Vaultwarden : `https://vaultwarden.bb-homelab.local/alive`
    - Homepage : `https://home.bb-homelab.local/api/healthcheck`
 3. Brancher le canal de notification Telegram (token bot + chat ID
