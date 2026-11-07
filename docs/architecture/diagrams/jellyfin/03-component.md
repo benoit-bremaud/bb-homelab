@@ -38,7 +38,7 @@ flowchart LR
       subgraph storage ["Storage — Disque A (appdata), Pattern Y"]
         cfg["/mnt/appdata/jellyfin/config → /config"]
         cache["/mnt/appdata/jellyfin/cache → /cache"]
-        media["/mnt/appdata/jellyfin/media → /media (TEMP, ro)"]
+        media["/mnt/appdata/media → /media (TEMP, ro)"]
       end
       jelly --> cfg
       jelly --> cache

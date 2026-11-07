@@ -15,7 +15,8 @@ infrastructure (reverse proxy, Tailscale) which is bootstrapped first.
 |---|---|---|---|
 | n8n + cloudflared | `n8n/` | issue #6, #7, #8 | Files migrated from `impropedia-infra` (#6); volume migration PC → Pi pending (#7) |
 | Caddy reverse proxy | `caddy/` | issue #14 | Planned |
-| Jellyfin (media) | `jellyfin/` | issue #12 | Scaffolded — library temporarily on `appdata`, migrates to `/mnt/media` when Disque B lands (#47) |
+| Jellyfin (media) | `jellyfin/` | issue #12 | Stopped 2026-11-05, replaced by PopCornTV; removed two weeks after cut-over |
+| PopCornTV (media) | `popcorntv/` | issue #240 | Live compose; library on `/mnt/appdata/media` until `/mnt/media` (#47) |
 | PostgreSQL | `postgres/` | issue #17 | Planned |
 | brasse-bouillon backend | `brasse-bouillon/` | issue #15 | Planned |
 | brasse-bouillon frontend | `brasse-bouillon/` | issue #16 | Planned |

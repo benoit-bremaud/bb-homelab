@@ -29,7 +29,7 @@ hors site chiffrée reste l'objet de l'issue #19.
 
 | Fichier | Rôle |
 |---|---|
-| [`scripts/pull-backups.sh`](scripts/pull-backups.sh) | Copie `~/backups/{n8n,caddy,uptime-kuma,jellyfin}/` et `~/vaultwarden-backups/` du Pi vers `~/Documents/02_personal/bb-homelab-backups/<service>/` |
+| [`scripts/pull-backups.sh`](scripts/pull-backups.sh) | Copie `~/backups/{n8n,caddy,uptime-kuma,popcorntv,jellyfin}/` et `~/vaultwarden-backups/` du Pi vers `~/Documents/02_personal/bb-homelab-backups/<service>/` |
 | [`systemd/bb-homelab-backup-pull.service`](systemd/bb-homelab-backup-pull.service) | Lance le script une fois |
 | [`systemd/bb-homelab-backup-pull.timer`](systemd/bb-homelab-backup-pull.timer) | Chaque jour entre 04:00 et 04:10, avec rattrapage |
 | [`systemd/bb-homelab-backup-pull-failed.service`](systemd/bb-homelab-backup-pull-failed.service) | Notification de bureau si la copie échoue |

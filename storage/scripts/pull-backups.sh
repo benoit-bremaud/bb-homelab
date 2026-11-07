@@ -21,6 +21,7 @@ SOURCES=(
   "vaultwarden-backups/:vaultwarden"
   "backups/caddy/:caddy"
   "backups/uptime-kuma/:uptime-kuma"
+  "backups/popcorntv/:popcorntv"
   "backups/jellyfin/:jellyfin"
 )
 

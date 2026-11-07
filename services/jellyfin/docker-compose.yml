@@ -47,7 +47,7 @@ services:
       # reads media). Migration to /mnt/media is tracked in the README
       # and ADR 0003.
       - type: bind
-        source: /mnt/appdata/jellyfin/media
+        source: /mnt/appdata/media
         target: /media
         read_only: true
         bind:

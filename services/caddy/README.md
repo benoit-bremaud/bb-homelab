@@ -49,6 +49,11 @@ for s in vaultwarden n8n jellyfin uptime-kuma homepage; do
   docker network inspect "bb-homelab-proxy-$s" >/dev/null 2>&1 \
     || docker network create "bb-homelab-proxy-$s"
 done
+# PopCornTV needs a fixed subnet (Caddy at 10.203.60.2), plus its web volume.
+docker network inspect bb-homelab-proxy-popcorntv >/dev/null 2>&1 \
+  || docker network create --subnet 10.203.60.0/29 bb-homelab-proxy-popcorntv
+docker volume inspect popcorntv-web >/dev/null 2>&1 \
+  || docker volume create popcorntv-web
 
 # 2. Attach each backend to its own network. Every backend compose
 #    already declares its network (n8n: services/n8n/docker-compose.yml,
