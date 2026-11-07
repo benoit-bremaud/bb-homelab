@@ -39,6 +39,8 @@ services:
         target: /config          # auto-managed runtime config
         bind:
           create_host_path: false
+      # PopCornTV web build, filled by its web-sync job (services/popcorntv).
+      - popcorntv-web:/srv/popcorntv-web:ro
     networks:
       # `edge` carries Caddy's default route and published ports, so no
       # backend sits on its gateway path (ADR 0009, #200). Each backend has
@@ -49,6 +51,10 @@ services:
       proxy-n8n: {}
       proxy-jellyfin: {}
       proxy-homepage: {}
+      proxy-popcorntv:
+        # Fixed address: PopCornTV trusts X-Forwarded-For from this IP only
+        # (TRUST_PROXY in services/popcorntv/docker-compose.yml).
+        ipv4_address: 10.203.60.2
       proxy-uptime-kuma:
         # Kuma probes the other backends through Caddy over HTTPS. Docker
         # aliases are literal names (no wildcard): keep this list in sync
@@ -59,6 +65,7 @@ services:
           - status.bb-homelab.local
           - vaultwarden.bb-homelab.local
           - home.bb-homelab.local
+          - popcorntv.bb-homelab.local
     # Caddy is the frontal reverse proxy (80/443) for the whole homelab, so
     # it gets a liveness probe like every backend. It hits the plain-HTTP
     # /healthz route defined in the Caddyfile (a localhost-only site), proving
@@ -96,4 +103,14 @@ networks:
     external: true
   proxy-homepage:
     name: bb-homelab-proxy-homepage
+    external: true
+  proxy-popcorntv:
+    # Created with --subnet 10.203.60.0/29 for Caddy's fixed IP.
+    name: bb-homelab-proxy-popcorntv
+    external: true
+
+volumes:
+  # Shared with services/popcorntv, created once by hand (ADR 0002).
+  popcorntv-web:
+    name: popcorntv-web
     external: true

@@ -11,6 +11,14 @@ musique diffusés en streaming sur le tailnet, sans compte tiers ni cloud.
 > `docker compose start` (et non `up -d`, qui recréerait le conteneur en
 > 10.11.11), puis remettre la ligne cron et réactiver le moniteur. Avant
 > un passage en 10.11.11, lancer d'abord une sauvegarde de `/config`.
+>
+> **Remplacé par [PopCornTV](../popcorntv/README.md) (#240).** La
+> médiathèque a quitté `/mnt/appdata/jellyfin/media` pour
+> `/mnt/appdata/media`, partagée avec PopCornTV ; ce compose pointe déjà
+> sur le nouveau chemin. Le conteneur arrêté monte encore l'ancien : pour
+> le relancer en repli, le recréer (`docker compose up -d`, après la
+> sauvegarde de `/config`). Jellyfin est retiré deux semaines après la
+> bascule (service, réseau proxy, route Caddy, `/mnt/appdata/jellyfin`).
 
 ## Stack
 
@@ -21,7 +29,7 @@ musique diffusés en streaming sur le tailnet, sans compte tiers ni cloud.
 - Données persistantes (bind-mounts HDD, Pattern Y, rôle `appdata`) :
   - `/mnt/appdata/jellyfin/config` → `/config` (base, réglages, comptes)
   - `/mnt/appdata/jellyfin/cache` → `/cache` (transcodage, vignettes)
-  - `/mnt/appdata/jellyfin/media` → `/media` (médiathèque, **temporaire**)
+  - `/mnt/appdata/media` → `/media` (médiathèque, **temporaire**)
 - Réseau : `bb-homelab-proxy-jellyfin` (partagé avec Caddy seul, ADR 0009) + port `8096` publié
   pour l'accès direct.
 - Accès : `https://jellyfin.bb-homelab.local` (via Caddy) ou direct
@@ -33,7 +41,7 @@ musique diffusés en streaming sur le tailnet, sans compte tiers ni cloud.
 Pattern Y place la médiathèque sur le rôle `media` (`/mnt/media`,
 Disque B). Ce disque n'est **pas encore monté** (issue #47). En
 attendant, la médiathèque vit sur le Disque A sous
-`/mnt/appdata/jellyfin/media`. C'est un choix **assumé et temporaire** :
+`/mnt/appdata/media`. C'est un choix **assumé et temporaire** :
 
 - léger écart à Pattern Y (vidéo sur le disque `appdata` rapide) ;
 - volume limité (le Disque A n'est pas dimensionné pour une grosse
@@ -54,10 +62,10 @@ cp .env.example .env
 # Le disque appdata doit être monté (create_host_path: false sinon
 # échec au démarrage) :
 mountpoint -q /mnt/appdata || { echo "ERREUR : /mnt/appdata non monté"; exit 1; }
-sudo mkdir -p /mnt/appdata/jellyfin/{config,cache,media}
+sudo mkdir -p /mnt/appdata/jellyfin/{config,cache} /mnt/appdata/media
 # Rendre la médiathèque inscriptible par benoit (dépôt SFTP/scp sans sudo) ;
 # config/ et cache/ restent à root, utilisés par le conteneur.
-sudo chown -R benoit:benoit /mnt/appdata/jellyfin/media
+sudo chown -R benoit:benoit /mnt/appdata/media
 
 docker compose up -d
 docker compose logs -f jellyfin
@@ -81,7 +89,7 @@ Deux bibliothèques distinctes, un dossier racine chacune (sinon Jellyfin
 mélange films et épisodes) :
 
 ```text
-/mnt/appdata/jellyfin/media/
+/mnt/appdata/media/
 ├── films/
 │   └── Titre (Année).mkv                 # ou Titre (Année)/Titre (Année).mkv
 └── series/
@@ -117,17 +125,17 @@ téléverser). Deux méthodes :
 ```bash
 # A. Glisser-déposer (graphique) — dans l'explorateur de fichiers :
 #    « Se connecter à un serveur » →
-#    sftp://benoit@bb-homelab/mnt/appdata/jellyfin/media/
+#    sftp://benoit@bb-homelab/mnt/appdata/media/
 #    puis déposer dans films/ ou series/.
 
 # B. Ligne de commande (depuis le poste) :
 scp "/chemin/mon_film.mkv" \
-  "benoit@bb-homelab:/mnt/appdata/jellyfin/media/films/Titre (Année).mkv"
+  "benoit@bb-homelab:/mnt/appdata/media/films/Titre (Année).mkv"
 
 # Série : créer l'arbo saison d'abord
-ssh benoit@bb-homelab 'mkdir -p "/mnt/appdata/jellyfin/media/series/Ma Série (2020)/Season 01"'
+ssh benoit@bb-homelab 'mkdir -p "/mnt/appdata/media/series/Ma Série (2020)/Season 01"'
 scp "/chemin/ep1.mkv" \
-  "benoit@bb-homelab:/mnt/appdata/jellyfin/media/series/Ma Série (2020)/Season 01/Ma Série S01E01.mkv"
+  "benoit@bb-homelab:/mnt/appdata/media/series/Ma Série (2020)/Season 01/Ma Série S01E01.mkv"
 ```
 
 > Le dossier `media/` appartient à `benoit` (cf. le `chown` du bootstrap),
