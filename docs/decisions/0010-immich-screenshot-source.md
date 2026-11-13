@@ -45,9 +45,9 @@ Contraintes :
    envoi. Les tâches tournent avec une concurrence de 1, et les modèles
    sont déchargés après 5 min d'inactivité. Le choix initial « la nuit »
    reposait sur un réglage qui n'existe pas ; le propriétaire a retenu
-   l'OCR dès l'envoi le 2026-11-13 (440, contre une pause de jour par cron
-   360 et un lancement manuel 330). La recherche complète (phase C) fera l'objet d'une issue
-   de suivi, ouverte une fois la charge du Pi mesurée.
+   l'OCR dès l'envoi le 2026-11-13 (matrice « Moment de l'OCR »). La
+   recherche complète (phase C) fera l'objet d'une issue de suivi, ouverte
+   une fois la charge du Pi mesurée.
 4. **Accès :**
    - **Téléphone :** il envoie seulement, à la maison et en Wi-Fi, par le
      tunnel Tailscale déjà installé, à l'adresse `http://bb-homelab:2283`.
@@ -121,14 +121,31 @@ la revue ; aucun gagnant ne change :
 | C. Les deux | 5 | 2 | 3 | 2 | 340 |
 | B. PC de travail (XPS) | 2 | 5 | 5 | 2 | 335 |
 
+Matrices ajoutées à la revue du 2026-11-13 :
+
+| Moment de l'OCR | Charge 30 | Simple 30 | Fiabilité 25 | Réversible 15 | Total /500 |
+|---|---|---|---|---|---|
+| A. Dès l'envoi, concurrence 1 | 3 | 5 | 5 | 5 | **440** |
+| B. Pause de jour par cron | 5 | 2 | 3 | 4 | 360 |
+| C. Lancement manuel | 5 | 3 | 1 | 5 | 330 |
+
+| Failles Trivy | Risque 40 | Règle 30 | Effort 20 | Suivi 10 | Total /500 |
+|---|---|---|---|---|---|
+| C. Attendre des images corrigées | 5 | 5 | 5 | 2 | **470** |
+| A. Exceptions à 30 jours (#219) | 4 | 5 | 4 | 5 | 440 |
+| B. Reconstruire les images | 5 | 5 | 1 | 3 | 430 |
+
 Sensibilité des matrices serrées :
 
+- Moment de l'OCR : B passe devant seulement si la charge pèse plus de
+  55 ; Failles Trivy : A passe devant si le suivi pèse plus que le risque.
 - Stockage, Accès, Sauvegarde : l'option retenue égale ou dépasse les
   autres sur presque chaque critère ; aucun poids raisonnable ne l'inverse.
 - OCR : b passe devant (425 contre 390) si la charge pèse 35 et le
   déblocage de #3 25. Le choix tient tant que débloquer #3 compte plus que
   la charge du Pi.
-- Rétention : B passe devant (380 contre 360) si la simplicité pèse 40.
+- Rétention : B et C passent devant (380 contre 360) si la simplicité
+  pèse 40.
   Le choix tient tant que la vie privée et la récupération comptent plus.
 - Cible : A domine C. B ne passe devant (380 contre 350) que si l'effort
   pèse plus que la régularité (40 contre 25).
@@ -150,19 +167,22 @@ Sensibilité des matrices serrées :
   proto tcp` (`docs/security/AUDIT.md`, R13).
 - Un échec de la copie n'alerte que si une session graphique est ouverte
   sur le portable (`notify-send`). Une sonde côté Pi qui vérifie la
-  fraîcheur de la copie fera l'objet d'une issue de suivi ; en attendant,
-  le journal du timer est contrôlé chaque semaine.
+  fraîcheur de la copie est suivie dans #250 ; en attendant, le journal du
+  timer est contrôlé chaque semaine.
 - L'IP tailnet du Pi est désormais écrite dans trois compose (Caddy,
   Jellyfin, Immich) : la procédure de l'ADR 0007 en cas de changement
   d'IP s'applique aussi à `services/immich/docker-compose.yml`.
 - **Déploiement suspendu** : Trivy trouve des failles critiques corrigées
   en amont dans les paquets des images serveur, ML et Postgres v3.4.1. Le
   propriétaire a choisi le 2026-11-13 d'attendre des images d'Immich
-  corrigées plutôt que de poser des exceptions (470, contre exceptions
-  440 et reconstruction locale 430). screenshot-triage #3 attend ce
-  déploiement.
+  corrigées plutôt que de poser des exceptions (matrice « Failles
+  Trivy »). screenshot-triage #3 attend ce déploiement.
+- Caddy déclare le réseau externe `bb-homelab-proxy-immich` : il doit
+  exister sur le Pi avant toute recréation de Caddy, même tant qu'Immich
+  n'est pas déployé. Le créer juste après la fusion (boucle de
+  `services/caddy/README.md`, étape 1).
 - Postgres 14 arrive en fin de vie en novembre 2026 : la montée de version
-  suivra Immich (issue de suivi).
+  suivra Immich (#251).
 - L'app mobile et le serveur doivent rester compatibles : la mise à jour
   automatique de l'app est coupée, et le serveur est mis à jour en premier.
 - Les alertes Kuma dépendent de la liaison sortante du Pi (#237).

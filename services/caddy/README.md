@@ -44,7 +44,9 @@ Pre-requisite: Docker + Compose v2 on the host.
 
 ```bash
 # 1. Create one proxy network per backend (once per host, skipping
-#    those that already exist).
+#    those that already exist). Run it again before any Caddy recreate:
+#    Caddy refuses to start if one of them is missing, even for a backend
+#    not deployed yet (Immich, ADR 0010).
 for s in vaultwarden n8n jellyfin uptime-kuma homepage immich; do
   docker network inspect "bb-homelab-proxy-$s" >/dev/null 2>&1 \
     || docker network create "bb-homelab-proxy-$s"

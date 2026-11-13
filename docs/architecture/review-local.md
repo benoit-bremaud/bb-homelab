@@ -6,12 +6,12 @@ Pre-push review of the Immich branch: the push waits for the Must fixes and a se
 - Commit: 06bbd9d
 - Scope: branch diff origin/main...HEAD (`--push`)
 - Checks run: adversarial (Opus, round 1) · docker · docs · lint · secrets · SonarQube · Trivy
-- Verdict: fix Must Have first · Must 7 · Should 10 · Nice 9
+- Verdict: ship (pre-push) · Must 0 open · Should 0 open · Nice 0 open (round 1: Must 7 · Should 10 · Nice 9)
 
 ## Adversarial review (#236)
 
 - Round 1 on `06bbd9d`: Must 7 · Should 10 · Nice 9 · unverified 3 · Push gate: closed
-- Round 2: see below (fix commit)
+- Round 2 on `4a7515a`: 7 Must fixed (M7 by owner decision C) · 0 regressed · new Should 3 (fixed in the next commit: Caddy network note, two matrices, #250 and #251) · **Push gate: open**
 - Optional second review (owner's OpenAI account): not run
 
 ## Pre-merge gate (head SHA 06bbd9d)
