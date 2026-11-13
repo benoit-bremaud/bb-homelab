@@ -127,16 +127,23 @@ jour majeure d'Immich.
    sudo mv /mnt/appdata/immich/postgres /mnt/appdata/immich/postgres.old
    sudo mkdir /mnt/appdata/immich/postgres
    docker compose up -d --wait database
+   set -o pipefail
    gunzip -c /mnt/appdata/immich/db-dumps/immich-db-<date>.sql.gz \
-     | sed "s/SELECT pg_catalog.set_config('search_path', '', false);/SELECT pg_catalog.set_config('search_path', 'public, pg_catalog', true);/g" \
-     | docker exec -i bb-homelab-immich-postgres psql --dbname=postgres --username=postgres
-   docker compose up -d
+     | sed -e "s/SELECT pg_catalog.set_config('search_path', '', false);/SELECT pg_catalog.set_config('search_path', 'public, pg_catalog', true);/g" \
+           -e '/^DROP ROLE IF EXISTS postgres;$/d' -e '/^CREATE ROLE postgres;$/d' \
+     | docker exec -i bb-homelab-immich-postgres psql --dbname=postgres --username=postgres --set ON_ERROR_STOP=on \
+     && docker compose up -d
    ```
 
    `--wait` attend que Postgres ait fini sa première initialisation. Le
    dump `pg_dumpall` recrée lui-même la base `immich` : on se connecte donc
    à `postgres`, sans `--single-transaction` (`DROP DATABASE` ne passe pas
-   dans une transaction).
+   dans une transaction). Les deux lignes retirées suppriment et recréent
+   le rôle `postgres`, déjà présent : ce sont les seules erreurs attendues.
+   `pipefail` et `ON_ERROR_STOP` arrêtent tout au premier problème (archive
+   tronquée, erreur SQL), et Immich ne redémarre qu'après un chargement
+   complet. En cas d'échec, ne pas lancer Immich : recommencer depuis une
+   base vide avec un autre dump.
 
    La substitution `sed` vient de la procédure officielle d'Immich
    (<https://docs.immich.app/administration/backup-and-restore>).
