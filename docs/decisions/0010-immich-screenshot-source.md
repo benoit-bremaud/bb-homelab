@@ -121,10 +121,10 @@ notes 0–5) :
   même service (port direct et Caddy). Le retirer revient à supprimer une
   ligne de `ports`.
 - Le portable de la maison n'est pas sur le tailnet. Il tire la copie par
-  le Wi-Fi privé de la maison, auquel le Pi est aussi connecté. Il reste à
-  vérifier, à l'étape des sauvegardes, que le SSH du Pi écoute sur son
-  adresse locale, et à restreindre l'accès à la clé du portable (point
-  ouvert).
+  le Wi-Fi privé de la maison, auquel le Pi est aussi connecté. Le SSH du
+  Pi écoute sur toutes ses interfaces (vérifié le 2026-11-13). La clé du
+  portable sera limitée à la lecture des dossiers d'Immich (`rrsync`
+  en lecture seule).
 - L'app mobile et le serveur doivent rester compatibles : la mise à jour
   automatique de l'app est coupée, et le serveur est mis à jour en premier.
 - Les alertes Kuma dépendent de la liaison sortante du Pi (#237).
