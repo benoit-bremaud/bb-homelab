@@ -2027,3 +2027,37 @@ was done and why, by date.
 - **Follow-ups**: #241 (Homepage tile, network diagram, ADR superseding
   0003, `--ip-range`), #243 (local attested gate).
 - **Refs**: #240, #242, #241, #243
+
+## 2026-11-13
+
+### PR #252 — feat(immich): deploy Immich on the Pi for the screenshot triage pipeline
+
+- **What**: adds `services/immich/` (Immich v3.4.1, images pinned by
+  digest, ML limited to OCR at upload time, internal backend network
+  with an egress network for ML only, server with `cap_drop: [ALL]`),
+  port 2283 on `127.0.0.1` + tailnet IP for the phone, the Caddy site
+  `immich.bb-homelab.local` on its own proxy network, a nightly
+  `pg_dumpall` with a Kuma push, and the home-laptop mirror over the LAN
+  (`rrsync -ro`, `from=`, 30-day delayed delete). ADR 0010, three UML
+  diagrams, README runbook, BACKUP.md.
+- **Decisions (owner MCDA)**: host Pi (445), `/mnt/appdata/immich` (450),
+  OCR-only ML (410, then OCR at upload 440), phone through the tunnel
+  and PC through Caddy (465), dump + mirror (470), 30-day delayed delete
+  (370), home laptop target (380). Six MCDA totals mis-added at
+  presentation were corrected in review; no winner changed.
+- **Pi deploy suspended**: Trivy finds fixable CRITICAL CVEs in the
+  upstream server, ML and Postgres images; the owner chose to wait for
+  fixed upstream images (470) over waivers. screenshot-triage #3 waits.
+  Right after the merge, create `bb-homelab-proxy-immich` on the Pi
+  (Caddy refuses to start without it).
+- **Merge gate** on `56478cc`: no attestation in this repo; SonarQube
+  passed, gitleaks clean, shellcheck, yamllint, markdownlint green; the
+  Pi smoke test was not run (deploy suspended); merged on the owner's
+  explicit yes. The log entry rides in this PR (owner MCDA 460).
+- **Review**: local adversarial review in two rounds (round 1: 7 Must,
+  all fixed); automated review (Must Have): restore made fail-fast;
+  automated review (Disagree): an internal proxy network would stop the
+  port publish the phone needs.
+- **Follow-ups**: #250 (mirror freshness alert), #251 (Postgres 14 EOL);
+  #141 must keep LAN SSH for the laptop (AUDIT R13).
+- **Refs**: #224, #252, #250, #251
