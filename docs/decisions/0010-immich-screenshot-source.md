@@ -1,6 +1,6 @@
 # ADR 0010 — Immich, source des captures d'écran du téléphone
 
-- **Status**: Proposed
+- **Status**: Accepted
 - **Date**: 2026-11-13
 
 ## Context
@@ -25,7 +25,7 @@ Contraintes :
 - L'app mobile Immich gère mal les certificats auto-signés et les CA
   privées : l'envoi échoue souvent. La documentation d'Immich recommande
   un VPN.
-- Android ne résout pas `*.bb-homelab.local` : ADR 0002, point 4 ;
+- Android ne résout pas `*.bb-homelab.local` :
   `services/vaultwarden/CLIENTS.md`.
 
 ## Decision
@@ -38,11 +38,15 @@ Contraintes :
    `create_host_path: false` : le conteneur refuse de démarrer si le disque
    manque, plutôt que d'écrire sur la carte SD. Postgres tourne en mode
    disque dur (`DB_STORAGE_TYPE=HDD`).
-3. **Apprentissage automatique : OCR seul, la nuit.** Le conteneur ML ne
-   charge que les modèles OCR. La recherche intelligente (CLIP) et la
-   reconnaissance des visages sont désactivées. Les tâches tournent avec
-   une concurrence de 1, et les modèles sont déchargés après 5 min
-   d'inactivité. La recherche complète (phase C) fera l'objet d'une issue
+3. **Apprentissage automatique : OCR seul, dès l'envoi.** Le conteneur ML
+   ne charge que les modèles OCR. La recherche intelligente (CLIP) et la
+   reconnaissance des visages sont désactivées. Immich v3.4.1 n'a pas de
+   plage horaire pour l'OCR : il le lance après la vignette de chaque
+   envoi. Les tâches tournent avec une concurrence de 1, et les modèles
+   sont déchargés après 5 min d'inactivité. Le choix initial « la nuit »
+   reposait sur un réglage qui n'existe pas ; le propriétaire a retenu
+   l'OCR dès l'envoi le 2026-11-13 (440, contre une pause de jour par cron
+   360 et un lancement manuel 330). La recherche complète (phase C) fera l'objet d'une issue
    de suivi, ouverte une fois la charge du Pi mesurée.
 4. **Accès :**
    - **Téléphone :** il envoie seulement, à la maison et en Wi-Fi, par le
@@ -53,9 +57,10 @@ Contraintes :
    - **PC et screenshot-triage :** ils passent par Caddy en HTTPS, sur un
      réseau proxy dédié (ADR 0009).
 5. **Sauvegardes :**
-   - Postgres : un dump chaque nuit, avec une sonde Push Uptime Kuma.
-   - Photos : les dossiers `upload`, `library`, `profile` et `backups` sont
-     tirés chaque nuit par rsync incrémental vers le portable de la maison.
+   - Postgres : un dump `pg_dumpall` chaque nuit dans `db-dumps`, avec une
+     sonde Push Uptime Kuma.
+   - Photos : les dossiers `upload`, `library`, `profile` et `backups`,
+     plus `db-dumps`, sont tirés chaque nuit par rsync incrémental vers le portable de la maison.
      `thumbs` et `encoded-video` sont reconstructibles et ne sont pas
      copiés.
    - Rétention : miroir où un fichier supprimé sur le Pi part dans un
@@ -71,7 +76,8 @@ Contraintes :
    le filet de sécurité.
 
 Matrices MCDA validées par le propriétaire le 2026-11-13 (poids /100,
-notes 0–5) :
+notes 0–5). Six totaux mal additionnés à la présentation ont été corrigés à
+la revue ; aucun gagnant ne change :
 
 | Hôte | Dispo 30 | Cohérence 25 | OCR 20 | Place 15 | Simple 10 | Total /500 |
 |---|---|---|---|---|---|---|
@@ -82,12 +88,12 @@ notes 0–5) :
 | Stockage | Sûreté 35 | SD 25 | Simple 25 | Migration 15 | Total /500 |
 |---|---|---|---|---|---|
 | A. `/mnt/appdata` | 4 | 5 | 5 | 4 | **450** |
-| B. Bibliothèque sur `/mnt/archive` | 4 | 5 | 2 | 3 | 345 |
-| C. Volumes Docker | 2 | 5 | 4 | 2 | 305 |
+| B. Bibliothèque sur `/mnt/archive` | 4 | 5 | 2 | 3 | 360 |
+| C. Volumes Docker | 2 | 5 | 4 | 2 | 325 |
 
 | OCR pour #3 | Débloque 35 | Charge 25 | Simple 20 | ADR 20 | Total /500 |
 |---|---|---|---|---|---|
-| a. ML OCR seul, la nuit | 5 | 3 | 3 | 5 | **410** |
+| a. ML OCR seul (prévu la nuit, voir point 3) | 5 | 3 | 3 | 5 | **410** |
 | b. Sans ML, #3 attend | 2 | 5 | 5 | 5 | 395 |
 | c. OCR hors Immich | 4 | 4 | 2 | 1 | 300 |
 
@@ -95,7 +101,7 @@ notes 0–5) :
 |---|---|---|---|---|---|
 | A. Téléphone par le tunnel, PC en HTTPS | 4 | 5 | 5 | 5 | **465** |
 | C. Tunnel seul, même sur le PC | 3 | 5 | 3 | 5 | 380 |
-| B. HTTPS `ts.net` partout | 5 | 2 | 3 | 2 | 340 |
+| B. HTTPS `ts.net` partout | 5 | 2 | 3 | 2 | 330 |
 
 | Sauvegarde | Restauration 40 | Cohérence 30 | Effort 30 | Total /500 |
 |---|---|---|---|---|
@@ -111,9 +117,21 @@ notes 0–5) :
 
 | Cible de la copie | Régularité 40 | Effort 25 | Cohérence 20 | Place 15 | Total /500 |
 |---|---|---|---|---|---|
-| A. Portable de la maison | 5 | 3 | 3 | 3 | **385** |
-| B. PC de travail (XPS) | 2 | 5 | 5 | 2 | 355 |
-| C. Les deux | 5 | 2 | 3 | 2 | 345 |
+| A. Portable de la maison | 5 | 3 | 3 | 3 | **380** |
+| C. Les deux | 5 | 2 | 3 | 2 | 340 |
+| B. PC de travail (XPS) | 2 | 5 | 5 | 2 | 335 |
+
+Sensibilité des matrices serrées :
+
+- Stockage, Accès, Sauvegarde : l'option retenue égale ou dépasse les
+  autres sur presque chaque critère ; aucun poids raisonnable ne l'inverse.
+- OCR : b passe devant (425 contre 390) si la charge pèse 35 et le
+  déblocage de #3 25. Le choix tient tant que débloquer #3 compte plus que
+  la charge du Pi.
+- Rétention : B passe devant (380 contre 360) si la simplicité pèse 40.
+  Le choix tient tant que la vie privée et la récupération comptent plus.
+- Cible : A domine C. B ne passe devant (380 contre 350) que si l'effort
+  pèse plus que la régularité (40 contre 25).
 
 ## Consequences
 
@@ -121,10 +139,30 @@ notes 0–5) :
   même service (port direct et Caddy). Le retirer revient à supprimer une
   ligne de `ports`.
 - Le portable de la maison n'est pas sur le tailnet. Il tire la copie par
-  le Wi-Fi privé de la maison, auquel le Pi est aussi connecté. Le SSH du
-  Pi écoute sur toutes ses interfaces (vérifié le 2026-11-13). La clé du
-  portable sera limitée à la lecture des dossiers d'Immich (`rrsync`
-  en lecture seule).
+  le réseau local de la maison. Le SSH du Pi écoute sur toutes ses
+  interfaces (vérifié le 2026-11-13). La clé du portable est limitée à la
+  lecture des dossiers d'Immich (`rrsync -ro`) et à l'IP du portable
+  (`from=`). Le résolveur mDNS du Pi (avahi sur `eth0`, #205) fournit le
+  nom `bb-homelab.local` au portable.
+- **#141 doit garder ce chemin** : restreindre SSH au tailnet
+  (`SSH_UFW_SCOPE=tailscale`) couperait la seule copie hors du Pi. La règle
+  pare-feu doit garder `ufw allow from <IP du portable> to any port 22
+  proto tcp` (`docs/security/AUDIT.md`, R13).
+- Un échec de la copie n'alerte que si une session graphique est ouverte
+  sur le portable (`notify-send`). Une sonde côté Pi qui vérifie la
+  fraîcheur de la copie fera l'objet d'une issue de suivi ; en attendant,
+  le journal du timer est contrôlé chaque semaine.
+- L'IP tailnet du Pi est désormais écrite dans trois compose (Caddy,
+  Jellyfin, Immich) : la procédure de l'ADR 0007 en cas de changement
+  d'IP s'applique aussi à `services/immich/docker-compose.yml`.
+- **Déploiement suspendu** : Trivy trouve des failles critiques corrigées
+  en amont dans les paquets des images serveur, ML et Postgres v3.4.1. Le
+  propriétaire a choisi le 2026-11-13 d'attendre des images d'Immich
+  corrigées plutôt que de poser des exceptions (470, contre exceptions
+  440 et reconstruction locale 430). screenshot-triage #3 attend ce
+  déploiement.
+- Postgres 14 arrive en fin de vie en novembre 2026 : la montée de version
+  suivra Immich (issue de suivi).
 - L'app mobile et le serveur doivent rester compatibles : la mise à jour
   automatique de l'app est coupée, et le serveur est mis à jour en premier.
 - Les alertes Kuma dépendent de la liaison sortante du Pi (#237).
@@ -139,4 +177,4 @@ choix de la source (débrief screenshot-triage du 2026-11-13).
 - Issue #224 ; `screenshot-triage` ADR-0001 et issue #3.
 - ADR 0002 (Caddy), ADR 0007 (ports publiés), ADR 0008 (stockage Docker),
   ADR 0009 (réseaux proxy par backend).
-- Diagrammes : [docs/architecture/diagrams/immich/](../architecture/diagrams/immich/01-deployment.md).
+- Diagrammes : [docs/architecture/diagrams/immich/](../architecture/diagrams/immich/08-deployment.md).

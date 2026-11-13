@@ -24,6 +24,9 @@ services:
         bind:
           create_host_path: false
       - /etc/localtime:/etc/localtime:ro
+    # Runs as root on a root-owned /data: no capability expected. If the first
+    # start logs EPERM, add back only the named one (services/immich/README.md).
+    cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
     networks:
       - backend
@@ -38,14 +41,15 @@ services:
       disable: false
 
   # OCR only (ADR 0010): smart search and facial recognition are disabled in
-  # the admin settings, jobs run at night with concurrency 1. Models are
-  # unloaded after 5 min idle (MACHINE_LEARNING_MODEL_TTL default).
+  # the admin settings. OCR runs at upload time with concurrency 1; Immich has
+  # no night window for it. Models are unloaded after 5 min idle
+  # (MACHINE_LEARNING_MODEL_TTL default).
   immich-machine-learning:
     container_name: bb-homelab-immich-machine-learning
     image: ghcr.io/immich-app/immich-machine-learning:v3.4.1@sha256:8adebf414256f6e4f837bfbb66fa94f14f4da7260e3a1d65cbba49e4e35d8764
-    env_file:
-      - .env
+    # No env_file: this container never talks to the database.
     environment:
+      TZ: Europe/Paris
       MACHINE_LEARNING_MODEL_REVISION: v2
     volumes:
       - type: bind
@@ -57,6 +61,7 @@ services:
     security_opt: [no-new-privileges:true]
     networks:
       - backend
+      - ml-egress
     restart: unless-stopped
     healthcheck:
       disable: false
@@ -106,10 +111,14 @@ services:
       disable: false
 
 networks:
-  # Server, database, queue and OCR. Not internal: the OCR container downloads
-  # its models on first start.
+  # Server, database, queue and OCR, with no route out.
   backend:
     name: bb-homelab-immich-backend
+    internal: true
+  # Internet egress for the OCR container only: it downloads its models on
+  # first start.
+  ml-egress:
+    name: bb-homelab-immich-ml-egress
   # Shared with Caddy only, created once by hand on the host (ADR 0009).
   proxy:
     name: bb-homelab-proxy-immich

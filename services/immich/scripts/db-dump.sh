@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Immich database dump — nightly pg_dump of the Immich Postgres (#224,
+# Immich database dump — nightly pg_dumpall of the Immich Postgres (#224,
 # ADR 0010). Runs from the Pi's crontab. The dump lands on the appdata HDD,
 # next to the library, where the home laptop pulls both (pull-immich.sh).
 #
@@ -36,9 +36,11 @@ trap 'rm -f "${DUMP}.part"' EXIT
 trap 'exit 130' INT TERM HUP
 
 log "dumping ${CONTAINER}"
-# pg_dump gives a consistent snapshot without stopping Immich. pipefail
-# turns a failed dump into a failed run, so no heartbeat is sent.
-(umask 077; docker exec "${CONTAINER}" pg_dump --clean --if-exists --dbname=immich --username=postgres \
+# Same command as Immich's backup procedure: pg_dumpall keeps database-level
+# settings that a single-database pg_dump drops. Each database is a consistent
+# snapshot taken without stopping Immich. pipefail turns a failed dump into a
+# failed run, so no heartbeat is sent.
+(umask 077; docker exec "${CONTAINER}" pg_dumpall --clean --if-exists --username=postgres \
   | gzip > "${DUMP}.part")
 gzip -t "${DUMP}.part" || die "dump archive is corrupt"
 mv "${DUMP}.part" "${DUMP}"

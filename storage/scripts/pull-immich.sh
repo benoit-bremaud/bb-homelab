@@ -11,6 +11,8 @@
 # after RETENTION_DAYS. Thumbnails and transcoded videos are rebuilt by Immich
 # and not copied.
 #
+# The default PI_HOST relies on the Pi's avahi (mDNS on eth0, #205).
+#
 # Usage:
 #   ./pull-immich.sh
 #   PI_HOST=benoit@192.168.1.216 DEST=/path/to/dir ./pull-immich.sh
@@ -39,8 +41,8 @@ for src in "${SOURCES[@]}"; do
   dst="${DEST}/current/${src}"
   mkdir -p "${dst}"
   log "pulling ${PI_HOST}:${src}/ -> ${dst}"
-  # --backup-dir is relative to the destination: deleted or replaced files
-  # go to deleted/<date>/<src>/ instead of disappearing.
+  # Deleted or replaced files go to the absolute deleted/<date>/<src>/
+  # instead of disappearing.
   if ! rsync -a --no-links --chmod=D700,F600 -e "${SSH_OPTS}" \
        --delete --backup --backup-dir="${DEST}/deleted/${TODAY}/${src}" \
        "${PI_HOST}:${src}/" "${dst}/"; then

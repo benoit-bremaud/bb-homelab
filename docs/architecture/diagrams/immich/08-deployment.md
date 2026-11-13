@@ -9,9 +9,7 @@
 ## Contexte
 
 Ce diagramme montre où tourne chaque élément d'Immich et par quel chemin
-chaque client l'atteint. Il ne couvre pas le chemin réseau local du
-portable de la maison vers le Pi, encore à décider (ADR 0010,
-Consequences).
+chaque client l'atteint, portable de la maison compris.
 
 ## Diagramme
 
@@ -46,7 +44,7 @@ flowchart LR
   server --> valkey
   server --> disk
   pg --> disk
-  pull -- "rsync sur SSH, réseau local" --> disk
+  pull -- "rsync sur SSH, réseau local<br/>rrsync -ro" --> disk
   kuma -- "sonde de santé via Caddy" --> caddy
 ```
 
@@ -55,4 +53,7 @@ flowchart LR
 - Le port 2283 est publié sur `127.0.0.1` et l'IP tailnet seulement
   (ADR 0007) : ni le réseau local ni Internet ne l'atteignent.
 - `postgres`, `valkey` et `immich-machine-learning` n'ont aucun port
-  publié. Ils partagent un réseau interne avec le serveur seulement.
+  publié. Ils partagent avec le serveur le réseau interne
+  `bb-homelab-immich-backend`, sans accès à Internet. Seul
+  `immich-machine-learning` rejoint aussi `bb-homelab-immich-ml-egress` pour
+  télécharger ses modèles OCR.

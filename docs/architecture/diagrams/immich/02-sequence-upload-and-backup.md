@@ -2,8 +2,8 @@
 
 > **Fonctionnalité** : issue #224 — Immich, source des captures d'écran
 > **ADR liés** : ADR 0010, ADR 0004
-> **Décisions capturées** : envoi à la maison en Wi-Fi seulement, OCR la
-> nuit, dump Postgres avant la copie des fichiers, signal « réussi »
+> **Décisions capturées** : envoi à la maison en Wi-Fi seulement, OCR dès
+> l'envoi, dump Postgres avant la copie des fichiers, signal « réussi »
 > seulement en cas de succès, copie tirée par le portable de la maison
 
 ## Contexte
@@ -25,6 +25,7 @@ sequenceDiagram
   participant pg as Postgres
   participant cron as cron (Pi)
   participant kuma as Uptime Kuma
+  participant ssh as sshd + rrsync -ro (Pi)
   participant lap as Timer de copie (portable)
 
   owner->>app: prend une capture
@@ -32,22 +33,21 @@ sequenceDiagram
     app->>srv: POST /api/assets (album Captures)
     srv->>pg: enregistre l'asset
     srv-->>app: 201 créé
+    srv->>ml: OCR de l'asset, après la vignette (concurrence 1)
+    ml-->>srv: texte OCR
+    srv->>pg: stocke le texte
   else hors de la maison
     Note over app: envoi différé au retour en Wi-Fi
   end
 
-  Note over srv,ml: fenêtre de nuit
-  srv->>ml: OCR de l'asset (concurrence 1)
-  ml-->>srv: texte OCR
-  srv->>pg: stocke le texte
-
-  cron->>pg: pg_dumpall | gzip
+  cron->>pg: pg_dumpall | gzip vers db-dumps
   alt dump réussi
     cron->>kuma: push status=up
   else échec
     Note over kuma: aucun signal → sonde DOWN, alerte
   end
 
-  lap->>srv: rsync upload, library, profile, backups
+  lap->>ssh: rsync upload, library, profile, backups, db-dumps
+  ssh-->>lap: fichiers en lecture seule
   Note over lap: fichiers supprimés sur le Pi → dossier daté, purge à 30 j
 ```

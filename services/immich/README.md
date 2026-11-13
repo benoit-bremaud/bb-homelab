@@ -3,14 +3,14 @@
 Immich reçoit l'album Captures d'écran du téléphone Android et sert de
 source, d'archive privée et de recherche au pipeline screenshot-triage
 (issue #224, [ADR 0010](../../docs/decisions/0010-immich-screenshot-source.md),
-[diagrammes](../../docs/architecture/diagrams/immich/01-deployment.md)).
+[diagrammes](../../docs/architecture/diagrams/immich/08-deployment.md)).
 
 ## Ce qui tourne
 
 | Conteneur | Rôle | Port publié |
 |---|---|---|
 | `bb-homelab-immich-server` | API, site web, tâches | `2283` sur `127.0.0.1` et l'IP tailnet seulement |
-| `bb-homelab-immich-machine-learning` | OCR seul, la nuit | aucun |
+| `bb-homelab-immich-machine-learning` | OCR seul, dès l'envoi | aucun |
 | `bb-homelab-immich-postgres` | Base de données | aucun |
 | `bb-homelab-immich-redis` | File des tâches (Valkey) | aucun |
 
@@ -31,6 +31,16 @@ Données : `/mnt/appdata/immich/{library,postgres,model-cache,db-dumps}`
 
 ## Déploiement (première fois)
 
+**Suspendu** jusqu'à des images d'Immich sans faille critique corrigible
+(ADR 0010, Consequences). Avant de déployer, relancer le scan :
+
+```bash
+for i in $(grep -o 'image: .*' docker-compose.yml | cut -d' ' -f2); do
+  trivy image --platform linux/arm64 --scanners vuln --severity CRITICAL \
+    --ignore-unfixed --exit-code 1 --ignorefile ../../.trivyignore.yaml "$i"
+done
+```
+
 Vérifier d'abord la place et la mémoire, puis que la liaison sortante du
 Pi télécharge correctement (#237) :
 
@@ -42,6 +52,7 @@ free -h
 ```bash
 sudo mkdir -p /mnt/appdata/immich/{library,postgres,model-cache,db-dumps}
 sudo chown benoit:benoit /mnt/appdata/immich/db-dumps
+chmod 700 /mnt/appdata/immich/db-dumps
 docker network inspect bb-homelab-proxy-immich >/dev/null 2>&1 \
   || docker network create bb-homelab-proxy-immich
 cd ~/bb-homelab/services/immich
@@ -49,7 +60,12 @@ cp .env.example .env    # DB_PASSWORD aléatoire, rangé dans le gestionnaire de
 chmod 600 .env
 docker compose up -d
 docker compose ps       # les quatre conteneurs « healthy »
+docker compose logs immich-server | grep -i eperm   # vide attendu
 ```
+
+Le serveur tourne sans aucune capacité Linux (`cap_drop: [ALL]`). Si les
+logs montrent `EPERM`, ajouter seulement la capacité en cause dans
+`cap_add` et le noter dans le compose.
 
 Puis recréer Caddy (`services/caddy`, `docker compose up -d`) pour qu'il
 rejoigne le réseau, et vérifier qu'aucun port ne s'est ouvert sur le Wi-Fi :
@@ -69,8 +85,8 @@ administrateur reste ouverte tant qu'aucun compte n'existe.
 2. **Réglages serveur** (Administration → Paramètres) :
    - Apprentissage automatique : désactiver la recherche intelligente et
      la reconnaissance faciale, garder l'OCR.
-   - Tâches : concurrence 1 pour l'OCR et les vignettes ; OCR planifié la
-     nuit.
+   - Tâches : concurrence 1 pour l'OCR et les vignettes. Immich lance
+     l'OCR à chaque envoi ; aucune plage horaire n'existe.
    - Corbeille : activée, rétention 30 jours au moins.
    - Désactiver la vérification de nouvelle version et les tuiles de carte
      externes.
@@ -98,7 +114,7 @@ administrateur reste ouverte tant qu'aucun compte n'existe.
    essais ; sonde Push `backup-immich` ([BACKUP.md](BACKUP.md)).
 
 Avant de vider la pellicule, suivre la règle du
-[diagramme d'activité](../../docs/architecture/diagrams/immich/03-activity.md) :
+[diagramme d'activité](../../docs/architecture/diagrams/immich/07-activity-free-phone-space.md) :
 test de restauration réussi, copie du portable vérifiée, captures de plus
 de 2 jours seulement.
 

@@ -125,7 +125,7 @@ utilisateur par utilisateur est l'objet de l'issue #131.
 | R1 (récurrence) | #140 | Soit ajouter `Debian` stable + dépôts tiers, soit un rappel mensuel ; ADR |
 | R12 | #26 (reformulée) | Déplacer `~/home-assistant` sous `services/` avec épinglage et sauvegarde |
 | Suivis des étapes 3 et 5 | #151, #152, #156 | `N8N_WEBHOOK_URL` à la place de `WEBHOOK_URL` déprécié (#151, P4) ; `allowedOrigins` sur le webhook n8n, qui reflète toute origine (#152, P3) ; porte d'authentification de Homepage v2 (#156, P4) |
-| R13 | #141 | Ajouter `X11Forwarding no` à `harden-ssh.sh` ; relancer `SSH_UFW_SCOPE=tailscale` quand le propriétaire est près du Pi ; AppArmor et fail2ban évalués par matrice |
+| R13 | #141 | Ajouter `X11Forwarding no` à `harden-ssh.sh` ; relancer `SSH_UFW_SCOPE=tailscale` quand le propriétaire est près du Pi, en gardant `ufw allow from <IP du portable> to any port 22 proto tcp` pour la copie d'Immich (ADR 0010) ; AppArmor et fail2ban évalués par matrice |
 
 ## 6. Relevés sudo (2026-10-23, lancés par le propriétaire)
 
