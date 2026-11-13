@@ -33,9 +33,10 @@ adresse de liaison décide qui les joint. Relevé du 2026-11-02.
 
 | Port | Service | Liaison | Joignable depuis |
 |---|---|---|---|
-| 22/tcp | SSH (hôte) | toutes | LAN + tailnet (UFW `ALLOW Anywhere`, R13) |
+| 22/tcp | SSH (hôte) | toutes | LAN + tailnet (UFW `ALLOW Anywhere`, R13) ; le portable de la maison y tire la copie d'Immich par le LAN (`rrsync -ro`, ADR 0010) |
 | 80, 443/tcp, 443/udp | Caddy | `127.0.0.1` + IP tailnet | Pi + tailnet |
 | 8096/tcp | Jellyfin | `127.0.0.1` + IP tailnet | Pi + tailnet |
+| 2283/tcp | Immich | `127.0.0.1` + IP tailnet | Pi + tailnet (app mobile, ADR 0010) |
 | 5678/tcp | n8n | `127.0.0.1` | Pi (Internet via le tunnel cloudflared) |
 | 8123/tcp | Home Assistant (hôte) | toutes | tailnet, Nest Mini (UFW, #162) |
 | 1883/tcp | Mosquitto (dépôt `home-assistant`) | toutes | LAN + tailnet, voulu pour les ESP32 |

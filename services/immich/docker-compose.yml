@@ -1,0 +1,125 @@
+# Immich, source of the phone screenshots for screenshot-triage (#224, ADR 0010).
+# Based on the upstream v3.4.1 release compose; service names `database` and
+# `redis` are kept because the server resolves them by default.
+name: immich
+
+services:
+  immich-server:
+    container_name: bb-homelab-immich-server
+    image: ghcr.io/immich-app/immich-server:v3.4.1@sha256:7c489add298fc2f92cda4c777de6462aa206877e04087b815f62c7664af0b53b
+    env_file:
+      - .env
+    ports:
+      # The phone uploads to http://bb-homelab:2283 inside the Tailscale tunnel:
+      # the Immich app does not trust Caddy's internal CA (ADR 0010). Bound to
+      # loopback and the Pi's tailnet IP only (ADR 0007): never the home Wi-Fi.
+      - "127.0.0.1:2283:2283"
+      - "100.121.134.61:2283:2283"
+    # Pattern Y, role appdata; create_host_path: false refuses to start when the
+    # HDD (mounted with nofail) is missing, instead of writing to the SD card.
+    volumes:
+      - type: bind
+        source: /mnt/appdata/immich/library
+        target: /data
+        bind:
+          create_host_path: false
+      - /etc/localtime:/etc/localtime:ro
+    # Runs as root on a root-owned /data: no capability expected. If the first
+    # start logs EPERM, add back only the named one (services/immich/README.md).
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    networks:
+      - backend
+      - proxy
+    depends_on:
+      redis:
+        condition: service_healthy
+      database:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      disable: false
+
+  # OCR only (ADR 0010): smart search and facial recognition are disabled in
+  # the admin settings. OCR runs at upload time with concurrency 1; Immich has
+  # no night window for it. Models are unloaded after 5 min idle
+  # (MACHINE_LEARNING_MODEL_TTL default).
+  immich-machine-learning:
+    container_name: bb-homelab-immich-machine-learning
+    image: ghcr.io/immich-app/immich-machine-learning:v3.4.1@sha256:8adebf414256f6e4f837bfbb66fa94f14f4da7260e3a1d65cbba49e4e35d8764
+    # No env_file: this container never talks to the database.
+    environment:
+      TZ: Europe/Paris
+      MACHINE_LEARNING_MODEL_REVISION: v2
+    volumes:
+      - type: bind
+        source: /mnt/appdata/immich/model-cache
+        target: /cache
+        bind:
+          create_host_path: false
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    networks:
+      - backend
+      - ml-egress
+    restart: unless-stopped
+    healthcheck:
+      disable: false
+
+  # Job queue only: nothing to back up (ADR 0010).
+  redis:
+    container_name: bb-homelab-immich-redis
+    image: docker.io/valkey/valkey:9@sha256:418652cfb58ef879d4978c33553735d7147016032d5aefaa14c828e611eb9dfd
+    # The entrypoint drops to the valkey user, hence SETUID/SETGID.
+    cap_drop: [ALL]
+    cap_add: [SETUID, SETGID]
+    security_opt: [no-new-privileges:true]
+    networks:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: redis-cli ping | grep -q PONG || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  database:
+    container_name: bb-homelab-immich-postgres
+    image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0@sha256:bcf63357191b76a916ae5eb93464d65c07511da41e3bf7a8416db519b40b1c23
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env (see .env.example)}
+      POSTGRES_USER: postgres
+      POSTGRES_DB: immich
+      POSTGRES_INITDB_ARGS: '--data-checksums'
+      # Disk A is a 5400 rpm HDD (storage/INVENTORY.md).
+      DB_STORAGE_TYPE: 'HDD'
+    volumes:
+      - type: bind
+        source: /mnt/appdata/immich/postgres
+        target: /var/lib/postgresql/data
+        bind:
+          create_host_path: false
+    shm_size: 128mb
+    # The entrypoint fixes data-dir ownership, then drops to the postgres user.
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETUID, SETGID]
+    security_opt: [no-new-privileges:true]
+    networks:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      disable: false
+
+networks:
+  # Server, database, queue and OCR, with no route out.
+  backend:
+    name: bb-homelab-immich-backend
+    internal: true
+  # Internet egress for the OCR container only: it downloads its models on
+  # first start.
+  ml-egress:
+    name: bb-homelab-immich-ml-egress
+  # Shared with Caddy only, created once by hand on the host (ADR 0009).
+  proxy:
+    name: bb-homelab-proxy-immich
+    external: true

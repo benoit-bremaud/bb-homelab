@@ -52,6 +52,17 @@ jellyfin.bb-homelab.local {
 	reverse_proxy jellyfin:8096
 }
 
+# ---- immich ----
+# immich.bb-homelab.local → Immich (screenshot source, #224, ADR 0010) on
+# its own proxy network, for the PC browser and screenshot-triage. The phone
+# app cannot install the internal CA and uploads through the direct port
+# instead (http://bb-homelab:2283, published by services/immich/).
+immich.bb-homelab.local {
+	tls internal
+	import tailnet_only /api/server/ping
+	reverse_proxy immich-server:2283
+}
+
 # ---- Uptime Kuma ----
 # status.bb-homelab.local → uptime-kuma container (Stack B monitoring,
 # issue #44). Reached over its own proxy network.

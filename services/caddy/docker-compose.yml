@@ -51,6 +51,7 @@ services:
       proxy-n8n: {}
       proxy-jellyfin: {}
       proxy-homepage: {}
+      proxy-immich: {}
       proxy-popcorntv:
         # Fixed address: PopCornTV trusts X-Forwarded-For from this IP only
         # (TRUST_PROXY in services/popcorntv/docker-compose.yml).
@@ -66,6 +67,7 @@ services:
           - vaultwarden.bb-homelab.local
           - home.bb-homelab.local
           - popcorntv.bb-homelab.local
+          - immich.bb-homelab.local
     # Caddy is the frontal reverse proxy (80/443) for the whole homelab, so
     # it gets a liveness probe like every backend. It hits the plain-HTTP
     # /healthz route defined in the Caddyfile (a localhost-only site), proving
@@ -103,6 +105,9 @@ networks:
     external: true
   proxy-homepage:
     name: bb-homelab-proxy-homepage
+    external: true
+  proxy-immich:
+    name: bb-homelab-proxy-immich
     external: true
   proxy-popcorntv:
     # Created with --subnet 10.203.60.0/29 for Caddy's fixed IP.
