@@ -1,0 +1,12 @@
+[Unit]
+Description=Mirror Immich originals and database dumps from the Pi
+OnFailure=bb-homelab-immich-pull-failed.service
+StartLimitIntervalSec=1h
+StartLimitBurst=3
+
+[Service]
+Type=oneshot
+ExecStart=%h/bb-homelab/storage/scripts/pull-immich.sh
+Restart=on-failure
+RestartSec=5min
+RestartMode=direct

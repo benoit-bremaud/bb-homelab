@@ -1,0 +1,6 @@
+[Unit]
+Description=Desktop notification when the Immich mirror fails
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/notify-send --urgency=critical "Immich mirror failed" "journalctl --user -u bb-homelab-immich-pull.service"

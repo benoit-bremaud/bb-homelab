@@ -22,6 +22,9 @@ dans [docs/architecture/diagrams/backup/](../docs/architecture/diagrams/backup/0
 - Un échec de copie déclenche une notification sur le bureau du PC
   (`OnFailure`), pour ne pas retomber dans une panne silencieuse.
 
+Immich a sa propre copie, tirée par le portable de la maison et non par ce
+PC : voir [services/immich/BACKUP.md](../services/immich/BACKUP.md).
+
 Ce n'est pas une copie hors site : le PC est dans la même maison. La copie
 hors site chiffrée reste l'objet de l'issue #19.
 
