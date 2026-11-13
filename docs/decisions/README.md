@@ -19,3 +19,4 @@ decision is reversed, write a new ADR that supersedes the previous one.
 - [0007 — Docker-published ports bound to loopback and the tailnet](0007-docker-published-ports-binding.md)
 - [0008 — Docker storage on the appdata disk](0008-docker-storage-on-appdata-disk.md)
 - [0009 — One proxy network per backend](0009-per-backend-proxy-networks.md)
+- [0010 — Immich as the source of phone screenshots](0010-immich-screenshot-source.md)
