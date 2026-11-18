@@ -222,6 +222,14 @@ internal CA root can then be uninstalled from every client device.
   (ADR 0009, #217).
   When adding services with stronger auth needs (Vaultwarden, etc.),
   layer Caddy's `basicauth` or forward-auth directives per-route.
+- **Durcissement du conteneur (#131, étape 1).** Toutes les capacités
+  Linux sont retirées (`cap_drop: [ALL]`) et `no-new-privileges` est actif.
+  Les ports 80/443 restent accessibles : Docker fixe
+  `ip_unprivileged_port_start=0` dans le conteneur. Caddy tourne encore en
+  root avec un système de fichiers modifiable : `read_only` et un
+  utilisateur non-root viendront dans des PR suivantes. Retour arrière :
+  retirer `cap_drop` et `security_opt` de `docker-compose.yml`, puis
+  `docker compose up -d`.
 
 ## Sauvegarde
 

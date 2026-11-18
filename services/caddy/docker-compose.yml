@@ -6,6 +6,14 @@ services:
     image: caddy:${CADDY_IMAGE_TAG:-2.11.8}
     container_name: bb-homelab-caddy
     restart: unless-stopped
+    # Hardening, step 1 of #131: no Linux capabilities and no privilege gain
+    # through setuid or file capabilities. NET_BIND_SERVICE is not needed:
+    # Docker sets net.ipv4.ip_unprivileged_port_start=0 in the container's
+    # network namespace, so 80/443 bind without it, and the image's file
+    # capability on /usr/bin/caddy is permitted-only (=p), so exec still
+    # succeeds. read_only and a non-root user are later steps (see README).
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
     # Bound to loopback and the Pi's tailnet IP only (ADR 0007, #139):
     # Docker-published ports bypass UFW, so an unbound port is open to the
     # whole LAN. Loopback keeps the Pi's own Kuma pushes working
