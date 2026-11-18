@@ -2061,3 +2061,23 @@ was done and why, by date.
 - **Follow-ups**: #250 (mirror freshness alert), #251 (Postgres 14 EOL);
   #141 must keep LAN SSH for the laptop (AUDIT R13).
 - **Refs**: #224, #252, #250, #251
+
+## 2026-11-18
+
+### PR #253 — fix(caddy): drop capabilities and set no-new-privileges
+
+- **What**: Caddy runs with `cap_drop: [ALL]`, `cap_add: [NET_BIND_SERVICE]`
+  and `no-new-privileges`. First hardening step of #131.
+- **Decisions (owner MCDA)**: capabilities + `no-new-privileges` only, no
+  `read_only` or non-root yet (430); keep `NET_BIND_SERVICE` so a rollback
+  below 2.11.8 still starts (470).
+- **Constraint**: `/mnt/appdata/caddy` must stay owned by `0:0`, or Caddy
+  fails to start (README, APPDATA-BACKUP).
+- **Merge gate** on `d1bd07e`: no attestation in this repo; SonarQube
+  passed (two earlier runs failed on a 95 % full dev disk), gitleaks,
+  yamllint, markdownlint green; merged on the owner's explicit yes.
+- **Review**: local adversarial review in three rounds, 0 Must; automated
+  review: no findings.
+- **Pi deploy**: pending, run by the owner (SSH to the Pi is out of the
+  agent's scope).
+- **Refs**: #131, #253
