@@ -2073,11 +2073,11 @@ was done and why, by date.
   below 2.11.8 still starts (470).
 - **Constraint**: `/mnt/appdata/caddy` must stay owned by `0:0`, or Caddy
   fails to start (README, APPDATA-BACKUP).
-- **Merge gate** on `d1bd07e`: no attestation in this repo; SonarQube
-  passed (two earlier runs failed on a 95 % full dev disk), gitleaks,
-  yamllint, markdownlint green; merged on the owner's explicit yes.
-- **Review**: local adversarial review in three rounds, 0 Must; automated
-  review: no findings.
-- **Pi deploy**: pending, run by the owner (SSH to the Pi is out of the
-  agent's scope).
+- **Merge gate**: no attestation in this repo. Linters and gitleaks green
+  on `cbdc780`; SonarQube passed on `d1bd07e` (two earlier runs failed on
+  a 95 % full dev disk). Merged head `6443830` adds only the review
+  report. Merged on the owner's explicit yes.
+- **Review**: local adversarial review in three rounds (last on
+  `cbdc780`), 0 Must; automated review: no findings.
+- **Pi deploy**: pending, run by the owner on the Pi.
 - **Refs**: #131, #253
