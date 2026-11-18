@@ -6,8 +6,7 @@
   `services/caddy/README.md`, `storage/APPDATA-BACKUP.md`)
 - Checks run: adversarial (fresh reviewer, 3 rounds) · containers · docs ·
   security · correctness (design and tests: n/a, no application code)
-- Verdict: ship after the Should fixes; merge blocked on SonarQube ·
-  Must 1 (gate) · Should 4 (3 fixed) · Nice 5
+- Verdict: ship · Must 0 · Should 4 (3 fixed) · Nice 5
 
 ## Adversarial review (#236)
 
@@ -25,18 +24,15 @@
 | 0 CI mirror | ✅ yamllint (`.yamllint.yaml`) · ✅ markdownlint-cli2 0.13.0 (bundled by the v16 action) · ✅ gitleaks · hadolint, shellcheck: n/a (no Dockerfile or script) · CodeQL, Scorecard, dependency-review: CI-only |
 | 1 Tests | n/a (no application code; `docker compose config` OK; caddy 2.10.2 to 2.11.9 start with the new options; real Caddyfile on an existing PKI: running, 0 errors, CA unchanged) |
 | 2 Coverage | n/a (project deviation in `CLAUDE.md`: linters and config validation replace coverage) |
-| 3 SonarQube | ❌ not run: the CE task failed twice (`Unrecoverable indexing failures`); the dev machine's disk is 95 % full, so Elasticsearch set its indices read-only (`read_only_allow_delete=true`). Key `bb-homelab` exists |
+| 3 SonarQube | ✅ PASSED on `d1bd07e` (first two runs failed: disk 95 % full, Elasticsearch read-only; re-run at 87 %) |
 | 4 Secrets | ✅ gitleaks clean (`--log-opts=--all`) · no tracked `.env` · diff read: nothing sensitive |
 | 5 E2E/smoke | n/a locally; runtime check on the Pi after merge (health, `/proc/1/status`, HTTPS on each site) |
 
-- Gate: **RED — step 3 SonarQube** (needs free disk space on the dev machine,
-  then a re-scan)
+- Gate: **GREEN on `d1bd07e`** (no `scripts/attest.sh`: merge on the owner's explicit yes)
 
 ## 🔴 Must Have
 
-- `sonar-scanner` `[gate]` · SonarQube quality gate not obtained · free disk
-  space on the dev machine (under 90 %), clear the read-only index block,
-  re-run the scan
+_None._ (SonarQube gate fixed by the re-run)
 
 ## 🟡 Should Have
 
