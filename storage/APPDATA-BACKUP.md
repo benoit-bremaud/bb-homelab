@@ -121,8 +121,10 @@ qui se trouverait dans l'archive.
 
 Lancé sans root, `docker cp` écrit les fichiers au nom de `benoit`
 (`1000`) : le `chown` remet le propriétaire d'origine.
-Pour `caddy`, ce `0:0` est obligatoire : sans capacités (#131), root ne
-lit que ses propres fichiers, et Caddy refuse de démarrer sinon.
+Pour `caddy`, ce `0:0` est obligatoire : sans `CAP_DAC_OVERRIDE` (#131),
+root n'a que les droits d'un utilisateur ordinaire, et Caddy écrit ses
+fichiers en `0600`/`0700` ; avec un autre propriétaire, il refuse de
+démarrer.
 Pour une archive copiée sur le PC, la renvoyer d'abord sur
 le Pi avec `scp`.
 

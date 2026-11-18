@@ -228,7 +228,8 @@ internal CA root can then be uninstalled from every client device.
   conteneur, donc cette capacité n'ajoute rien en pratique ; elle reste
   pour qu'un retour à une image antérieure à 2.11.8 (binaire en
   `cap_net_bind_service=ep`) démarre encore. Sans
-  `CAP_DAC_OVERRIDE`, root ne lit que ses propres fichiers : tout
+  `CAP_DAC_OVERRIDE`, root n'a que les droits d'un utilisateur ordinaire
+  et Caddy écrit ses fichiers en `0600`/`0700` : tout
   `/mnt/appdata/caddy/{data,config}` doit rester `0:0`, sinon Caddy refuse
   de démarrer (voir la restauration dans
   [APPDATA-BACKUP.md](../../storage/APPDATA-BACKUP.md)). Caddy tourne
