@@ -223,6 +223,19 @@ internal CA root can then be uninstalled from every client device.
   When adding services with stronger auth needs (Vaultwarden, etc.),
   layer Caddy's `basicauth` or forward-auth directives per-route.
 
+### Durcissement du conteneur (#131)
+
+- **Appliqué :** toutes les capacités Linux retirées sauf
+  `NET_BIND_SERVICE`, et `no-new-privileges`.
+- **Pourquoi `NET_BIND_SERVICE` :** inutile sur 2.11.8, mais sans elle une
+  image plus ancienne ne démarre pas (retour arrière impossible).
+- **Contrainte :** `/mnt/appdata/caddy/{data,config}` doit appartenir à
+  `0:0`. Sans `CAP_DAC_OVERRIDE`, Caddy ne démarre pas sinon.
+- **Reste à faire :** `read_only` (avec l'option globale
+  `skip_install_trust`) et un utilisateur non-root, suivis dans #131.
+- **Retour arrière :** retirer `cap_drop`, `cap_add` et `security_opt` de
+  `docker-compose.yml`, puis `docker compose up -d`.
+
 ## Sauvegarde
 
 Sauvegarde nocturne et restauration : voir
