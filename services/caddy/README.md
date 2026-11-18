@@ -222,23 +222,19 @@ internal CA root can then be uninstalled from every client device.
   (ADR 0009, #217).
   When adding services with stronger auth needs (Vaultwarden, etc.),
   layer Caddy's `basicauth` or forward-auth directives per-route.
-- **Durcissement du conteneur (#131, étape 1).** Toutes les capacités
-  Linux sont retirées sauf `NET_BIND_SERVICE`, et `no-new-privileges` est
-  actif. Docker fixe déjà `ip_unprivileged_port_start=0` dans le
-  conteneur, donc cette capacité n'ajoute rien en pratique ; elle reste
-  pour qu'un retour à une image antérieure à 2.11.8 (binaire en
-  `cap_net_bind_service=ep`) démarre encore. Sans
-  `CAP_DAC_OVERRIDE`, root n'a que les droits d'un utilisateur ordinaire
-  et Caddy écrit ses fichiers en `0600`/`0700` : tout
-  `/mnt/appdata/caddy/{data,config}` doit rester `0:0`, sinon Caddy refuse
-  de démarrer (voir la restauration dans
-  [APPDATA-BACKUP.md](../../storage/APPDATA-BACKUP.md)). Caddy tourne
-  encore en root avec un système de fichiers modifiable : `read_only`
-  (prérequis : option globale `skip_install_trust`, car Caddy installe sa
-  CA dans le magasin de l'image à chaque démarrage) et un utilisateur
-  non-root viendront dans des PR suivantes. Retour arrière :
-  retirer `cap_drop`, `cap_add` et `security_opt` de `docker-compose.yml`, puis
-  `docker compose up -d`.
+
+### Durcissement du conteneur (#131)
+
+- **Appliqué :** toutes les capacités Linux retirées sauf
+  `NET_BIND_SERVICE`, et `no-new-privileges`.
+- **Pourquoi `NET_BIND_SERVICE` :** inutile sur 2.11.8, mais sans elle une
+  image plus ancienne ne démarre pas (retour arrière impossible).
+- **Contrainte :** `/mnt/appdata/caddy/{data,config}` doit appartenir à
+  `0:0`. Sans `CAP_DAC_OVERRIDE`, Caddy ne démarre pas sinon.
+- **Reste à faire :** `read_only` (avec l'option globale
+  `skip_install_trust`) et un utilisateur non-root, suivis dans #131.
+- **Retour arrière :** retirer `cap_drop`, `cap_add` et `security_opt` de
+  `docker-compose.yml`, puis `docker compose up -d`.
 
 ## Sauvegarde
 

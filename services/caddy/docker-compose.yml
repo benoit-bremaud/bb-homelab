@@ -6,14 +6,9 @@ services:
     image: caddy:${CADDY_IMAGE_TAG:-2.11.8}
     container_name: bb-homelab-caddy
     restart: unless-stopped
-    # Hardening, step 1 of #131: no Linux capabilities except
-    # NET_BIND_SERVICE, and no privilege gain through setuid or file
-    # capabilities. NET_BIND_SERVICE grants nothing in practice (Docker sets
-    # net.ipv4.ip_unprivileged_port_start=0 in the container), but images
-    # before 2.11.8 ship /usr/bin/caddy with cap_net_bind_service=ep, and
-    # without it their exec fails with EPERM: keeping it lets a rollback to
-    # an older CADDY_IMAGE_TAG still start. read_only and a non-root user
-    # are later steps (see README).
+    # Hardening (#131, see README). NET_BIND_SERVICE is kept only so a
+    # rollback to an image before 2.11.8 still starts.
+    # /mnt/appdata/caddy must stay owned by 0:0, or Caddy fails to start.
     cap_drop: [ALL]
     cap_add: [NET_BIND_SERVICE]
     security_opt: [no-new-privileges:true]
