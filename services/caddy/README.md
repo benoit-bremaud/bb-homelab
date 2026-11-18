@@ -223,12 +223,20 @@ internal CA root can then be uninstalled from every client device.
   When adding services with stronger auth needs (Vaultwarden, etc.),
   layer Caddy's `basicauth` or forward-auth directives per-route.
 - **Durcissement du conteneur (#131, étape 1).** Toutes les capacités
-  Linux sont retirées (`cap_drop: [ALL]`) et `no-new-privileges` est actif.
-  Les ports 80/443 restent accessibles : Docker fixe
-  `ip_unprivileged_port_start=0` dans le conteneur. Caddy tourne encore en
-  root avec un système de fichiers modifiable : `read_only` et un
-  utilisateur non-root viendront dans des PR suivantes. Retour arrière :
-  retirer `cap_drop` et `security_opt` de `docker-compose.yml`, puis
+  Linux sont retirées sauf `NET_BIND_SERVICE`, et `no-new-privileges` est
+  actif. Docker fixe déjà `ip_unprivileged_port_start=0` dans le
+  conteneur, donc cette capacité n'ajoute rien en pratique ; elle reste
+  pour qu'un retour à une image antérieure à 2.11.8 (binaire en
+  `cap_net_bind_service=ep`) démarre encore. Sans
+  `CAP_DAC_OVERRIDE`, root ne lit que ses propres fichiers : tout
+  `/mnt/appdata/caddy/{data,config}` doit rester `0:0`, sinon Caddy refuse
+  de démarrer (voir la restauration dans
+  [APPDATA-BACKUP.md](../../storage/APPDATA-BACKUP.md)). Caddy tourne
+  encore en root avec un système de fichiers modifiable : `read_only`
+  (prérequis : option globale `skip_install_trust`, car Caddy installe sa
+  CA dans le magasin de l'image à chaque démarrage) et un utilisateur
+  non-root viendront dans des PR suivantes. Retour arrière :
+  retirer `cap_drop`, `cap_add` et `security_opt` de `docker-compose.yml`, puis
   `docker compose up -d`.
 
 ## Sauvegarde
