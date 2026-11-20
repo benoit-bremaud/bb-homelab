@@ -2061,3 +2061,43 @@ was done and why, by date.
 - **Follow-ups**: #250 (mirror freshness alert), #251 (Postgres 14 EOL);
   #141 must keep LAN SSH for the laptop (AUDIT R13).
 - **Refs**: #224, #252, #250, #251
+
+## 2026-11-18
+
+### PR #253 — fix(caddy): drop capabilities and set no-new-privileges
+
+- **What**: Caddy runs with `cap_drop: [ALL]`, `cap_add: [NET_BIND_SERVICE]`
+  and `no-new-privileges`. First hardening step of #131.
+- **Decisions (owner MCDA)**: capabilities + `no-new-privileges` only, no
+  `read_only` or non-root yet (430); keep `NET_BIND_SERVICE` so a rollback
+  below 2.11.8 still starts (470).
+- **Constraint**: `/mnt/appdata/caddy` must stay owned by `0:0`, or Caddy
+  fails to start (README, APPDATA-BACKUP).
+- **Merge gate**: no attestation in this repo. Linters and gitleaks green
+  on `cbdc780`; SonarQube passed on `d1bd07e` (two earlier runs failed on
+  a 95 % full dev disk). Merged head `6443830` adds only the review
+  report. Merged on the owner's explicit yes.
+- **Review**: local adversarial review in three rounds (last on
+  `cbdc780`), 0 Must; automated review: no findings.
+- **Pi deploy**: done, see 2026-11-19.
+- **Refs**: #131, #253
+
+## 2026-11-19
+
+### Deployment: PR #253 on the Pi (#131)
+
+- **Deployed**: Pi checkout on `818ba12`; Caddy recreated
+  2026-11-19T08:31Z.
+- **Hardening**: `healthy`, `CapEff 0x400` (NET_BIND_SERVICE only),
+  `NoNewPrivs 1`.
+- **Data**: `/data` and `/config` all `0:0`; no permission error in the
+  logs since start.
+- **Renewal**: leaf `notBefore` 2026-11-19T15:21Z, after the 08:31Z
+  start: renewed under the hardening.
+- **HTTPS**: 200 in Chrome on status, vaultwarden, n8n, popcorntv; home
+  loaded (status not captured).
+- **Down backends**: 502 on the health paths of jellyfin (stopped) and
+  immich (not deployed); `/` answers 403 from loopback (tailnet_only);
+  both with `curl -k`.
+- **Not checked**: Kuma monitors, HTTP/3, port 80 from the tailnet.
+- **Refs**: #131, #253
