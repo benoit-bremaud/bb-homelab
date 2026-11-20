@@ -2092,11 +2092,12 @@ was done and why, by date.
   `NoNewPrivs 1`.
 - **Data**: `/data` and `/config` all `0:0`; no permission error in the
   logs since start.
-- **Renewal**: internal leaf certificate renewed at 15:21Z under the
-  hardening.
+- **Renewal**: leaf `notBefore` 2026-11-19T15:21Z, after the 08:31Z
+  start: renewed under the hardening.
 - **HTTPS**: 200 in Chrome on status, vaultwarden, n8n, popcorntv; home
   loaded (status not captured).
 - **Down backends**: 502 on the health paths of jellyfin (stopped) and
-  immich (not deployed); `/` answers 403 from loopback (tailnet_only).
+  immich (not deployed); `/` answers 403 from loopback (tailnet_only);
+  both with `curl -k`.
 - **Not checked**: Kuma monitors, HTTP/3, port 80 from the tailnet.
 - **Refs**: #131, #253
