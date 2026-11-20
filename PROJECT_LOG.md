@@ -2079,5 +2079,24 @@ was done and why, by date.
   report. Merged on the owner's explicit yes.
 - **Review**: local adversarial review in three rounds (last on
   `cbdc780`), 0 Must; automated review: no findings.
-- **Pi deploy**: pending, run by the owner on the Pi.
+- **Pi deploy**: done, see 2026-11-19.
+- **Refs**: #131, #253
+
+## 2026-11-19
+
+### Deployment: PR #253 on the Pi (#131)
+
+- **Deployed**: Pi checkout on `818ba12`; Caddy recreated
+  2026-11-19T08:31Z.
+- **Hardening**: `healthy`, `CapEff 0x400` (NET_BIND_SERVICE only),
+  `NoNewPrivs 1`.
+- **Data**: `/data` and `/config` all `0:0`; no permission error in the
+  logs since start.
+- **Renewal**: internal leaf certificate renewed at 15:21Z under the
+  hardening.
+- **HTTPS**: 200 in Chrome on status, vaultwarden, n8n, popcorntv; home
+  loaded (status not captured).
+- **Down backends**: 502 on the health paths of jellyfin (stopped) and
+  immich (not deployed); `/` answers 403 from loopback (tailnet_only).
+- **Not checked**: Kuma monitors, HTTP/3, port 80 from the tailnet.
 - **Refs**: #131, #253
