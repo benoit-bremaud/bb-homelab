@@ -6,6 +6,11 @@ services:
     image: ghcr.io/gethomepage/homepage:${HOMEPAGE_IMAGE_TAG:-v2.7.0}
     container_name: bb-homelab-homepage
     restart: unless-stopped
+    # Resource caps (#256): about 2.5x the observed use (~155 MiB).
+    # memswap_limit = mem_limit: no swap, the cap is hard.
+    pids_limit: 256
+    mem_limit: 384m
+    memswap_limit: 384m
     environment:
       - TZ=${TZ:-Europe/Paris}
       # Required since v1.0 to serve the dashboard via a non-localhost

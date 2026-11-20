@@ -9,6 +9,12 @@ services:
     image: docker.n8n.io/n8nio/n8n:${N8N_IMAGE_TAG:-2.47.2}
     container_name: bb-homelab-n8n
     restart: unless-stopped
+    # Resource caps (#256): about 3x the observed use (~460 MiB, task
+    # runner included) for workflow spikes; the runner's processes count
+    # against pids_limit. memswap_limit = mem_limit: no swap, hard cap.
+    pids_limit: 512
+    mem_limit: 1536m
+    memswap_limit: 1536m
     ports:
       - "127.0.0.1:5678:5678"
     environment:

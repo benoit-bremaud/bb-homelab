@@ -2101,3 +2101,35 @@ was done and why, by date.
   both with `curl -k`.
 - **Not checked**: Kuma monitors, HTTP/3, port 80 from the tailnet.
 - **Refs**: #131, #253
+
+## 2026-11-20
+
+### Maintenance: Pi disk cleanup and container resource limits (#256)
+
+- **Audit**: `/` (SD) 86 %, `/mnt/appdata` 10 %; RAM 7.9 GiB, 5.5 GiB
+  available; swap = zram 2 GiB (priority 100, 52 MiB used) + `/swapfile`
+  2 GiB on the SD (priority -2, unused); journald already capped at 100 MB.
+- **Cleanup on the Pi (owner)**:
+  - `/var/lib/{docker,containerd}.old` deleted (#202, 12 GB): `/` 86 % → 44 %.
+  - `apt-get clean`, pip and uv caches, ESPHome build cache: about 0.6 GB.
+  - `docker builder prune --filter until=168h`: 0 B, the whole cache was
+    newer than 7 days (PopCornTV builds); kept.
+  - 4 stale local branches and `Caddyfile.bak-2026-11-10` removed from
+    the Pi checkout.
+- **Repo change**: `mem_limit` + `pids_limit` on caddy (256m/256),
+  homepage (384m/256), n8n (1536m/512), uptime-kuma (512m/256) and
+  popcorntv (2g/192, the memory and pids caps of its pi-staging compose,
+  without its `cpus: 2`); `memswap_limit` = `mem_limit` on these five and
+  on vaultwarden, so no container swaps.
+- **Decisions (owner MCDA)**: regenerable caches only (405); build cache
+  older than 7 days only (420); memory + pids limits (430); keep the SD
+  swapfile as an unused fallback behind zram (460); no swap per container
+  (420).
+- **Deploy**: recreate one service at a time, naming it
+  (`docker compose up -d n8n`): a bare `up -d` in `services/n8n` would
+  start cloudflared, kept stopped for #196.
+- **Follow-up**: popcorntv#405 aligns the reference
+  `deploy/homelab/compose.yml`.
+- **Not touched**: Trivy cache (1.7 GB), `~/stt-bench` and `~/confiture-pi5`
+  (confiture project), stopped containers, PopCornTV rollback images.
+- **Refs**: #256, #202
