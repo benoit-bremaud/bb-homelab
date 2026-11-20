@@ -25,6 +25,8 @@ services:
       - /tmp:size=64m,mode=1777
     pids_limit: 256
     mem_limit: 512m
+    # No swap, the cap is hard (#256).
+    memswap_limit: 512m
     # No host port published. Unlike n8n (which binds 127.0.0.1 for
     # cloudflared), Vaultwarden is reached ONLY by Caddy over its own
     # bb-homelab-proxy-vaultwarden network as `vaultwarden:8080`

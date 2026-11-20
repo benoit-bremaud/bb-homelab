@@ -2119,8 +2119,8 @@ was done and why, by date.
 - **Repo change**: `mem_limit` + `pids_limit` on caddy (256m/256),
   homepage (384m/256), n8n (1536m/512), uptime-kuma (512m/256) and
   popcorntv (2g/192, the memory and pids caps of its pi-staging compose,
-  without its `cpus: 2`); `memswap_limit` = `mem_limit` so no container
-  swaps.
+  without its `cpus: 2`); `memswap_limit` = `mem_limit` on these five and
+  on vaultwarden, so no container swaps.
 - **Decisions (owner MCDA)**: regenerable caches only (405); build cache
   older than 7 days only (420); memory + pids limits (430); keep the SD
   swapfile as an unused fallback behind zram (460); no swap per container
