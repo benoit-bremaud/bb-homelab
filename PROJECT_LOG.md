@@ -2144,8 +2144,8 @@ was done and why, by date.
 ### Deployment: PR #257 on the Pi (#256)
 
 - **Deployed**: Pi checkout on `1c77c31`; homepage, uptime-kuma,
-  vaultwarden, popcorntv, n8n then caddy recreated one at a time from
-  2026-11-20T21:15Z, each `healthy` before the next.
+  vaultwarden, popcorntv, n8n then caddy recreated one at a time after
+  the 2026-11-20T21:11Z merge, each `healthy` before the next.
 - **Caps applied**: `docker inspect`: `MemorySwap` = `Memory` (no swap)
   and `PidsLimit` set on all six; `docker info` prints no swap-limit
   warning.
