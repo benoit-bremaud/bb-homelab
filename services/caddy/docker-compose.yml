@@ -12,6 +12,9 @@ services:
     cap_drop: [ALL]
     cap_add: [NET_BIND_SERVICE]
     security_opt: [no-new-privileges:true]
+    # Resource caps (#256): about 9x the observed use, like vaultwarden.
+    pids_limit: 256
+    mem_limit: 256m
     # Bound to loopback and the Pi's tailnet IP only (ADR 0007, #139):
     # Docker-published ports bypass UFW, so an unbound port is open to the
     # whole LAN. Loopback keeps the Pi's own Kuma pushes working

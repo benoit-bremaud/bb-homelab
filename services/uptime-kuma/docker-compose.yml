@@ -6,6 +6,9 @@ services:
     image: louislam/uptime-kuma:${UPTIME_KUMA_IMAGE_TAG:-2.5.9-slim}
     container_name: bb-homelab-uptime-kuma
     restart: unless-stopped
+    # Resource caps (#256): about 2.5x the observed use (~190 MiB).
+    pids_limit: 256
+    mem_limit: 512m
     environment:
       - TZ=${TZ:-Europe/Paris}
       # Probes reach the other backends through Caddy over HTTPS (ADR 0009),
