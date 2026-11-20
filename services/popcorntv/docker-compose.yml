@@ -41,10 +41,12 @@ services:
       - /tmp
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
-    # Resource caps (#256), same as the popcorntv pi-staging compose
-    # (transcoding needs the headroom).
+    # Resource caps (#256): same memory and pids caps as the popcorntv
+    # pi-staging compose (its cpus: 2 is not applied here); transcoding
+    # needs the headroom. memswap_limit = mem_limit: no swap, hard cap.
     pids_limit: 192
     mem_limit: 2g
+    memswap_limit: 2g
     networks:
       proxy:
         ipv4_address: 10.203.60.3
