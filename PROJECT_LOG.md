@@ -2133,3 +2133,18 @@ was done and why, by date.
 - **Not touched**: Trivy cache (1.7 GB), `~/stt-bench` and `~/confiture-pi5`
   (confiture project), stopped containers, PopCornTV rollback images.
 - **Refs**: #256, #202
+
+### Deployment: PR #257 on the Pi (#256)
+
+- **Deployed**: Pi checkout on `1c77c31`; homepage, uptime-kuma,
+  vaultwarden, popcorntv, n8n then caddy recreated one at a time, each
+  `healthy` before the next.
+- **Caps applied**: `docker inspect` shows memory = memory+swap and the
+  pids limit on all six; `docker info` prints no swap-limit warning.
+- **Use after restart**: caddy 19 MiB / 256 MiB, homepage 107 / 384,
+  n8n 411 / 1536, uptime-kuma 148 / 512, popcorntv 43 / 2048,
+  vaultwarden 19 / 512.
+- **cloudflared**: still stopped (#196), `up -d n8n` named the service.
+- **Next check**: `OOMKilled` and `RestartCount` on the six containers on
+  or after 2026-11-27.
+- **Refs**: #256, #257
