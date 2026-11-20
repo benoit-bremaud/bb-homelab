@@ -2154,4 +2154,4 @@ was done and why, by date.
   vaultwarden 19 / 512.
 - **cloudflared**: not started (#196): `up -d n8n` names the service.
 - **Next check**: OOM kills and restarts on or after 2026-11-27 (#258).
-- **Refs**: #256, #257
+- **Refs**: #256, #257, #258
