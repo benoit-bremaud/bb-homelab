@@ -2130,6 +2130,13 @@ was done and why, by date.
   start cloudflared, kept stopped for #196.
 - **Follow-up**: popcorntv#405 aligns the reference
   `deploy/homelab/compose.yml`.
+- **Merge gate**: no attestation in this repo. yamllint (known
+  line-length warnings only), markdownlint, `docker compose config`,
+  gitleaks and SonarQube green on `20e4be1`; squash-merged as `1c77c31`
+  (PR #257) on the owner's explicit yes.
+- **Review**: local adversarial review in two rounds, 0 Must; the
+  automated review did not run (usage limit).
+- **Pi deploy**: done, see below.
 - **Not touched**: Trivy cache (1.7 GB), `~/stt-bench` and `~/confiture-pi5`
   (confiture project), stopped containers, PopCornTV rollback images.
 - **Refs**: #256, #202
@@ -2137,14 +2144,14 @@ was done and why, by date.
 ### Deployment: PR #257 on the Pi (#256)
 
 - **Deployed**: Pi checkout on `1c77c31`; homepage, uptime-kuma,
-  vaultwarden, popcorntv, n8n then caddy recreated one at a time, each
-  `healthy` before the next.
-- **Caps applied**: `docker inspect` shows memory = memory+swap and the
-  pids limit on all six; `docker info` prints no swap-limit warning.
+  vaultwarden, popcorntv, n8n then caddy recreated one at a time from
+  2026-11-20T21:15Z, each `healthy` before the next.
+- **Caps applied**: `docker inspect`: `MemorySwap` = `Memory` (no swap)
+  and `PidsLimit` set on all six; `docker info` prints no swap-limit
+  warning.
 - **Use after restart**: caddy 19 MiB / 256 MiB, homepage 107 / 384,
   n8n 411 / 1536, uptime-kuma 148 / 512, popcorntv 43 / 2048,
   vaultwarden 19 / 512.
-- **cloudflared**: still stopped (#196), `up -d n8n` named the service.
-- **Next check**: `OOMKilled` and `RestartCount` on the six containers on
-  or after 2026-11-27.
+- **cloudflared**: not started (#196): `up -d n8n` names the service.
+- **Next check**: OOM kills and restarts on or after 2026-11-27 (#258).
 - **Refs**: #256, #257
