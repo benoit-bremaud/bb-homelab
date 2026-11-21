@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Off-site copy of the local Vaultwarden archives (bb-vault#19).
 #
-# Pushes BACKUP_DIR to an encrypted restic repository on Cloudflare R2,
-# keeps 30 daily + 12 monthly snapshots, checks a sample of the data, then
+# Clears stale restic locks, pushes BACKUP_DIR to an encrypted restic
+# repository on Cloudflare R2, keeps 30 daily + 12 monthly snapshots, checks a sample of the data, then
 # sends a success-only heartbeat to an Uptime Kuma Push monitor. Restic
 # encrypts client-side: R2 only ever stores ciphertext.
 #
@@ -42,6 +42,12 @@ set +a
 # One sub-path per service inside the shared bucket.
 RESTIC_REPOSITORY="${RESTIC_REPOSITORY%/}"
 export RESTIC_REPOSITORY="${RESTIC_REPOSITORY%/vaultwarden}/vaultwarden"
+
+# A run killed mid-way leaves its lock in the repository and every later run
+# fails on it (#263). Plain `unlock` removes stale locks only: a live run
+# refreshes its lock every 5 minutes, so it is never touched.
+log "clear stale locks"
+restic unlock --quiet
 
 log "backup ${BACKUP_DIR}"
 # *.part: archive still being written by backup.sh.
