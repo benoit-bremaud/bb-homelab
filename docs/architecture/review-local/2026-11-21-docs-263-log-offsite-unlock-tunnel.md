@@ -13,6 +13,7 @@ Pre-push review of the log entries for the Home Assistant off-site unlock and th
 - Round 1 on `7bc19ee`: Must 1 · Should 3 · Nice 1 · unverified 2 · Push gate: closed
 - Round 2 on `ffffb99`: 6 fixed · 0 not fixed · 0 regressed · new Must 0 · **Push gate: open**
 - Round 2 Should (pentest-plan E2 wording) and Nice (`DOCKER-STORAGE-MOVE.md`, `.gitignore` `.env.bak*`) applied in the following commit
+- Round 3 on `a42f918`: 3 fixed · 0 not fixed · 0 regressed · new Must 0 · **Push gate: open**
 - Optional second review (owner's own account): not run
 
 ## Pre-merge gate (pre-push run)
