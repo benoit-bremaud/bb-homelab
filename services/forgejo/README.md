@@ -9,9 +9,10 @@ Schéma de déploiement :
 
 ## Stack
 
-- Image : `codeberg.org/forgejo/forgejo:15.0.12-rootless` (ligne LTS, fin
-  de support 2027-07-15), épinglée par `FORGEJO_IMAGE_TAG`.
-- Un seul conteneur, `bb-homelab-forgejo` : utilisateur `1000:1000`,
+- Image : `codeberg.org/forgejo/forgejo`, variante rootless de la ligne
+  LTS 15, épinglée par `FORGEJO_IMAGE_TAG` (défaut dans le compose).
+- Un seul conteneur, `bb-homelab-forgejo` : utilisateur `1000:1000`
+  (`FORGEJO_UID` / `FORGEJO_GID`, le `benoit` du Pi),
   `cap_drop: [ALL]`, `no-new-privileges`, racine en lecture seule, `/tmp`
   en tmpfs, 512 Mo sans swap, 256 pids.
 - Base SQLite, dans le dossier de données.
@@ -29,6 +30,7 @@ Schéma de déploiement :
     contourne UFW.
 - Instance fermée : inscription désactivée, connexion obligatoire pour
   tout lire, assistant d'installation verrouillé, pas de runner Actions.
+  Git LFS n'est pas activé.
 
 ## Bootstrap
 
@@ -37,21 +39,26 @@ Sur le Pi (`ssh benoit@bb-homelab`), le disque appdata monté :
 ```bash
 mountpoint -q /mnt/appdata || { echo "ERREUR : /mnt/appdata non monté"; exit 1; }
 
-# 1. Dossier de données et dossier de sauvegarde (attendu dès maintenant
-#    par la copie nocturne vers le PC)
+# 1. Dossier de données, au propriétaire du conteneur (FORGEJO_UID:GID).
+#    Le dossier ~/backups/forgejo existe déjà (créé le 2026-11-21 pour
+#    la copie nocturne vers le PC).
 sudo install -d -o 1000 -g 1000 -m 700 /mnt/appdata/forgejo
-install -d -m 700 ~/backups/forgejo
 
 # 2. Réseau partagé avec Caddy (une fois)
-docker network create bb-homelab-proxy-forgejo
+docker network inspect bb-homelab-proxy-forgejo >/dev/null 2>&1 \
+  || docker network create bb-homelab-proxy-forgejo
 
 # 3. Configuration. La clé secrète est écrite dans .env sans jamais
-#    s'afficher ; la dernière ligne doit répondre 1.
+#    s'afficher. Un .env existant n'est pas touché : le réécrire
+#    changerait la clé. La dernière ligne doit répondre 1.
 cd ~/bb-homelab/services/forgejo
-cp .env.example .env && chmod 600 .env
-sed -i '/^FORGEJO_SECRET_KEY=/d' .env
-printf 'FORGEJO_SECRET_KEY=%s\n' "$(docker run --rm --entrypoint /usr/local/bin/forgejo \
-  codeberg.org/forgejo/forgejo:15.0.12-rootless generate secret SECRET_KEY)" >> .env
+if [ -e .env ]; then
+  echo ".env existe déjà : étape 3 ignorée"
+else
+  (umask 077; cp .env.example .env)
+  sed -i '/^FORGEJO_SECRET_KEY=/d' .env
+  printf 'FORGEJO_SECRET_KEY=%s\n' "$(openssl rand -hex 32)" >> .env
+fi
 grep -c '^FORGEJO_SECRET_KEY=[A-Za-z0-9_-]\{32,\}$' .env
 
 # 4. Démarrage
@@ -60,7 +67,10 @@ docker compose ps        # attendu : healthy
 ```
 
 Copier la valeur de `FORGEJO_SECRET_KEY` dans le gestionnaire de mots de
-passe : sans elle, une restauration ne peut plus lire les secrets 2FA.
+passe. Le compose l'impose depuis `.env` à chaque démarrage : avec une
+autre clé, Forgejo ne peut plus lire les secrets 2FA ni les jetons
+enregistrés, même si l'archive de sauvegarde contient l'ancienne dans
+`app.ini`.
 
 Puis recréer Caddy (`services/caddy`, `docker compose up -d`) : il rejoint
 le réseau et sert le site. Toutes les sondes Kuma tombent le temps du
@@ -72,12 +82,14 @@ Le propriétaire le crée lui-même, dans son terminal :
 
 ```bash
 docker exec -it bb-homelab-forgejo forgejo admin user create \
-  --admin --username <nom> --email <adresse> --random-password
+  --admin --username <nom> --email <adresse> --random-password \
+  --must-change-password=true
 ```
 
-Le mot de passe s'affiche une seule fois : l'enregistrer dans le
-gestionnaire de mots de passe. Forgejo demande de le changer à la première
-connexion. Activer ensuite la double authentification (Paramètres →
+Le mot de passe s'affiche une seule fois. Forgejo demande de le changer à
+la première connexion (option explicite : le premier compte en est
+dispensé par défaut) : enregistrer le nouveau dans le gestionnaire de mots
+de passe. Activer ensuite la double authentification (Paramètres →
 Sécurité).
 
 ### Clients
@@ -95,8 +107,19 @@ La CA interne de Caddy doit être de confiance, comme pour les autres sites
 
 - Uptime Kuma : moniteur HTTP sur
   `https://git.bb-homelab.local/api/healthz`, au moins deux essais.
-- Sauvegarde : moniteur Push `backup-forgejo`, voir
-  [BACKUP.md](BACKUP.md).
+- Sauvegarde : moniteur Push `backup-forgejo`, voir [Sauvegarde](#sauvegarde).
+
+### Essais du premier déploiement
+
+À noter dans `PROJECT_LOG.md` :
+
+- restauration d'une archive avec un dépôt d'essai
+  ([APPDATA-BACKUP.md](../../storage/APPDATA-BACKUP.md#restauration)) ;
+- envoi par le web d'un fichier de plus de 64 Mo et fusion d'une PR : le
+  `/tmp` du conteneur est un tmpfs de 64 Mo (`GITEA_TEMP`). En cas
+  d'échec, agrandir le tmpfs ou déplacer le dossier temporaire sous
+  `/var/lib/gitea` ;
+- empreinte de la clé d'hôte SSH relevée (ci-dessous).
 
 ## Utiliser git
 
@@ -117,7 +140,8 @@ Sans cette entrée, l'URL complète est
 `ssh://git@git.bb-homelab.local:2222/<utilisateur>/<dépôt>.git`.
 
 À la première connexion, comparer l'empreinte proposée par `ssh` avec
-celle relevée sur le Pi :
+celle relevée **depuis le Pi lui-même** (session SSH d'administration) :
+lancée depuis le client, la commande ne prouverait rien.
 
 ```bash
 ssh-keyscan -p 2222 100.121.134.61 2>/dev/null | ssh-keygen -lf -
@@ -133,7 +157,7 @@ demande un jeton d'accès Forgejo et que git fasse confiance à la CA interne.
 | Variable | Défaut | Rôle |
 | --- | --- | --- |
 | `FORGEJO_SECRET_KEY` | aucun, **obligatoire** | clé secrète globale ; le compose refuse de démarrer sans elle |
-| `FORGEJO_IMAGE_TAG` | `15.0.12-rootless` | version de l'image |
+| `FORGEJO_IMAGE_TAG` | celui du compose | version de l'image |
 | `FORGEJO_UID` / `FORGEJO_GID` | `1000` | utilisateur du conteneur et propriétaire des données |
 | `FORGEJO_LOG_LEVEL` | `Info` | niveau de journalisation |
 | `TZ` | `Europe/Paris` | fuseau horaire |
@@ -142,16 +166,25 @@ Les autres réglages sont dans le compose (`FORGEJO__<section>__<CLÉ>`) :
 Forgejo les réécrit dans `app.ini` à chaque démarrage. Un réglage modifié
 à la main dans `app.ini` et présent dans le compose est donc écrasé.
 
+## Sauvegarde
+
+Tout `/var/lib/gitea` est archivé chaque nuit à 03:35 par le script
+commun, puis copié sur le PC. Installation, vérification d'une archive et
+restauration : [storage/APPDATA-BACKUP.md](../../storage/APPDATA-BACKUP.md).
+
 ## Mise à jour
 
 1. Lire les notes de version (changements cassants).
-2. Lancer la sauvegarde à la main (ligne cron de [BACKUP.md](BACKUP.md))
-   et vérifier l'archive.
+2. Lancer la sauvegarde à la main (ligne cron de
+   [APPDATA-BACKUP.md](../../storage/APPDATA-BACKUP.md)) et vérifier
+   l'archive.
 3. Changer `FORGEJO_IMAGE_TAG` dans `.env`, puis `docker compose up -d` :
    les migrations de base tournent au démarrage.
 
 Retour arrière : une base migrée ne redescend pas. Arrêter Forgejo,
-restaurer l'archive de l'étape 2, remettre l'ancien tag.
+restaurer l'archive de l'étape 2
+([procédure](../../storage/APPDATA-BACKUP.md#restauration)), remettre
+l'ancien tag.
 
 La ligne LTS 15 s'arrête le 2027-07-15 : passer à la LTS suivante (19.0,
 annoncée pour le 2027-04-15) avant cette date.

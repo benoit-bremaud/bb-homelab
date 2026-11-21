@@ -40,16 +40,16 @@ flowchart TB
     subgraph hdd ["«device» HDD /mnt/appdata"]
       data["«artifact» forgejo/ (dépôts, SQLite, configuration)"]
     end
-    backup["«artifact» sauvegarde nocturne de /mnt/appdata"]
+    backup["«artifact» ~/backups/forgejo/*.tar.gz (7 archives)"]
   end
 
   client -->|"HTTPS :443 git.bb-homelab.local (IP tailnet)"| caddy
   caddy -->|"HTTP :3000 via proxy-forgejo"| fj
   client -->|"SSH :2222 (IP tailnet seule, clé publique)"| fj
-  lan -.->|"refusé : aucun port publié hors loopback et tailnet"| pi5
+  lan -.->|"refusé : 443 et 2222 ne sont pas liés à l'IP du LAN"| pi5
   kuma -.->|"HTTPS :443 /api/healthz (alias explicite)"| caddy
   fj -->|"montage bind, create_host_path: false"| data
-  data -->|"copie nocturne"| backup
+  fj -.->|"03:35 appdata-backup.sh (pause, docker cp)"| backup
 ```
 
 Légende : Caddy est rattaché à `edge`, à `bb-homelab-proxy-forgejo` et

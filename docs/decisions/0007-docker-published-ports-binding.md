@@ -51,7 +51,8 @@ des journaux montre qu'aucun usage LAN n'existe, donc A tient.
   l'option B. Si l'IP tailnet du Pi change (nœud recréé), les deux
   compose sont à mettre à jour : Docker écoute alors sur une adresse
   morte sans erreur, et les sondes Kuma, qui passent par `127.0.0.1`,
-  ne le voient pas. Reprise : nouvelle IP dans les deux compose, puis
+  ne le voient pas. Reprise : nouvelle IP dans chaque compose qui la porte (Forgejo
+  aussi depuis l'ADR 0011), puis
   `docker compose up -d`.
 - `ip_nonlocal_bind` vaut pour tout l'hôte (IPv4 seulement) : tout
   processus local peut se lier à une adresse que le Pi ne porte pas ;

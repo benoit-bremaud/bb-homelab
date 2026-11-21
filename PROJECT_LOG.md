@@ -2160,8 +2160,8 @@ was done and why, by date.
 
 ### Forgejo git forge: conception and compose (#260)
 
-- **What**: `services/forgejo/` (compose, `.env.example`, README,
-  BACKUP), Caddy site `git.bb-homelab.local` with its own proxy network
+- **What**: `services/forgejo/` (compose, `.env.example`, README),
+  Caddy site `git.bb-homelab.local` with its own proxy network
   `bb-homelab-proxy-forgejo`, deployment diagram and ADR 0011.
 - **Why**: a git forge under the owner's control, as an alternative to
   GitHub for personal projects.
@@ -2175,7 +2175,15 @@ was done and why, by date.
   requires `FORGEJO_SECRET_KEY`.
 - **Backup**: `appdata-backup.sh forgejo bb-homelab-forgejo
   /var/lib/gitea` at 03:35, Push monitor `backup-forgejo`, pulled to the
-  PC by `pull-backups.sh`.
+  PC by `pull-backups.sh`; procedure in `storage/APPDATA-BACKUP.md`.
+- **Pi, 2026-11-21**: empty `~/backups/forgejo` (mode 700) created
+  before the deploy, so the PC's nightly `rsync` of the new source does
+  not fail (exit 23) while Forgejo is not deployed yet.
+- **Checks**: local container run with the compose hardening (healthy,
+  read-only rootfs, admin CLI, paused `docker cp` copy passes
+  `PRAGMA integrity_check`); Trivy image scan, CRITICAL with a fix: 0.
+- **To test at the first deploy**: restore from an archive; a web upload
+  above 64 MB and a PR merge (the container `/tmp` is a 64 MB tmpfs).
 - **Not done yet**: Pi deployment, admin account (created by the owner),
   restore test, the ADR on Forgejo's role next to GitHub.
 - **Refs**: #260

@@ -26,13 +26,17 @@ ces sous-décisions (matrices MCDA validées par le propriétaire le
 
 1. **Base SQLite**, dans le dossier de données de Forgejo.
 
-   | Base | Total /500 |
-   | --- | --- |
-   | A. SQLite | **450** |
-   | B. PostgreSQL (conteneur dédié) | 350 |
+   | Critère (poids) | A. SQLite | B. PostgreSQL (conteneur dédié) |
+   | --- | --- | --- |
+   | Simplicité d'exploitation (30) | 5 : un fichier | 3 : second conteneur, mot de passe |
+   | Sauvegarde et restauration (25) | 5 : script commun | 3 : `pg_dump` à ajouter |
+   | RAM sur le Pi (20) | 5 | 3 |
+   | Concurrence (15) | 3 : suffit pour un utilisateur | 5 |
+   | Évolutivité (10) | 3 | 5 |
+   | **Total /500** | **450** | 350 |
 
-   Un seul utilisateur : SQLite suffit, sans second conteneur à
-   sauvegarder, surveiller et mettre à jour.
+   Sensibilité : B ne passe devant que si concurrence et évolutivité
+   pèsent plus de 60.
 
 2. **Git en HTTPS via Caddy et en SSH sur le tailnet.** Le site
    `git.bb-homelab.local` suit le patron des autres sites (`tls
@@ -40,11 +44,21 @@ ces sous-décisions (matrices MCDA validées par le propriétaire le
    Le serveur SSH intégré de Forgejo est publié sur
    `100.121.134.61:2222` seulement.
 
-   | Transport | Total /500 |
-   | --- | --- |
-   | A. HTTPS + SSH intégré sur l'IP tailnet, port 2222 | **455** |
-   | B. HTTPS seul | 390 |
-   | C. SSH via le sshd de l'hôte (relais) | 370 |
+   | Critère (poids) | A. HTTPS + SSH intégré, IP tailnet:2222 | B. HTTPS seul | C. SSH via le sshd de l'hôte |
+   | --- | --- | --- | --- |
+   | Confort quotidien (30) | 5 : clés SSH | 3 : jeton et CA interne par client | 5 |
+   | Surface d'attaque (25) | 4 : un port, tailnet seul | 5 : aucun port en plus | 3 : touche le sshd du Pi |
+   | Simplicité de configuration (20) | 4 | 5 | 1 : exclut l'image rootless |
+   | Compatibilité outils (25) | 5 | 3 | 5 |
+   | **Total /500** | **455** | 390 | 370 |
+
+   Sensibilité : B ne gagne que si la surface d'attaque pèse plus de 45.
+
+   Écart avec l'ADR 0007 : le port 2222 est lié à l'IP tailnet seule,
+   sans `127.0.0.1`. Aucune sonde locale ne passe par ce port (Kuma
+   sonde `/api/healthz` via Caddy), la liaison loopback serait inutile.
+   L'IP tailnet figure donc dans un compose de plus : la reprise décrite
+   dans l'ADR 0007 s'y applique aussi.
 
    URL de clone :
    `ssh://git@git.bb-homelab.local:2222/<utilisateur>/<dépôt>.git`.
@@ -52,13 +66,16 @@ ces sous-décisions (matrices MCDA validées par le propriétaire le
 3. **Ligne LTS, version 15.0.12**, épinglée (fin de support
    2027-07-15).
 
-   | Version | Total /500 |
-   | --- | --- |
-   | A. LTS 15.0.12 | **470** |
-   | B. Stable 17.0.2 (fin de support 2027-01-28) | 375 |
+   | Critère (poids) | A. LTS 15.0.12 | B. Stable 17.0.2 (fin de support 2027-01-28) |
+   | --- | --- | --- |
+   | Stabilité (35) | 5 | 4 |
+   | Charge de montée de version (30) | 5 : une par an | 2 : une tous les trois mois, fenêtres de deux semaines |
+   | Correctifs de sécurité (25) | 5 | 5 |
+   | Nouvelles fonctions (10) | 2 | 5 |
+   | **Total /500** | **470** | 375 |
 
-   La ligne stable impose une montée de version majeure tous les trois
-   mois ; la LTS n'en demande qu'une par an.
+   Sensibilité : B ne gagne que si les nouvelles fonctions pèsent plus
+   de 45.
 
 4. **Instance fermée** : inscription désactivée, assistant
    d'installation verrouillé (`INSTALL_LOCK`), compte administrateur
@@ -89,8 +106,9 @@ service, dans un nouvel ADR.
 - Ajouter le site demande de recréer Caddy (ADR 0009), ce qui fait
   tomber toutes les sondes Kuma le temps du redémarrage.
 - Un fichier SQLite copié pendant une écriture peut être incohérent :
-  la procédure de sauvegarde et de restauration est décrite et testée
-  dans `services/forgejo/BACKUP.md`.
+  la sauvegarde met le conteneur en pause pendant la copie. La
+  procédure est décrite dans `storage/APPDATA-BACKUP.md` ; le test de
+  restauration est à faire au premier déploiement.
 - Le retour à une version antérieure de Forgejo n'est pas possible
   après une migration de base : sauvegarder avant chaque montée de
   version.
