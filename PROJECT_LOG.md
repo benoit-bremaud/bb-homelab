@@ -2188,7 +2188,7 @@ was done and why, by date.
   restore test, the ADR on Forgejo's role next to GitHub.
 - **Refs**: #260
 
-### Ops: Home Assistant off-site unblocked (stale restic lock)
+### Backup: Home Assistant off-site unblocked (stale restic lock)
 
 - **What**: the `ha-backup` Push monitor was DOWN. Local archives ran
   every night, but `offsite.sh` failed since 2026-11-08 with
@@ -2197,22 +2197,23 @@ was done and why, by date.
 - **Fix**: `restic unlock` (removed 1 stale lock), then a manual
   `offsite.sh` run: backup, retention, 5 % check, heartbeat sent (first
   `curl` timed out, the retry passed).
-- **Gap**: archives from 2026-11-08 to 2026-11-13 rotated out locally
+- **Gap**: archives from 2026-11-08 to 2026-11-14 rotated out locally
   before reaching R2; off-site history has no copy of those days.
 - **Follow-up**: #263, clear stale locks before each off-site run (Home
   Assistant and vaultwarden scripts).
 - **Refs**: #263
 
-### Ops: n8n quick tunnel restarted (owner decision)
+### Network: n8n quick tunnel restarted (owner decision)
 
 - **What**: `bb-homelab-cloudflared` started again so the claude.ai n8n
   connector can reach n8n; new trycloudflare hostname written to
-  `WEBHOOK_URL` and `N8N_HOST` in the Pi's `.env` (previous file kept as
-  `.env.bak-2026-11-21`), n8n recreated; `/healthz` 200 locally and
+  `WEBHOOK_URL` and `N8N_HOST` in the Pi's `.env` (previous file kept
+  outside the checkout, in `~/.config/bb-homelab/env-backups/`), n8n recreated; `/healthz` 200 locally and
   through the tunnel.
-- **Why**: owner's explicit yes after the MCDA (pause monitor 375,
-  named tunnel + Access 345, quick tunnel 230): the connector needs a
-  public URL.
+- **Why**: owner override of the MCDA (pause monitor 375, named
+  tunnel with Access 345, quick tunnel 230): the matrix did not weigh the
+  connector's need for a public URL, which only the tunnel options meet;
+  quick tunnel over named tunnel because #143 is not ready.
 - **Risk accepted**: n8n login and API public again (#196); MFA on,
   community nodes and unauthenticated webhooks (#152) still open.
 - **Owner to do**: point the connector, the `n8n tunnel (public)` Kuma
