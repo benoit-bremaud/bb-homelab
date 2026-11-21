@@ -2,9 +2,10 @@
 # Off-site copy of the local Vaultwarden archives (bb-vault#19).
 #
 # Clears stale restic locks, pushes BACKUP_DIR to an encrypted restic
-# repository on Cloudflare R2, keeps 30 daily + 12 monthly snapshots, checks a sample of the data, then
-# sends a success-only heartbeat to an Uptime Kuma Push monitor. Restic
-# encrypts client-side: R2 only ever stores ciphertext.
+# repository on Cloudflare R2, keeps 30 daily + 12 monthly snapshots,
+# checks a sample of the data, then sends a success-only heartbeat to an
+# Uptime Kuma Push monitor. Restic encrypts client-side: R2 only ever
+# stores ciphertext.
 #
 # Run from cron after scripts/backup.sh, e.g.:
 #   20 3 * * * KUMA_PUSH_URL="$(cat ~/.config/bb-homelab/kuma-push-vaultwarden-offsite)" \
@@ -44,10 +45,13 @@ RESTIC_REPOSITORY="${RESTIC_REPOSITORY%/}"
 export RESTIC_REPOSITORY="${RESTIC_REPOSITORY%/vaultwarden}/vaultwarden"
 
 # A run killed mid-way leaves its lock in the repository and every later run
-# fails on it (#263). Plain `unlock` removes stale locks only: a live run
-# refreshes its lock every 5 minutes, so it is never touched.
+# fails on it (#263). Plain `unlock` (never `--remove-all`) removes locks not
+# refreshed for 30 minutes, or held on this host by a dead PID. A live run of
+# the same user on this host, or of any other host, is never touched; run
+# manual restic commands on the Pi as this user, not with sudo. restic prints
+# "successfully removed N locks" when it clears one: the trace of a killed run.
 log "clear stale locks"
-restic unlock --quiet
+restic unlock
 
 log "backup ${BACKUP_DIR}"
 # *.part: archive still being written by backup.sh.
