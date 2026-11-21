@@ -253,6 +253,11 @@ incident and keep the previous archive as the working copy.
   backup). Pushes `BACKUP_DIR` to `s3:…r2.cloudflarestorage.com/bb-homelab-backups/vaultwarden`,
   keeps 30 daily + 12 monthly snapshots, checks 5% of the data, then
   pings the Uptime Kuma Push monitor "Vaultwarden off-site backup".
+- **Stale locks**: each run starts with `restic unlock`, which removes
+  locks left by a killed run (not refreshed for 30 minutes, or a dead PID
+  on this host) and logs `successfully removed N locks` when it does (#263).
+  A live lock of the same user, or of another host, is never removed: run
+  manual restic commands on the Pi as the cron user, never with `sudo`.
 - **Encryption**: restic encrypts client-side; R2 only stores ciphertext.
 - **Secrets** (on the Pi, `chmod 600`, out of git):
   `~/.config/bb-homelab/restic-r2.env` (R2 key pair, repository) and
