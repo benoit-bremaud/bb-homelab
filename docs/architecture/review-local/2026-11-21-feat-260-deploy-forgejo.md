@@ -15,6 +15,8 @@ Pre-push review of the Forgejo service files, its Caddy site and its conception 
 - Round 1 on `297f230`: Must 1 · Should 5 · Nice 5 · unverified 1 · Push gate: closed
 - Round 2 on `333ff30`: 9 fixed · 2 not fixed (S3 deferred to the first-deploy tests, N2 accepted) · 0 regressed · new Must 0 · new Should 2 · new Nice 1 · **Push gate: open**
 - Round 2 follow-up: the 2 Should (ADR 0011 sensitivity thresholds, ADR 0007 compose list) and the Nice (bootstrap creates `~/backups/forgejo`) are fixed in the commit that carries this line
+- Round 3 on `84381c2`: 3 fixed · 0 not fixed · 0 regressed · new Must 0 · new Should 0 · new Nice 0 · **Push gate: open**
+- ADR 0011: per-criterion scores of the three matrices confirmed by the owner on 2026-11-21
 - Optional second review (owner's own account): not run (never a gate step)
 
 ## Pre-merge gate (pre-push run on 297f230)
@@ -30,6 +32,9 @@ Pre-push review of the Forgejo service files, its Caddy site and its conception 
 
 - Gate: **pre-push green** — every local check passed; the Pi deployment and the restore test
   come after the merge.
+- Pre-merge run on `84381c2` (2026-11-21): markdownlint-cli2 0.13.0, yamllint and gitleaks
+  (`main..HEAD`) re-run clean; SonarQube `QUALITY GATE STATUS: PASSED`; no shell or Dockerfile
+  change since `297f230`. Steps 1, 2 and 5 stay n/a.
 
 ## 🔴 Must Have
 
