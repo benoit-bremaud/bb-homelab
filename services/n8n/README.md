@@ -107,7 +107,8 @@ inventoriés dans [Bots Telegram](../../docs/telegram-bots.md).
 | Impropedia — Feedback → Telegram | Webhook `POST /webhook/feedback` (tunnel cloudflared) | oui | Telegram (envoi d'un message texte) | `Telegram account` (`telegramApi`) | « Impropedia Feedback » (dédié) | chat du propriétaire (…7563) | 2026-10-24, succès | garder |
 
 C'est le seul workflow et le seul credential présents dans n8n
-(`n8n list:workflow`, actifs compris). Le tunnel cloudflared est arrêté
-depuis le 2026-11-03 (#196) : le webhook est injoignable de l'extérieur
-tant qu'il ne redémarre pas. Le Kaggle watcher ne tourne pas dans n8n ;
+(`n8n list:workflow`, actifs compris). Le tunnel cloudflared, arrêté du
+2026-11-03 au 2026-11-21 (#196), tourne de nouveau (décision du
+propriétaire, risque accepté) : le webhook est joignable par l'URL
+trycloudflare courante jusqu'à #143. Le Kaggle watcher ne tourne pas dans n8n ;
 l'ancien `n8n-watchdog` du portable a été retiré par l'ADR 0004.

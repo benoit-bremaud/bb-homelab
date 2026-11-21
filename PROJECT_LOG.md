@@ -2187,3 +2187,36 @@ was done and why, by date.
 - **Not done yet**: Pi deployment, admin account (created by the owner),
   restore test, the ADR on Forgejo's role next to GitHub.
 - **Refs**: #260
+
+### Backup: Home Assistant off-site unblocked (stale restic lock)
+
+- **What**: the `ha-backup` Push monitor was DOWN. Local archives ran
+  every night, but `offsite.sh` failed since 2026-11-08 with
+  `repository is already locked`: a lock left on 2026-11-07 12:03 by a
+  dead PID (970392) on the `home-assistant` restic repository.
+- **Fix**: `restic unlock` (removed 1 stale lock), then a manual
+  `offsite.sh` run: backup, retention, 5 % check, heartbeat sent (first
+  `curl` timed out, the retry passed).
+- **Gap**: archives from 2026-11-08 to 2026-11-14 rotated out locally
+  before reaching R2; off-site history has no copy of those days.
+- **Follow-up**: #263, clear stale locks before each off-site run (Home
+  Assistant and vaultwarden scripts).
+- **Refs**: #263
+
+### Network: n8n quick tunnel restarted (owner decision)
+
+- **What**: `bb-homelab-cloudflared` started again so the claude.ai n8n
+  connector can reach n8n; new trycloudflare hostname written to
+  `WEBHOOK_URL` and `N8N_HOST` in the Pi's `.env` (previous file kept
+  outside the checkout, in `~/.config/bb-homelab/env-backups/`), n8n recreated; `/healthz` 200 locally and
+  through the tunnel.
+- **Why**: owner override of the MCDA (pause monitor 375, named
+  tunnel with Access 345, quick tunnel 230): the matrix did not weigh the
+  connector's need for a public URL, which only the tunnel options meet;
+  quick tunnel over named tunnel because #143 is not ready.
+- **Risk accepted**: n8n login and API public again (#196); MFA on,
+  community nodes and unauthenticated webhooks (#152) still open.
+- **Owner to do**: point the connector, the `n8n tunnel (public)` Kuma
+  monitor and the Impropedia widget at the new hostname.
+- **Durable fix**: #143 (named tunnel, Cloudflare Access).
+- **Refs**: #196, #143, #152

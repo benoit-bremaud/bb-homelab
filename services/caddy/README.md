@@ -60,8 +60,8 @@ docker volume inspect popcorntv-web >/dev/null 2>&1 \
 # 2. Attach each backend to its own network. Every backend compose
 #    already declares its network (n8n: services/n8n/docker-compose.yml,
 #    and likewise for the others) — just re-up each stack, for example:
-#    For n8n, re-up the n8n service only: a plain `up -d` also restarts
-#    cloudflared, the public quick tunnel, kept stopped since #196.
+#    For n8n, re-up the n8n service only: a plain `up -d` may recreate
+#    cloudflared and rotate the quick-tunnel URL (#143).
 cd services/n8n && docker compose up -d n8n && cd -
 #    Exception: uptime-kuma mounts Caddy's root.crt, which exists only
 #    after Caddy's first start; re-up it after step 4.
