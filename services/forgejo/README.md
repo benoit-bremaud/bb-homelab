@@ -39,10 +39,10 @@ Sur le Pi (`ssh benoit@bb-homelab`), le disque appdata monté :
 ```bash
 mountpoint -q /mnt/appdata || { echo "ERREUR : /mnt/appdata non monté"; exit 1; }
 
-# 1. Dossier de données, au propriétaire du conteneur (FORGEJO_UID:GID).
-#    Le dossier ~/backups/forgejo existe déjà (créé le 2026-11-21 pour
-#    la copie nocturne vers le PC).
+# 1. Dossier de données, au propriétaire du conteneur (FORGEJO_UID:GID),
+#    et dossier des archives, attendu par la copie nocturne vers le PC.
 sudo install -d -o 1000 -g 1000 -m 700 /mnt/appdata/forgejo
+install -d -m 700 ~/backups/forgejo
 
 # 2. Réseau partagé avec Caddy (une fois)
 docker network inspect bb-homelab-proxy-forgejo >/dev/null 2>&1 \

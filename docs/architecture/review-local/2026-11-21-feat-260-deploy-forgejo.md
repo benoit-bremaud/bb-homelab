@@ -13,7 +13,8 @@ Pre-push review of the Forgejo service files, its Caddy site and its conception 
 ## Adversarial review (#236)
 
 - Round 1 on `297f230`: Must 1 · Should 5 · Nice 5 · unverified 1 · Push gate: closed
-- Round 2: pending
+- Round 2 on `333ff30`: 9 fixed · 2 not fixed (S3 deferred to the first-deploy tests, N2 accepted) · 0 regressed · new Must 0 · new Should 2 · new Nice 1 · **Push gate: open**
+- Round 2 follow-up: the 2 Should (ADR 0011 sensitivity thresholds, ADR 0007 compose list) and the Nice (bootstrap creates `~/backups/forgejo`) are fixed in the commit that carries this line
 - Optional second review (owner's own account): not run (never a gate step)
 
 ## Pre-merge gate (pre-push run on 297f230)

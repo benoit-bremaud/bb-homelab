@@ -36,7 +36,7 @@ ces sous-décisions (matrices MCDA validées par le propriétaire le
    | **Total /500** | **450** | 350 |
 
    Sensibilité : B ne passe devant que si concurrence et évolutivité
-   pèsent plus de 60.
+   pèsent ensemble plus de 50.
 
 2. **Git en HTTPS via Caddy et en SSH sur le tailnet.** Le site
    `git.bb-homelab.local` suit le patron des autres sites (`tls
@@ -52,7 +52,8 @@ ces sous-décisions (matrices MCDA validées par le propriétaire le
    | Compatibilité outils (25) | 5 | 3 | 5 |
    | **Total /500** | **455** | 390 | 370 |
 
-   Sensibilité : B ne gagne que si la surface d'attaque pèse plus de 45.
+   Sensibilité : B ne gagne que si la surface d'attaque pèse plus de 55
+   environ, les autres poids réduits en proportion.
 
    Écart avec l'ADR 0007 : le port 2222 est lié à l'IP tailnet seule,
    sans `127.0.0.1`. Aucune sonde locale ne passe par ce port (Kuma
@@ -75,7 +76,7 @@ ces sous-décisions (matrices MCDA validées par le propriétaire le
    | **Total /500** | **470** | 375 |
 
    Sensibilité : B ne gagne que si les nouvelles fonctions pèsent plus
-   de 45.
+   de 32 environ, les autres poids réduits en proportion.
 
 4. **Instance fermée** : inscription désactivée, assistant
    d'installation verrouillé (`INSTALL_LOCK`), compte administrateur
