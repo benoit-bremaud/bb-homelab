@@ -76,6 +76,7 @@ redémarrer les conteneurs qui en gardent une copie (ex.
    - Vaultwarden : `https://vaultwarden.bb-homelab.local/alive`
    - Homepage : `https://home.bb-homelab.local/api/healthcheck`
    - Immich : `https://immich.bb-homelab.local/api/server/ping` (une fois Immich déployé, ADR 0010)
+   - Forgejo : `https://git.bb-homelab.local/api/healthz` (une fois Forgejo déployé, ADR 0011)
 3. Brancher le canal de notification Telegram (token bot + chat ID
    depuis le gestionnaire de mots de passe). Le bot utilisé est
    `@bb_infra_alerts_bot`, voir [Bots Telegram](../../docs/telegram-bots.md).

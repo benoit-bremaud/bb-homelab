@@ -20,3 +20,4 @@ decision is reversed, write a new ADR that supersedes the previous one.
 - [0008 — Docker storage on the appdata disk](0008-docker-storage-on-appdata-disk.md)
 - [0009 — One proxy network per backend](0009-per-backend-proxy-networks.md)
 - [0010 — Immich as the source of phone screenshots](0010-immich-screenshot-source.md)
+- [0011 — Forgejo as the self-hosted git forge](0011-forgejo-git-forge.md)

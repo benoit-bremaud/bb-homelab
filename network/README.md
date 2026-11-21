@@ -37,6 +37,7 @@ adresse de liaison décide qui les joint. Relevé du 2026-11-02.
 | 80, 443/tcp, 443/udp | Caddy | `127.0.0.1` + IP tailnet | Pi + tailnet |
 | 8096/tcp | Jellyfin | `127.0.0.1` + IP tailnet | Pi + tailnet |
 | 2283/tcp | Immich | `127.0.0.1` + IP tailnet | Pi + tailnet (app mobile, ADR 0010) |
+| 2222/tcp | Forgejo, git en SSH (prévu, #260 : pas encore déployé) | IP tailnet | tailnet (ADR 0011) |
 | 5678/tcp | n8n | `127.0.0.1` | Pi (Internet via le tunnel cloudflared) |
 | 8123/tcp | Home Assistant (hôte) | toutes | tailnet, Nest Mini (UFW, #162) |
 | 1883/tcp | Mosquitto (dépôt `home-assistant`) | toutes | LAN + tailnet, voulu pour les ESP32 |

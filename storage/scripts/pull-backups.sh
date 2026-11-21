@@ -23,6 +23,7 @@ SOURCES=(
   "backups/uptime-kuma/:uptime-kuma"
   "backups/popcorntv/:popcorntv"
   "backups/jellyfin/:jellyfin"
+  "backups/forgejo/:forgejo"
 )
 
 log() { printf '[pull-backups] %s\n' "$*"; }

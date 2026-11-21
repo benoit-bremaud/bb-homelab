@@ -2155,3 +2155,35 @@ was done and why, by date.
 - **cloudflared**: not started (#196): `up -d n8n` names the service.
 - **Next check**: OOM kills and restarts on or after 2026-11-27 (#258).
 - **Refs**: #256, #257, #258
+
+## 2026-11-21
+
+### Forgejo git forge: conception and compose (#260)
+
+- **What**: `services/forgejo/` (compose, `.env.example`, README),
+  Caddy site `git.bb-homelab.local` with its own proxy network
+  `bb-homelab-proxy-forgejo`, deployment diagram and ADR 0011.
+- **Why**: a git forge under the owner's control, as an alternative to
+  GitHub for personal projects.
+- **Decisions (owner MCDA, ADR 0011)**: SQLite (450 vs 350); HTTPS
+  through Caddy plus built-in SSH on the tailnet IP, port 2222 (455 vs
+  390 and 370); LTS 15.0.12 rootless (470 vs 375); closed instance; no
+  Actions runner.
+- **Image facts checked on the v15.0.12 tag**: one volume
+  (`/var/lib/gitea`, no `/etc/gitea` in the rootless image); an empty
+  `SECRET_KEY` falls back to a key public in the source, so the compose
+  requires `FORGEJO_SECRET_KEY`.
+- **Backup**: `appdata-backup.sh forgejo bb-homelab-forgejo
+  /var/lib/gitea` at 03:35, Push monitor `backup-forgejo`, pulled to the
+  PC by `pull-backups.sh`; procedure in `storage/APPDATA-BACKUP.md`.
+- **Pi, 2026-11-21**: empty `~/backups/forgejo` (mode 700) created
+  before the deploy, so the PC's nightly `rsync` of the new source does
+  not fail (exit 23) while Forgejo is not deployed yet.
+- **Checks**: local container run with the compose hardening (healthy,
+  read-only rootfs, admin CLI, paused `docker cp` copy passes
+  `PRAGMA integrity_check`); Trivy image scan, CRITICAL with a fix: 0.
+- **To test at the first deploy**: restore from an archive; a web upload
+  above 64 MB and a PR merge (the container `/tmp` is a 64 MB tmpfs).
+- **Not done yet**: Pi deployment, admin account (created by the owner),
+  restore test, the ADR on Forgejo's role next to GitHub.
+- **Refs**: #260

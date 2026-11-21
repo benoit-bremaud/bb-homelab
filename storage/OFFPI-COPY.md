@@ -13,7 +13,9 @@ dans [docs/architecture/diagrams/backup/](../docs/architecture/diagrams/backup/0
   (`--ignore-existing`). Seuls les `*.tar.gz` et les `*.log` sont copiés.
 - Pas de `--delete` : les archives supprimées par la rotation du Pi restent
   sur le PC, qui garde un historique plus long. Il n'y a pas de rétention
-  côté PC : le dossier grossit d'environ 450 Ko par nuit, à purger à la main.
+  côté PC : le dossier grossit d'environ 450 Ko par nuit, plus une archive
+  Forgejo par nuit (taille des dépôts) une fois Forgejo déployé (#260),
+  à purger à la main.
 - Fichiers en `600`, dossiers en `700` : les archives Vaultwarden contiennent
   la base chiffrée et `rsa_key.pem`.
 - Le timer tourne entre 04:00 et 04:10 ; si le PC était éteint, il rattrape
@@ -32,7 +34,7 @@ hors site chiffrée reste l'objet de l'issue #19.
 
 | Fichier | Rôle |
 |---|---|
-| [`scripts/pull-backups.sh`](scripts/pull-backups.sh) | Copie `~/backups/{n8n,caddy,uptime-kuma,popcorntv,jellyfin}/` et `~/vaultwarden-backups/` du Pi vers `~/Documents/02_personal/bb-homelab-backups/<service>/` |
+| [`scripts/pull-backups.sh`](scripts/pull-backups.sh) | Copie `~/backups/{n8n,caddy,uptime-kuma,popcorntv,jellyfin,forgejo}/` et `~/vaultwarden-backups/` du Pi vers `~/Documents/02_personal/bb-homelab-backups/<service>/` |
 | [`systemd/bb-homelab-backup-pull.service`](systemd/bb-homelab-backup-pull.service) | Lance le script une fois |
 | [`systemd/bb-homelab-backup-pull.timer`](systemd/bb-homelab-backup-pull.timer) | Chaque jour entre 04:00 et 04:10, avec rattrapage |
 | [`systemd/bb-homelab-backup-pull-failed.service`](systemd/bb-homelab-backup-pull-failed.service) | Notification de bureau si la copie échoue |
