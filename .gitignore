@@ -1,6 +1,7 @@
 .env
 .env.local
 .env.*.local
+.env.bak*
 # PopCornTV app env (TMDB token), next to its compose file
 services/popcorntv/popcorntv.env
 *.bak

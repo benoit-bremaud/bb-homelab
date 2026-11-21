@@ -159,7 +159,7 @@ de toute la pile : voir #206 et la surveillance SMART (#11).
 
 6. Redémarrer containerd puis Docker. Les conteneurs en `unless-stopped`
    repartent seuls ; ceux arrêtés à la main (comme `bb-homelab-cloudflared`
-   aujourd'hui) restent arrêtés. Fin de la coupure.
+   du 2026-11-03 au 2026-11-21) restent arrêtés. Fin de la coupure.
 
    ```bash
    sudo systemctl start containerd.service docker.service
