@@ -19,10 +19,15 @@ de restauration (issue #138).
 | `uptime-kuma` | `bb-homelab-uptime-kuma` | `/app/data` | `kuma.db` (moniteurs, notifications, historique) | `app_data/` |
 | `popcorntv` | `bb-homelab-popcorntv` | `/app/data` | base SQLite (comptes, bibliothèques, progression) | `app_data/` |
 | `jellyfin` | `bb-homelab-jellyfin` | `/config` | bibliothèques, utilisateurs, réglages | `config/` |
+| `forgejo` | `bb-homelab-forgejo` | `/var/lib/gitea` | dépôts git, base SQLite, `app.ini`, clé d'hôte SSH | `var_lib_gitea/` |
 
 Non sauvegardés : `/config` de Caddy (régénéré au démarrage), `/cache` de
 Jellyfin et `/app/cache` de PopCornTV (reconstructibles) et les médias
 (`/mnt/appdata/media`, ex-`/mnt/appdata/jellyfin/media`).
+
+Forgejo (#260) passe par le même script à 03:35 ; son installation, sa
+vérification et sa restauration sont dans
+[services/forgejo/BACKUP.md](../services/forgejo/BACKUP.md).
 
 Perdre la CA Caddy oblige à refaire confiance à la nouvelle racine sur
 chaque client ; l'archive `caddy` contient donc la **clé privée de la CA**.

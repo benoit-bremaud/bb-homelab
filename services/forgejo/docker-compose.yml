@@ -1,0 +1,104 @@
+services:
+  # Forgejo — self-hosted git forge (issue #260, ADR 0011).
+  # See services/forgejo/README.md: tailnet-only, closed instance, SQLite,
+  # web through Caddy, git over SSH on the tailnet IP.
+  forgejo:
+    # LTS line, pinned. Bump deliberately via FORGEJO_IMAGE_TAG in .env,
+    # after a backup: a database migration cannot be rolled back.
+    # Rootless image: runs as uid 1000 with its own SSH server on 2222.
+    image: codeberg.org/forgejo/forgejo:${FORGEJO_IMAGE_TAG:-15.0.12-rootless}
+    container_name: bb-homelab-forgejo
+    restart: unless-stopped
+    # Same uid:gid as the host `benoit`, so backups and restores keep one
+    # owner. /mnt/appdata/forgejo must belong to it (README, Bootstrap).
+    user: "${FORGEJO_UID:-1000}:${FORGEJO_GID:-1000}"
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    # Read-only rootfs: state lives in /var/lib/gitea, scratch in /tmp
+    # (GITEA_TEMP=/tmp/gitea: uploads in progress, local merge copies).
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    pids_limit: 256
+    mem_limit: 512m
+    # No swap, the cap is hard (#256).
+    memswap_limit: 512m
+    # Git over SSH only. Bound to the Pi's tailnet IP (ADR 0007):
+    # Docker-published ports bypass UFW, so this binding is the only
+    # filter on 2222. Never 0.0.0.0. The web port 3000 is not published:
+    # Caddy reaches it as `forgejo:3000` (ADR 0009).
+    ports:
+      - "100.121.134.61:2222:2222"
+    environment:
+      # Applied to app.ini at every start (FORGEJO__<section>__<KEY>).
+      # Must match the Caddy site name, or links and clone URLs break.
+      - FORGEJO__server__DOMAIN=git.bb-homelab.local
+      - FORGEJO__server__ROOT_URL=https://git.bb-homelab.local/
+      - FORGEJO__server__HTTP_PORT=3000
+      # Built-in SSH server (the only one the rootless image supports).
+      # SSH_PORT is the port shown in clone URLs, SSH_LISTEN_PORT the
+      # one bound in the container: both 2222.
+      - FORGEJO__server__START_SSH_SERVER=true
+      - FORGEJO__server__SSH_DOMAIN=git.bb-homelab.local
+      - FORGEJO__server__SSH_PORT=2222
+      - FORGEJO__server__SSH_LISTEN_PORT=2222
+      # SQLite in the data dir (ADR 0011, decision 1).
+      - FORGEJO__database__DB_TYPE=sqlite3
+      # No web installer: the instance is configured from here only.
+      - FORGEJO__security__INSTALL_LOCK=true
+      # Fail fast if missing: with an empty SECRET_KEY Forgejo falls back
+      # to a key that is public in its source code.
+      - "FORGEJO__security__SECRET_KEY=${FORGEJO_SECRET_KEY:?set it in .env (README, Bootstrap)}"
+      # Closed instance: no self-registration, nothing readable without
+      # an account. The owner creates the admin account from the CLI.
+      - FORGEJO__service__DISABLE_REGISTRATION=true
+      - FORGEJO__service__REQUIRE_SIGNIN_VIEW=true
+      - FORGEJO__openid__ENABLE_OPENID_SIGNIN=false
+      - FORGEJO__openid__ENABLE_OPENID_SIGNUP=false
+      # Served over HTTPS only (Caddy).
+      - FORGEJO__session__COOKIE_SECURE=true
+      # No third-party avatar lookups.
+      - FORGEJO__picture__DISABLE_GRAVATAR=true
+      # No Forgejo Actions runner (ADR 0011, decision 5).
+      - FORGEJO__actions__ENABLED=false
+      - FORGEJO__log__LEVEL=${FORGEJO_LOG_LEVEL:-Info}
+      - TZ=${TZ:-Europe/Paris}
+    volumes:
+      # Host bind-mount on the HDD (Pattern Y, role `appdata`).
+      # /var/lib/gitea holds the whole state: git repositories, the
+      # SQLite database, custom/conf/app.ini (with the generated tokens),
+      # the SSH host key, attachments and avatars.
+      #
+      # create_host_path: false is a fail-fast guard. The HDD uses
+      # `nofail` in fstab: without it, a failed mount would let Docker
+      # create the path on the SD card and Forgejo would start on an
+      # empty forge.
+      - type: bind
+        source: /mnt/appdata/forgejo
+        target: /var/lib/gitea
+        bind:
+          create_host_path: false
+    healthcheck:
+      # curl ships in the image; /api/healthz also checks the database.
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost:3000/api/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      # `default` — local bridge: egress (mirrors, webhooks) and the
+      # published SSH port.
+      # `proxy` — dedicated external network; Caddy reaches this service
+      # as `forgejo:3000` (see services/caddy/ + ADR 0009).
+      - default
+      - proxy
+
+networks:
+  default:
+    driver: bridge
+  proxy:
+    # This service's own proxy network, shared with Caddy only (ADR 0009).
+    # Created once on the host with
+    # `docker network create bb-homelab-proxy-forgejo`.
+    name: bb-homelab-proxy-forgejo
+    external: true

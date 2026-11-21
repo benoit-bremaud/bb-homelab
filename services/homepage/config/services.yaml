@@ -14,6 +14,10 @@
         href: https://vaultwarden.bb-homelab.local
         description: Gestionnaire de mots de passe
         icon: vaultwarden.png
+    - Forgejo:
+        href: https://git.bb-homelab.local
+        description: Forge git
+        icon: forgejo.png
 - Monitoring:
     - Uptime Kuma:
         href: https://status.bb-homelab.local
