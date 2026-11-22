@@ -31,6 +31,23 @@ Schéma de déploiement :
 - Instance fermée : inscription désactivée, connexion obligatoire pour
   tout lire, assistant d'installation verrouillé, pas de runner Actions.
   Git LFS n'est pas activé.
+- Réglages d'instance (#268), tous dans le compose :
+
+  | Réglage | Valeur | Effet |
+  | --- | --- | --- |
+  | `APP_NAME` | `bb-homelab git` | titre de l'instance |
+  | `[repository] FORCE_PRIVATE` | `true` | tout dépôt est créé privé, par le web comme par l'API ; un admin peut le publier après coup |
+  | `[repository] DEFAULT_PRIVATE` | `private` | case « privé » cochée dans le formulaire web |
+  | `[service] DEFAULT_ORG_VISIBILITY`, `DEFAULT_USER_VISIBILITY` | `private` | valeur présélectionnée dans le formulaire web |
+  | `[security] GLOBAL_TWO_FACTOR_REQUIREMENT` | `all` | double authentification obligatoire pour tous les comptes |
+  | `[session] PROVIDER` | `db` | sessions en base : un redémarrage ne déconnecte plus |
+  | `[mailer] ENABLED` | `false` | aucun courriel envoyé |
+
+  Les réglages `DEFAULT_*` ne valent que pour le formulaire web : l'API
+  les ignore. Rien ne force la visibilité d'une organisation : la créer
+  avec `visibility: private` explicite et le vérifier ensuite.
+  Avec la double authentification obligatoire, le jeton d'API d'un
+  compte sans second facteur est refusé.
 
 ## Bootstrap
 
@@ -111,15 +128,15 @@ La CA interne de Caddy doit être de confiance, comme pour les autres sites
 
 ### Essais du premier déploiement
 
-À noter dans `PROJECT_LOG.md` :
+Résultats dans `PROJECT_LOG.md` :
 
-- restauration d'une archive avec un dépôt d'essai
+- fait le 2026-11-21 : restauration d'une archive avec un dépôt d'essai
   ([APPDATA-BACKUP.md](../../storage/APPDATA-BACKUP.md#restauration)) ;
-- envoi par le web d'un fichier de plus de 64 Mo et fusion d'une PR : le
-  `/tmp` du conteneur est un tmpfs de 64 Mo (`GITEA_TEMP`). En cas
-  d'échec, agrandir le tmpfs ou déplacer le dossier temporaire sous
-  `/var/lib/gitea` ;
-- empreinte de la clé d'hôte SSH relevée (ci-dessous).
+- fait le 2026-11-21 : empreinte de la clé d'hôte SSH relevée (ci-dessous) ;
+- reste à faire : envoi par le web d'un fichier de plus de 64 Mo et
+  fusion d'une PR. Le `/tmp` du conteneur est un tmpfs de 64 Mo
+  (`GITEA_TEMP`) : en cas d'échec, agrandir le tmpfs ou déplacer le
+  dossier temporaire sous `/var/lib/gitea`.
 
 ## Utiliser git
 
@@ -130,7 +147,12 @@ dans `~/.ssh/config` du client :
 Host git.bb-homelab.local
   User git
   Port 2222
+  IdentityFile ~/.ssh/id_ed25519_forgejo
+  IdentitiesOnly yes
 ```
+
+`IdentityFile` désigne la clé dédiée à Forgejo ; `IdentitiesOnly` empêche
+`ssh` de proposer les autres clés du client.
 
 ```bash
 git clone git@git.bb-homelab.local:<utilisateur>/<dépôt>.git
@@ -147,8 +169,34 @@ lancée depuis le client, la commande ne prouverait rien.
 ssh-keyscan -p 2222 100.121.134.61 2>/dev/null | ssh-keygen -lf -
 ```
 
+Empreinte relevée le 2026-11-21 :
+`SHA256:0VjmYCYyYZkIa36N4JAtcgL6BqSsMC/4KQBs6/o73jQ`.
+
+Le port 2222 est aussi filtré par la politique d'accès du tailnet : seul
+le PC de développement (`100.67.85.126`) y est autorisé. Un nouveau
+client doit y être ajouté par le propriétaire, dans la console Tailscale.
+
 Le clone en HTTPS (`https://git.bb-homelab.local/<utilisateur>/<dépôt>.git`)
 demande un jeton d'accès Forgejo et que git fasse confiance à la CA interne.
+
+## API et jeton des agents
+
+- Base : `https://git.bb-homelab.local/api/v1`, en-tête
+  `Authorization: token <valeur>`.
+- Jeton `user-benoit-agents-2026` du compte `benoit` : écriture sur
+  `repository`, `issue` et `organization`, lecture sur `user` ; ni
+  `admin` ni `notification`. Créer un dépôt sous un compte
+  (`POST /user/repos`) demande `write:user` : ce jeton ne crée des
+  dépôts que sous une organisation. Sans expiration : à renouveler à la main,
+  rappel en 2027-11.
+- Valeur : fichier `~/.config/forgejo/token` du PC de développement
+  (`600`, dossier en `700`). Elle ne va ni dans git, ni dans une
+  commande affichée, ni dans une discussion :
+
+  ```bash
+  curl -fsS -H @<(printf 'Authorization: token %s' "$(cat ~/.config/forgejo/token)") \
+    https://git.bb-homelab.local/api/v1/user
+  ```
 
 ## Variables d'environnement
 
@@ -203,7 +251,7 @@ annoncée pour le 2027-04-15) avant cette date.
 
 ## Refs
 
-- Issue #260
+- Issues #260, #268
 - [ADR 0011](../../docs/decisions/0011-forgejo-git-forge.md),
   [ADR 0007](../../docs/decisions/0007-docker-published-ports-binding.md),
   [ADR 0009](../../docs/decisions/0009-per-backend-proxy-networks.md)
