@@ -39,7 +39,7 @@ Schéma de déploiement :
   | `[repository] FORCE_PRIVATE` | `true` | tout dépôt est créé privé, par le web comme par l'API ; un admin peut le publier après coup |
   | `[repository] DEFAULT_PRIVATE` | `private` | case « privé » cochée dans le formulaire web |
   | `[service] DEFAULT_ORG_VISIBILITY` | `private` | valeur présélectionnée dans le formulaire web |
-  | `[service] DEFAULT_USER_VISIBILITY` | `private` | tout nouveau compte est privé, quel que soit le chemin (web, CLI, API) ; le compte `benoit`, créé avant, garde sa visibilité |
+  | `[service] DEFAULT_USER_VISIBILITY` | `private` | tout nouveau compte est privé par défaut (web, CLI, API sans `visibility` explicite) ; le compte `benoit`, créé avant, garde sa visibilité |
   | `[security] GLOBAL_TWO_FACTOR_REQUIREMENT` | `all` | double authentification obligatoire pour tous les comptes |
   | `[session] PROVIDER` | `db` | sessions en base : un redémarrage ne déconnecte plus |
   | `[mailer] ENABLED` | `false` | aucun courriel : ni notification, ni réinitialisation de mot de passe (passer par la CLI) |

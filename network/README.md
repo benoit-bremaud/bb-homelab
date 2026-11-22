@@ -29,7 +29,7 @@ need to be reachable from the internet (e.g. the impropedia widget).
 ## Exposition réelle par port (#139)
 
 Les ports publiés par Docker contournent UFW (ADR 0007) : seule leur
-adresse de liaison décide qui les joint. Relevé du 2026-11-02.
+adresse de liaison décide qui les joint. Relevé du 2026-11-02, mis à jour le 2026-11-22 pour le port 2222.
 
 | Port | Service | Liaison | Joignable depuis |
 |---|---|---|---|
