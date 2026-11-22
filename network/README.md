@@ -10,9 +10,9 @@ need to be reachable from the internet (e.g. the impropedia widget).
 - **Tailscale** — mesh VPN for admin SSH and private service access.
   Free, no domain required. Install procedure + script:
   [tailscale.md](tailscale.md) / [install-tailscale.sh](install-tailscale.sh).
-- **cloudflared** — Cloudflare tunnel exposing public webhooks. Today
-  ephemeral (`*.trycloudflare.com`), upgradable to a named tunnel once
-  a domain is purchased (decision **#28**).
+- **cloudflared** — tunnel Cloudflare nommé qui expose n8n sur le nom
+  stable `n8n.benoitbremaud.fr` (webhooks publics, MCP) ; il remplace le tunnel rapide `*.trycloudflare.com`
+  (#143, [ADR 0012](../docs/decisions/0012-n8n-named-cloudflare-tunnel.md)).
 - **Reverse proxy (Caddy)** — single entry point routing host-based
   subdomains to the right service container, with auto-HTTPS. Tracked
   as **issue #14**.
@@ -38,7 +38,7 @@ adresse de liaison décide qui les joint. Relevé du 2026-11-02, mis à jour le 
 | 8096/tcp | Jellyfin | `127.0.0.1` + IP tailnet | Pi + tailnet |
 | 2283/tcp | Immich | `127.0.0.1` + IP tailnet | Pi + tailnet (app mobile, ADR 0010) |
 | 2222/tcp | Forgejo, git en SSH (déployé le 2026-11-21, #260) | IP tailnet | PC de développement seul (politique tailnet, #268 ; ADR 0011) |
-| 5678/tcp | n8n | `127.0.0.1` | Pi (Internet via le tunnel cloudflared) |
+| 5678/tcp | n8n | `127.0.0.1` | Pi (Internet via le tunnel cloudflared nommé, `n8n.benoitbremaud.fr`, #143) |
 | 8123/tcp | Home Assistant (hôte) | toutes | tailnet, Nest Mini (UFW, #162) |
 | 1883/tcp | Mosquitto (dépôt `home-assistant`) | toutes | LAN + tailnet, voulu pour les ESP32 |
 | 8080, 10200, 10300 | Z2M, piper, whisper (dépôt `home-assistant`) | `127.0.0.1` | Pi |

@@ -176,11 +176,9 @@ de toute la pile : voir #206 et la surveillance SMART (#11).
    docker ps -q | xargs -r docker inspect -f '{{.Name}} {{.HostConfig.LogConfig.Config}}'   # attendu : max-file:3 max-size:10m partout
    ```
 
-8. Tunnel n8n, seulement s'il tournait avant : un redémarrage de Docker lui
-   donne une nouvelle adresse `trycloudflare`. Suivre la rotation décrite
-   dans [AUDIT.md](../docs/security/AUDIT.md) (nouvelle adresse dans
-   `WEBHOOK_URL` et `N8N_HOST`, n8n recréé, moniteur Kuma et widget
-   Impropedia repointés, webhook testé de bout en bout).
+8. Tunnel n8n : depuis le tunnel nommé (#143), un redémarrage de Docker
+   garde le nom `n8n.benoitbremaud.fr`. Vérifier seulement que
+   `https://n8n.benoitbremaud.fr/healthz` renvoie 200.
 
 ## Vérifier
 
@@ -194,8 +192,7 @@ df -h / /mnt/appdata
 ```
 
 - `sd-clean`, `images-ok` et `containers-ok`.
-- Uptime Kuma vert, sauf le moniteur du tunnel s'il est arrêté ou en cours
-  de rotation ; Home Assistant répond, une automatisation testée.
+- Uptime Kuma vert, sauf le moniteur du tunnel s'il est arrêté ; Home Assistant répond, une automatisation testée.
 - `/` ne baisse qu'au nettoyage : les dossiers `.old` sont encore sur la SD.
 - Noter la date d'exécution dans `PROJECT_LOG.md` (départ des sept jours).
 

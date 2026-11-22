@@ -31,6 +31,10 @@ The key lives in two places and only those:
 
 If you lose both, you lose every credential n8n stores. No recovery.
 
+**`CLOUDFLARE_TUNNEL_TOKEN`** (named tunnel, #143) is not backed up
+either: it lives in the Pi `.env` and the password manager, and can be
+rotated from the Cloudflare dashboard (see [README.md](README.md)).
+
 ## Backup — manual run
 
 ```bash
@@ -167,7 +171,7 @@ docker compose up -d
 
 ## Restore — different host (or fresh Pi)
 
-Same flow as above, plus two prerequisites before step 1:
+Same flow as above, plus three prerequisites before step 1:
 
 1. `services/n8n/.env` must exist with the **same** `N8N_ENCRYPTION_KEY`
    value that was active when the archive was produced. Pull it from
@@ -182,9 +186,22 @@ Same flow as above, plus two prerequisites before step 1:
    sudo chown 1000:1000 /mnt/appdata/n8n
    ```
 
-   You can then proceed with steps 2-5 above (no need to start the
-   stack first — the bind-mount path is created by hand, unlike a
-   named volume which Docker only materialises on first `up`).
+   You can then proceed from `services/n8n` with steps 2-4 above, with
+   no need to start the stack first: the bind-mount path is created by
+   hand, unlike a named volume which Docker only materialises on first
+   `up`. Step 5 depends on the old host (prerequisite 3).
+
+3. `.env` also needs `N8N_HOST`, `N8N_WEBHOOK_URL` and
+   `CLOUDFLARE_TUNNEL_TOKEN` (password manager), or `docker compose`
+   refuses to start. Step 5:
+   - old host still running its tunnel: `docker compose up -d n8n`
+     only. A second cloudflared with the same token joins the same
+     tunnel, and Cloudflare would split public traffic between two n8n
+     databases. Once the old host's cloudflared is stopped, run
+     `docker compose up -d`;
+   - old host dead or gone: `docker compose up -d`.
+
+   Then check `https://n8n.benoitbremaud.fr/healthz` returns 200.
 
 ## Verifying an archive is restorable
 
