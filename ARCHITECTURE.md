@@ -9,7 +9,7 @@ principle splits the system into layers that depend only on the abstractions
 of the layer below them, never on the concrete implementation.
 
 If we ever swap the Raspberry Pi for a mini-PC, or Docker Compose for
-Kubernetes, or the ephemeral cloudflared tunnel for a named one, **only the
+Kubernetes, or a cloudflared tunnel for another ingress, **only the
 layer being swapped should change**. Every layer above it stays untouched.
 
 ## The six layers
@@ -20,7 +20,7 @@ layer being swapped should change**. Every layer above it stays untouched.
 | 5 | **Application packaging** | How a service is bundled to run anywhere | OCI / Docker images | Same Docker images, or Podman |
 | 4 | **Orchestration** | How multiple services boot, restart, share networks/volumes | `docker compose` | Kubernetes, Nomad, Podman quadlets |
 | 3 | **Host / OS** | The machine + its operating system | Raspberry Pi 5 + Raspberry Pi OS Lite 64-bit | Mini-PC + Debian, Hetzner CAX VPS, Synology |
-| 2 | **Network / access** | How the world reaches a service | cloudflared (ephemeral) + Tailscale | Cloudflared named tunnel, WireGuard, reverse proxy with HTTPS |
+| 2 | **Network / access** | How the world reaches a service | cloudflared named tunnel (`n8n.benoitbremaud.fr`, ADR 0012) + Tailscale + Caddy | Tailscale Funnel, WireGuard |
 | 1 | **Storage** | Where data lives | Docker volume on SD card | USB SSD, mounted external HDDs, NAS, S3 |
 
 Higher layers (top of the table) are the parts that carry user value and
@@ -71,9 +71,9 @@ the impropedia widget to the Telegram message a proofreader receives:
 | 6 | **Service** | The n8n workflow `Webhook → Telegram` runs: it reads the JSON body, formats the Telegram message, calls the Telegram Bot API. |
 
 If we replace the Pi with a mini-PC tomorrow (layer 3), only the bootstrap
-script and SSH inventory change. If we move from cloudflared ephemeral to a
-named tunnel (layer 2), only `network/` and a single line in `docker-compose.yml`
-change. The n8n workflow JSON is untouched in both cases.
+script and SSH inventory change. The move from the ephemeral cloudflared
+tunnel to a named one (layer 2, #143) changed only the tunnel container and the
+public URL settings of n8n. The n8n workflow JSON was untouched.
 
 ## Decisions
 

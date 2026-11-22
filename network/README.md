@@ -11,8 +11,7 @@ need to be reachable from the internet (e.g. the impropedia widget).
   Free, no domain required. Install procedure + script:
   [tailscale.md](tailscale.md) / [install-tailscale.sh](install-tailscale.sh).
 - **cloudflared** — tunnel Cloudflare nommé qui expose n8n sur le nom
-  stable `n8n.benoitbremaud.fr` (webhooks publics, connecteur MCP) depuis
-  le 2026-11-22 ; il remplace le tunnel rapide `*.trycloudflare.com`
+  stable `n8n.benoitbremaud.fr` (webhooks publics, MCP) ; il remplace le tunnel rapide `*.trycloudflare.com`
   (#143, [ADR 0012](../docs/decisions/0012-n8n-named-cloudflare-tunnel.md)).
 - **Reverse proxy (Caddy)** — single entry point routing host-based
   subdomains to the right service container, with auto-HTTPS. Tracked

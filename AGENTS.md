@@ -105,7 +105,7 @@ cp .env.example .env
 sed -i "s|^N8N_ENCRYPTION_KEY=.*|N8N_ENCRYPTION_KEY=$(openssl rand -hex 32)|" .env
 docker compose up -d
 docker compose ps
-docker compose logs cloudflared   # shows the ephemeral public URL
+docker compose logs cloudflared | grep -i "registered tunnel connection"   # named tunnel up (ADR 0012)
 ```
 
 ### Backup n8n volume (atomic, container-quiesced)

@@ -192,8 +192,7 @@ df -h / /mnt/appdata
 ```
 
 - `sd-clean`, `images-ok` et `containers-ok`.
-- Uptime Kuma vert, sauf le moniteur du tunnel s'il est arrêté ou en cours
-  de rotation ; Home Assistant répond, une automatisation testée.
+- Uptime Kuma vert, sauf le moniteur du tunnel s'il est arrêté ; Home Assistant répond, une automatisation testée.
 - `/` ne baisse qu'au nettoyage : les dossiers `.old` sont encore sur la SD.
 - Noter la date d'exécution dans `PROJECT_LOG.md` (départ des sept jours).
 

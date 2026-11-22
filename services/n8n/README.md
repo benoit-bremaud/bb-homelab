@@ -75,11 +75,12 @@ On first start, n8n will prompt for an admin account creation.
 | `N8N_ENCRYPTION_KEY` | Encrypts all credentials stored in n8n. **Lose it = lose them**. Must stay identical across migrations. |
 | `TZ` | Timezone (default `Europe/Paris`). |
 | `N8N_HOST` | Nom public servi par n8n : `n8n.benoitbremaud.fr`. |
-| `N8N_WEBHOOK_URL` | URL publique de base, avec la barre finale : `https://n8n.benoitbremaud.fr/`. n8n en tire les URL absolues des webhooks (celle du widget Impropedia par exemple). Remplace `WEBHOOK_URL`, dépréciée depuis n8n 2.35 (#151). |
+| `N8N_WEBHOOK_URL` | URL publique de base, avec la barre finale : `https://n8n.benoitbremaud.fr/`. n8n en tire les URL absolues des webhooks (celle du widget Impropedia par exemple). Remplace `WEBHOOK_URL`, dépréciée depuis n8n 2.30 (#151). |
 | `CLOUDFLARE_TUNNEL_TOKEN` | Jeton du tunnel nommé, passé à cloudflared comme `TUNNEL_TOKEN`. Secret : `.env` du Pi et gestionnaire de mots de passe seulement. Obligatoire. |
 
-`N8N_PROXY_HOPS=1` est fixé dans le compose : un seul proxy
-(cloudflared ou Caddy) se tient devant n8n et pose `X-Forwarded-For`.
+`N8N_PROXY_HOPS=1` est fixé dans le compose : un seul saut de proxy
+devant n8n (le bord Cloudflare via cloudflared, ou Caddy) ; n8n retient
+la dernière adresse de `X-Forwarded-For`.
 
 All sensitive values live in `.env` (gitignored). Never commit `.env`.
 
@@ -115,18 +116,36 @@ incident de rotation dans `PROJECT_LOG.md`, voir
    d'installation, sans l'exécuter, dans le `.env` du Pi
    (`CLOUDFLARE_TUNNEL_TOKEN=`) et dans le gestionnaire de mots de passe.
 3. `docker compose up -d --force-recreate cloudflared`.
-4. Contrôle : les journaux de cloudflared montrent des connexions
+4. En cas de fuite seulement, juste après l'étape 1 : couper toutes
+   les connexions du tunnel (API Cloudflare, `DELETE
+   …/cfd_tunnel/<id>/connections`) ; le connecteur d'un attaquant reste
+   sinon actif.
+5. Contrôle : les journaux de cloudflared montrent des connexions
    enregistrées, `https://n8n.benoitbremaud.fr/healthz` renvoie 200.
-5. En cas de fuite seulement : couper aussi toutes les connexions du
-   tunnel (API Cloudflare, `DELETE …/cfd_tunnel/<id>/connections`).
 6. Noter la date de rotation et la suivante dans `PROJECT_LOG.md`.
+
+### Passage depuis le tunnel rapide (une fois)
+
+1. Le propriétaire crée le tunnel et sa route dans le tableau de bord.
+2. `.env` du Pi : remplacer `WEBHOOK_URL=` par
+   `N8N_WEBHOOK_URL=https://n8n.benoitbremaud.fr/`, poser
+   `N8N_HOST=n8n.benoitbremaud.fr` et `CLOUDFLARE_TUNNEL_TOKEN=`. Le
+   compose refuse de démarrer s'il en manque un.
+3. `git pull`, puis `docker compose up -d` (recrée n8n et cloudflared).
+4. `https://n8n.benoitbremaud.fr/healthz` renvoie 200 ; une recréation
+   de cloudflared (`--force-recreate cloudflared`) garde le nom.
+5. Repointer le moniteur Uptime Kuma du tunnel et le widget Impropedia
+   (son dépôt), puis test du webhook de bout en bout.
+6. Client MCP distant : le retirer puis le rajouter avec la nouvelle URL
+   (les jetons émis pour l'ancien nom ne valent plus), et révoquer
+   l'ancien client OAuth dans n8n.
 
 ### Consommateurs du nom public
 
 - Widget de retours Impropedia (dépôt à part) : `POST
   https://n8n.benoitbremaud.fr/webhook/feedback`.
-- Connecteur n8n de claude.ai :
-  `https://n8n.benoitbremaud.fr/mcp-server/http` (OAuth par n8n).
+- Client MCP distant : `https://n8n.benoitbremaud.fr/mcp-server/http`
+  (OAuth par n8n).
 - Moniteur HTTPS Uptime Kuma du tunnel :
   `https://n8n.benoitbremaud.fr/healthz`.
 

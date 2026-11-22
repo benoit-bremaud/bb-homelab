@@ -20,11 +20,13 @@ services:
     environment:
       # Bind only to localhost; public access goes through the named
       # cloudflared tunnel on a stable hostname (#143, ADR 0012).
-      - N8N_HOST=${N8N_HOST:-localhost}
+      - "N8N_HOST=${N8N_HOST:?N8N_HOST must be set in .env}"
       - N8N_PORT=5678
       - N8N_PROTOCOL=http
-      # Replaces WEBHOOK_URL, deprecated since n8n 2.35 (#151).
-      - N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL:-https://localhost/}
+      # Replaces WEBHOOK_URL, deprecated since n8n 2.30 (#151). Required:
+      # it is also the base of the MCP OAuth issuer, a localhost default
+      # would break remote MCP clients silently.
+      - "N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL:?N8N_WEBHOOK_URL must be set in .env}"
       # One proxy (cloudflared or Caddy) sets X-Forwarded-For in front of
       # n8n: trust exactly one hop for the client IP and protocol.
       - N8N_PROXY_HOPS=1

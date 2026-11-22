@@ -17,7 +17,7 @@ Deux problèmes :
    `WEBHOOK_URL` et `N8N_HOST` dans le `.env` du Pi, recréer n8n,
    repointer le moniteur Uptime Kuma et le widget Impropedia (audit de
    sécurité du 2026-10-23, R2 et R6, issue #143).
-2. **Incident du 2026-11-22** : le connecteur n8n de claude.ai affiche
+2. **Incident du 2026-11-22** : le client MCP distant connecté à n8n affiche
    « Server not responding ». n8n est sain (`/healthz` à 200,
    `/mcp-server/http` à 401 sans jeton) et l'OAuth aboutit (consentement
    donné, code et jeton de rafraîchissement en base), mais aucune requête
@@ -40,7 +40,7 @@ distance**, `bb-homelab-n8n`, avec le nom public stable
   `.env` du Pi (`CLOUDFLARE_TUNNEL_TOKEN`, passé comme `TUNNEL_TOKEN`) ;
   le compose refuse de démarrer sans lui.
 - n8n reçoit `N8N_HOST`, `N8N_WEBHOOK_URL` (qui remplace `WEBHOOK_URL`,
-  dépréciée depuis n8n 2.35, #151) et `N8N_PROXY_HOPS=1`.
+  dépréciée depuis n8n 2.30, #151) et `N8N_PROXY_HOPS=1`.
 - Le jeton n'expire pas : rotation annuelle, procédure dans
   `services/n8n/README.md`.
 
@@ -48,17 +48,20 @@ Matrice MCDA validée par le propriétaire le 2026-11-22 (poids /100,
 notes 0–5, total /500) : tunnel nommé **470**, Tailscale Funnel 410,
 tunnel rapide gardé avec une liste de contrôle de rotation 155.
 
-Nom d'hôte, matrice validée le 2026-11-22 :
+Nom d'hôte, matrice validée le 2026-11-22 (totaux corrigés en revue,
+choix reconfirmé par le propriétaire) :
 
 | Critère (poids) | A. `n8n.` | B. `hooks.` | C. `automation.` |
 | --- | --- | --- | --- |
 | Clarté, correspondance au service (40) | 5 | 3 : ne couvre ni l'UI ni le MCP | 4 |
 | Cohérence avec les noms Caddy internes (30) | 5 : schéma `<service>` | 2 | 2 |
 | Discrétion face aux scans (30) | 2 : nomme le logiciel, déjà visible par l'UI | 4 | 4 |
-| **Total /500** | **450** | 310 | 340 |
+| **Total /500** | **410** | 300 | 340 |
 
 Sensibilité : avec la discrétion à 50 et la clarté à 20, A reste devant
-(410 contre 360 pour C).
+de peu (350 contre 340 pour C) ; C ne passe devant que si la discrétion
+pèse plus de 55 environ. Le nom `n8n` reste lisible sur la page de
+connexion de l'éditeur, ce qui borne l'intérêt de la discrétion.
 
 ## Consequences
 
@@ -66,8 +69,8 @@ Positives :
 
 - Le nom ne change plus : une recréation de cloudflared ne demande plus
   aucune correction (`.env`, moniteur, widget).
-- Les Server-Sent Events passent : le connecteur MCP de claude.ai
-  fonctionne.
+- Les tunnels nommés transportent les Server-Sent Events : le client
+  MCP distant doit fonctionner (à vérifier à l'application sur le Pi).
 - Le certificat est celui du bord Cloudflare ; le HSTS de la zone est
   respecté.
 - Fini l'avertissement `ERR_ERL_UNEXPECTED_X_FORWARDED_FOR` d'express-rate-limit
@@ -77,12 +80,18 @@ Négatives :
 
 - Un secret de plus à garder : quiconque détient le jeton peut faire
   tourner le tunnel. Il vit dans le `.env` du Pi et le gestionnaire de
-  mots de passe, avec une rotation annuelle.
+  mots de passe, avec une rotation annuelle (#273).
 - La route du nom public vit dans le tableau de bord Cloudflare, hors du
   dépôt ; elle est décrite dans `services/n8n/README.md`.
 - L'éditeur n8n est joignable sur un nom stable, plus facile à trouver
   qu'un nom aléatoire. Un Cloudflare Access sur l'UI, hors webhooks, MCP
-  et OAuth, réduirait cette surface : suivi à part.
+  et OAuth, réduirait cette surface (#274).
+- La confiance s'étend au compte Cloudflare : avec un tunnel géré à
+  distance et cloudflared dans le réseau de l'hôte, qui tient le compte
+  peut publier depuis le tableau de bord n'importe quel service joignable
+  depuis le Pi (Home Assistant, SSH, Forgejo), sans changement dans le
+  dépôt. Parade : double authentification sur le compte Cloudflare, une
+  seule route publique, la règle par défaut du tunnel en 404.
 
 ## Alternatives considered
 

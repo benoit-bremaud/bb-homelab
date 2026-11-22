@@ -2338,18 +2338,28 @@ was done and why, by date.
   `.env` as `TUNNEL_TOKEN`, compose fails fast without it). Public
   hostname `n8n.benoitbremaud.fr` → `http://127.0.0.1:5678`, created in
   the Cloudflare dashboard by the owner. n8n gets `N8N_HOST`,
-  `N8N_WEBHOOK_URL` (replaces `WEBHOOK_URL`, deprecated since n8n 2.35,
+  `N8N_WEBHOOK_URL` (replaces `WEBHOOK_URL`, deprecated since n8n 2.30,
   #151) and `N8N_PROXY_HOPS=1` (one proxy in front: cloudflared or Caddy;
   silences the express-rate-limit `X-Forwarded-For` warning).
-- **Decision (owner MCDA)**: hostname `n8n.benoitbremaud.fr` (450) over
-  `automation.` (340) and `hooks.` (310). ADR 0012.
+- **Decision (owner MCDA)**: hostname `n8n.benoitbremaud.fr` (410) over
+  `automation.` (340) and `hooks.` (300). Totals first shown as 450/310
+  were wrong; corrected in review and the owner re-confirmed A. ADR 0012.
 - **Token**: tunnel `bb-homelab-n8n`; no expiry on Cloudflare tunnel
-  tokens, yearly rotation, next 2027-11; procedure in
+  tokens, yearly rotation, next 2027-11 (#273); procedure in
   `services/n8n/README.md`.
 - **Docs**: `services/n8n/README.md` (named tunnel, rotation, consumers),
   `network/README.md`, `docs/security/AUDIT.md` (R2/R6 hostname
   resolved), `docs/security/pentest-plan.md`,
   `storage/DOCKER-STORAGE-MOVE.md`, `services/caddy/README.md`.
-- **Follow-up**: Cloudflare Access on the n8n editor (outside webhooks,
-  MCP and OAuth paths).
+- **Compose**: `N8N_HOST` and `N8N_WEBHOOK_URL` are now required; a
+  localhost default would also become the MCP OAuth issuer.
+- **Also updated**: `services/n8n/BACKUP.md` (token not backed up; a
+  restore host starts n8n only while the Pi tunnel runs), `AGENTS.md`,
+  `ARCHITECTURE.md`, `docs/security/README.md` (the named tunnel
+  hostname is public by design).
+- **Not done yet**: Pi apply, end-to-end widget webhook test after a
+  cloudflared recreation, MCP client reconnection; results go in a log
+  entry after the apply.
+- **Follow-ups**: #274 (Cloudflare Access on the n8n editor), #273
+  (token rotation).
 - **Refs**: #143, #151, #46

@@ -28,7 +28,8 @@ The 2026-10-23 configuration audit, its risk register and roadmap stay in
   the owner, with the rollback written down first; the owner is near the Pi for anything that
   may drop SSH.
 - **No secret in a report**: redact tokens, passwords, keys, tunnel credentials; public IPs,
-  tunnel URLs and tailnet addresses stay out of the repository.
+  quick-tunnel URLs and tailnet addresses stay out of the repository; the stable public
+  hostname of the named tunnel is public by design (ADR 0012).
 - **One issue per finding** (duplicate search first), on GitHub Project #48 `bb-homelab` or
   Project #77 `home-assistant`; the plan's status column links it.
 - Each session writes a dated report under [reports/](reports/) (`YYYY-MM-DD-topic.md`).
