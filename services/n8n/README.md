@@ -112,14 +112,13 @@ incident de rotation dans `PROJECT_LOG.md`, voir
    → *Rotate token* (ou *Refresh token*). L'ancien jeton n'ouvre plus de
    nouvelle connexion ; la connexion en cours reste active jusqu'au
    redémarrage de cloudflared.
-2. *Add a replica* : copier le jeton (`eyJ…`) de la commande
+2. En cas de fuite seulement : couper aussitôt toutes les connexions du
+   tunnel (API Cloudflare, `DELETE …/cfd_tunnel/<id>/connections`) ; le
+   connecteur d'un attaquant reste sinon actif.
+3. *Add a replica* : copier le jeton (`eyJ…`) de la commande
    d'installation, sans l'exécuter, dans le `.env` du Pi
    (`CLOUDFLARE_TUNNEL_TOKEN=`) et dans le gestionnaire de mots de passe.
-3. `docker compose up -d --force-recreate cloudflared`.
-4. En cas de fuite seulement, juste après l'étape 1 : couper toutes
-   les connexions du tunnel (API Cloudflare, `DELETE
-   …/cfd_tunnel/<id>/connections`) ; le connecteur d'un attaquant reste
-   sinon actif.
+4. `docker compose up -d --force-recreate cloudflared`.
 5. Contrôle : les journaux de cloudflared montrent des connexions
    enregistrées, `https://n8n.benoitbremaud.fr/healthz` renvoie 200.
 6. Noter la date de rotation et la suivante dans `PROJECT_LOG.md`.

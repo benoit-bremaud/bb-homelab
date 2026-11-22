@@ -59,8 +59,9 @@ choix reconfirmé par le propriétaire) :
 | **Total /500** | **410** | 300 | 340 |
 
 Sensibilité : avec la discrétion à 50 et la clarté à 20, A reste devant
-de peu (350 contre 340 pour C) ; C ne passe devant que si la discrétion
-pèse plus de 55 environ. Le nom `n8n` reste lisible sur la page de
+de peu (350 contre 340 pour C) ; C passe devant au-delà de 53 environ si
+la discrétion prend son poids à la clarté (44 si elle le prend à la
+cohérence). Le nom `n8n` reste lisible sur la page de
 connexion de l'éditeur, ce qui borne l'intérêt de la discrétion.
 
 ## Consequences

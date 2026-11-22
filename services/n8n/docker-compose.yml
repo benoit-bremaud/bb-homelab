@@ -27,8 +27,8 @@ services:
       # it is also the base of the MCP OAuth issuer, a localhost default
       # would break remote MCP clients silently.
       - "N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL:?N8N_WEBHOOK_URL must be set in .env}"
-      # One proxy (cloudflared or Caddy) sets X-Forwarded-For in front of
-      # n8n: trust exactly one hop for the client IP and protocol.
+      # One proxy hop in front of n8n (the Cloudflare edge via cloudflared,
+      # or Caddy): trust the last X-Forwarded-For entry only.
       - N8N_PROXY_HOPS=1
       - GENERIC_TIMEZONE=${TZ:-Europe/Paris}
       - TZ=${TZ:-Europe/Paris}
@@ -75,8 +75,8 @@ services:
 
   # Cloudflare named tunnel — exposes n8n on a stable public HTTPS
   # hostname (#143, ADR 0012). The tunnel and its public hostname route
-  # (-> http://127.0.0.1:5678) are managed in the Cloudflare Zero Trust
-  # dashboard; the container only needs the tunnel token.
+  # (-> http://127.0.0.1:5678) are managed in the Cloudflare dashboard
+  # (Networking > Tunnels); the container only needs the tunnel token.
   # network_mode: host so cloudflared uses the host's network stack
   # directly, avoiding Docker-bridge MTU/TLS handshake issues on some
   # environments. On host mode, it reaches n8n via 127.0.0.1:5678 (the

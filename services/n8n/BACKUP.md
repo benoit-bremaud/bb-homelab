@@ -186,7 +186,9 @@ Same flow as above, plus three prerequisites before step 1:
    sudo chown 1000:1000 /mnt/appdata/n8n
    ```
 
-   You can then proceed with steps 2-5 above (no need to start the
+   You can then proceed with steps 2-4 above, then step 5 as
+   `docker compose up -d n8n` while the old host still runs its tunnel
+   (prerequisite 3) (no need to start the
    stack first — the bind-mount path is created by hand, unlike a
    named volume which Docker only materialises on first `up`).
 

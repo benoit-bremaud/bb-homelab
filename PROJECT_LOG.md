@@ -2349,7 +2349,7 @@ was done and why, by date.
   `services/n8n/README.md`.
 - **Docs**: `services/n8n/README.md` (named tunnel, rotation, consumers),
   `network/README.md`, `docs/security/AUDIT.md` (R2/R6 hostname
-  resolved), `docs/security/pentest-plan.md`,
+  addressed), `docs/security/pentest-plan.md`,
   `storage/DOCKER-STORAGE-MOVE.md`, `services/caddy/README.md`.
 - **Compose**: `N8N_HOST` and `N8N_WEBHOOK_URL` are now required; a
   localhost default would also become the MCP OAuth issuer.
