@@ -2283,14 +2283,27 @@ was done and why, by date.
   (user read) creates repositories under an organisation only. Open
   point for the migration (#262).
 - **Agent API token**: `user-benoit-agents-2026` (repository, issue and
-  organization write, user read; no admin), created by the owner, value
+  organization write, user read; no admin, no notification), created by the owner, value
   only in `~/.config/forgejo/token` on the dev PC. No expiry: rotate by
   hand, reminder 2027-11.
 - **Decision (owner MCDA)**: repository layout mirrors GitHub (440/500):
   `benoit-bremaud/*` under `benoit/*`, `StudioB22/*` under a private
   organisation `StudioB22`, same repository names. First repository:
   `benoit/saint-thomas` (private).
+- **Checked after review**: an API token of the admin account with
+  `write:repository` only can `PATCH` a repository back to public
+  (`FORCE_PRIVATE` binds non-admins only): residual risk, recorded in the
+  README. Forgejo 15 tokens have no expiry field. `reset-mfa` exists for
+  a lost second factor. `DEFAULT_USER_VISIBILITY` applies to accounts
+  created from the CLI too.
+- **Also fixed**: the Uptime Kuma integrity check used `sqlite3` (absent
+  on the Pi); both checks open the database read-only, so a missing file
+  fails instead of answering `ok`; the restore guard also refuses an
+  unreadable archive. Stale "not deployed" lines updated in
+  `network/README.md`, `services/README.md`,
+  `services/uptime-kuma/README.md`. ADR 0011 left as a dated record.
 - **Not done yet**: apply the new settings on the Pi (`git pull`,
   `docker compose up -d`); web upload above 64 MB and a PR merge;
-  organisation `StudioB22`; the migration bricks of epic #262.
+  organisation `StudioB22`; the ADR on Forgejo's role next to GitHub,
+  with the repository-layout decision; the migration bricks of epic #262.
 - **Refs**: #260, #262, #268

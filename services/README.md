@@ -18,7 +18,7 @@ infrastructure (reverse proxy, Tailscale) which is bootstrapped first.
 | Jellyfin (media) | `jellyfin/` | issue #12 | Stopped 2026-11-05, replaced by PopCornTV; removed two weeks after cut-over |
 | PopCornTV (media) | `popcorntv/` | issue #240 | Live compose; library on `/mnt/appdata/media` until `/mnt/media` (#47) |
 | Immich (screenshots) | `immich/` | issue #224 | Compose ready; Pi deploy waits for fixed upstream images (ADR 0010) |
-| Forgejo (git forge) | `forgejo/` | issue #260 | Compose ready; Pi deploy pending (ADR 0011) |
+| Forgejo (git forge) | `forgejo/` | issue #260 | Live on the Pi since 2026-11-21 (ADR 0011) |
 | PostgreSQL | `postgres/` | issue #17 | Planned |
 | brasse-bouillon backend | `brasse-bouillon/` | issue #15 | Planned |
 | brasse-bouillon frontend | `brasse-bouillon/` | issue #16 | Planned |

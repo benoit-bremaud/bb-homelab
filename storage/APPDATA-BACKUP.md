@@ -80,18 +80,23 @@ le PC récupère ensuite les archives (voir [OFFPI-COPY.md](OFFPI-COPY.md)).
 ```bash
 A="$(ls -1t ~/backups/uptime-kuma/*.tar.gz | head -n1)"
 T="$(mktemp -d)" && tar -xzf "$A" -C "$T"
-sqlite3 "$T/app_data/kuma.db" 'PRAGMA integrity_check;'   # attendu : ok
+python3 -c 'import sqlite3, sys; print(sqlite3.connect("file:" + sys.argv[1] + "?mode=ro", uri=True).execute("PRAGMA integrity_check").fetchone()[0])' \
+  "$T/app_data/kuma.db"                                     # attendu : ok
 rm -rf "$T"
 tar -tzf "$(ls -1t ~/backups/caddy/*.tar.gz | head -n1)" | grep 'pki/authorities/local/root.key'
 ```
+
+`sqlite3` n'est pas installé sur le Pi : la vérification passe par
+`python3`, en lecture seule (`mode=ro`), pour qu'une base absente
+échoue au lieu de créer un fichier vide qui répondrait `ok`.
 
 Forgejo :
 
 ```bash
 A="$(ls -1t ~/backups/forgejo/*.tar.gz | head -n1)"
 T="$(mktemp -d)" && tar -xzf "$A" -C "$T"
-python3 -c 'import sqlite3, sys; print(sqlite3.connect(sys.argv[1]).execute("PRAGMA integrity_check").fetchone()[0])' \
-  "$T/var_lib_gitea/data/gitea.db"                                   # attendu : ok (sqlite3 n'est pas installé sur le Pi)
+python3 -c 'import sqlite3, sys; print(sqlite3.connect("file:" + sys.argv[1] + "?mode=ro", uri=True).execute("PRAGMA integrity_check").fetchone()[0])' \
+  "$T/var_lib_gitea/data/gitea.db"                                   # attendu : ok
 ls "$T/var_lib_gitea/git/repositories"                               # un dossier par utilisateur
 test -s "$T/var_lib_gitea/custom/conf/app.ini" && echo "app.ini présent"
 rm -rf "$T"
@@ -125,7 +130,8 @@ DEST=/mnt/appdata/uptime-kuma
 OWNER=1000:1000
 case "${DEST}" in /mnt/appdata/?*) OK=1 ;; *) OK=0 ;; esac
 
-if [ "${OK}" = 1 ] && mountpoint -q /mnt/appdata && test -d "${DEST}" && test -s "${ARCHIVE}"; then
+if [ "${OK}" = 1 ] && mountpoint -q /mnt/appdata && test -d "${DEST}" && test -s "${ARCHIVE}" \
+   && tar -tzf "${ARCHIVE}" "./${SRC}" >/dev/null; then
   docker compose down
   sudo find "${DEST}" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
   sudo tar -xzf "${ARCHIVE}" -C "${DEST}" --strip-components=2 "./${SRC}"
@@ -136,8 +142,9 @@ else
 fi
 ```
 
-Le garde-fou refuse toute cible hors de `/mnt/appdata/<service>` et
-toute archive absente ou vide avant d'effacer quoi que ce soit, et `chown -h` ne suit pas un lien symbolique
+Le garde-fou refuse, avant d'effacer quoi que ce soit, toute cible hors
+de `/mnt/appdata/<service>` et toute archive absente, vide, illisible ou
+sans le dossier attendu ; et `chown -h` ne suit pas un lien symbolique
 qui se trouverait dans l'archive.
 
 Lancé sans root, `docker cp` écrit les fichiers au nom de `benoit`

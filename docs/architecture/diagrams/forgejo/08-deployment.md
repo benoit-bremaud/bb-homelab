@@ -65,7 +65,8 @@ les arêtes.
   par Caddy.
 - **Port SSH** : publié sur `100.121.134.61:2222` seulement. Docker
   contourne UFW (ADR 0007) : la liaison à l'IP tailnet est le seul
-  filtre, elle ne doit jamais devenir `0.0.0.0`. Le sshd de l'hôte
+  filtre côté hôte, elle ne doit jamais devenir `0.0.0.0`. La politique
+  du tailnet limite en plus le port au PC de développement (#268). Le sshd de l'hôte
   (port 22) n'est pas concerné.
 - **Authentification SSH** : par clé publique seulement, gérée dans
   Forgejo ; aucun compte système n'est créé sur le Pi.

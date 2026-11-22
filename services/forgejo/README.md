@@ -38,13 +38,15 @@ Schéma de déploiement :
   | `APP_NAME` | `bb-homelab git` | titre de l'instance |
   | `[repository] FORCE_PRIVATE` | `true` | tout dépôt est créé privé, par le web comme par l'API ; un admin peut le publier après coup |
   | `[repository] DEFAULT_PRIVATE` | `private` | case « privé » cochée dans le formulaire web |
-  | `[service] DEFAULT_ORG_VISIBILITY`, `DEFAULT_USER_VISIBILITY` | `private` | valeur présélectionnée dans le formulaire web |
+  | `[service] DEFAULT_ORG_VISIBILITY` | `private` | valeur présélectionnée dans le formulaire web |
+  | `[service] DEFAULT_USER_VISIBILITY` | `private` | tout nouveau compte est privé, quel que soit le chemin (web, CLI, API) ; le compte `benoit`, créé avant, garde sa visibilité |
   | `[security] GLOBAL_TWO_FACTOR_REQUIREMENT` | `all` | double authentification obligatoire pour tous les comptes |
   | `[session] PROVIDER` | `db` | sessions en base : un redémarrage ne déconnecte plus |
-  | `[mailer] ENABLED` | `false` | aucun courriel envoyé |
+  | `[mailer] ENABLED` | `false` | aucun courriel : ni notification, ni réinitialisation de mot de passe (passer par la CLI) |
 
-  Les réglages `DEFAULT_*` ne valent que pour le formulaire web : l'API
-  les ignore. Rien ne force la visibilité d'une organisation : la créer
+  `DEFAULT_PRIVATE` et `DEFAULT_ORG_VISIBILITY` ne valent que pour le
+  formulaire web : l'API les ignore (vérifié sur 15.0.12). Rien ne
+  force la visibilité d'une organisation : la créer
   avec `visibility: private` explicite et le vérifier ensuite.
   Avec la double authentification obligatoire, le jeton d'API d'un
   compte sans second facteur est refusé.
@@ -106,8 +108,16 @@ docker exec -it bb-homelab-forgejo forgejo admin user create \
 Le mot de passe s'affiche une seule fois. Forgejo demande de le changer à
 la première connexion (option explicite : le premier compte en est
 dispensé par défaut) : enregistrer le nouveau dans le gestionnaire de mots
-de passe. Activer ensuite la double authentification (Paramètres →
-Sécurité).
+de passe. La double authentification est obligatoire : Forgejo l'impose
+à la première connexion (Paramètres → Sécurité) et refuse le jeton d'API
+d'un compte qui ne l'a pas. Garder le code de secours dans le
+gestionnaire de mots de passe. Second facteur perdu : depuis le Pi,
+
+```bash
+docker exec -it bb-homelab-forgejo forgejo admin user reset-mfa --username <nom>
+```
+
+puis réenrôler un second facteur à la connexion suivante.
 
 ### Clients
 
@@ -187,8 +197,15 @@ demande un jeton d'accès Forgejo et que git fasse confiance à la CA interne.
   `repository`, `issue` et `organization`, lecture sur `user` ; ni
   `admin` ni `notification`. Créer un dépôt sous un compte
   (`POST /user/repos`) demande `write:user` : ce jeton ne crée des
-  dépôts que sous une organisation. Sans expiration : à renouveler à la main,
-  rappel en 2027-11.
+  dépôts que sous une organisation.
+- Pas d'expiration : l'API de Forgejo 15 n'en propose pas (champs
+  `name`, `scopes`, `repositories` seulement). Rotation à la main, en
+  créant le nouveau jeton avant de révoquer l'ancien ; rappel en 2027-11.
+- Risque résiduel : le jeton appartient à un compte admin. Avec la seule
+  portée `write:repository`, il peut repasser un dépôt en public
+  (`PATCH`, vérifié sur 15.0.12) : `FORCE_PRIVATE` ne bloque que les
+  non-admins. Effet limité tant que l'instance exige une connexion pour
+  tout lire et n'a qu'un compte.
 - Valeur : fichier `~/.config/forgejo/token` du PC de développement
   (`600`, dossier en `700`). Elle ne va ni dans git, ni dans une
   commande affichée, ni dans une discussion :
