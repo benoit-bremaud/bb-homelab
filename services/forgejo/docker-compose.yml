@@ -25,12 +25,15 @@ services:
     memswap_limit: 512m
     # Git over SSH only. Bound to the Pi's tailnet IP (ADR 0007):
     # Docker-published ports bypass UFW, so this binding is the only
-    # filter on 2222. Never 0.0.0.0. The web port 3000 is not published:
+    # host-side filter on 2222. Never 0.0.0.0. The tailnet policy also
+    # limits 2222 to the dev PC (README, #268). The web port 3000 is not published:
     # Caddy reaches it as `forgejo:3000` (ADR 0009).
     ports:
       - "100.121.134.61:2222:2222"
     environment:
       # Applied to app.ini at every start (FORGEJO__<section>__<KEY>).
+      # Instance title (default section: four underscores).
+      - "FORGEJO____APP_NAME=bb-homelab git"
       # Must match the Caddy site name, or links and clone URLs break.
       - FORGEJO__server__DOMAIN=git.bb-homelab.local
       - FORGEJO__server__ROOT_URL=https://git.bb-homelab.local/
@@ -55,6 +58,22 @@ services:
       - FORGEJO__service__REQUIRE_SIGNIN_VIEW=true
       - FORGEJO__openid__ENABLE_OPENID_SIGNIN=false
       - FORGEJO__openid__ENABLE_OPENID_SIGNUP=false
+      # Private by default (#268). DEFAULT_* only preselect the web form:
+      # the API ignores them. FORCE_PRIVATE makes every new repository
+      # private, web and API; an admin can still publish one afterwards.
+      # Nothing forces an organisation: create it with an explicit
+      # `visibility: private`.
+      - FORGEJO__repository__DEFAULT_PRIVATE=private
+      - FORGEJO__repository__FORCE_PRIVATE=true
+      - FORGEJO__service__DEFAULT_ORG_VISIBILITY=private
+      - FORGEJO__service__DEFAULT_USER_VISIBILITY=private
+      # Every account must enrol a second factor before using the web UI.
+      - FORGEJO__security__GLOBAL_TWO_FACTOR_REQUIREMENT=all
+      # No mail server: no notification or password-reset mail.
+      - FORGEJO__mailer__ENABLED=false
+      # Sessions in the SQLite database, not in memory: a restart no
+      # longer signs everyone out.
+      - FORGEJO__session__PROVIDER=db
       # Served over HTTPS only (Caddy).
       - FORGEJO__session__COOKIE_SECURE=true
       # No third-party avatar lookups.

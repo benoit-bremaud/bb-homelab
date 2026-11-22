@@ -2244,3 +2244,66 @@ was done and why, by date.
 - **Not done yet**: the same fix in the home-assistant repository (own
   session); fixed `flock` path (#266).
 - **Refs**: #263, #265, #266
+
+## 2026-11-22
+
+### Forgejo: first deployment recorded, instance settings hardened (#268)
+
+- **Deployed, 2026-11-21**: `bb-homelab-forgejo` on the Pi, image
+  `15.0.12-rootless`, healthy; web through Caddy on
+  `https://git.bb-homelab.local`, git over SSH on `100.121.134.61:2222`.
+  Admin account `benoit` created by the owner, 2FA on.
+- **Access**: tailnet policy rule limits port 2222 to the dev PC
+  (`100.67.85.126`), set by the owner. SSH host key fingerprint recorded
+  in `services/forgejo/README.md`; client key `id_ed25519_forgejo` with
+  `IdentitiesOnly yes`.
+- **Monitoring**: Uptime Kuma HTTP monitor `Forgejo` on `/api/healthz`
+  and Push monitor `backup-forgejo`.
+- **Backup**: nightly archive at 03:35 (first cron run 2026-11-22,
+  `forgejo-2026-11-22_033501.tar.gz`).
+- **Restore test, 2026-11-21**: passed, from an archive holding a test
+  repository; procedure in `storage/APPDATA-BACKUP.md`. Two fixes to
+  that procedure: the integrity check uses `python3` (`sqlite3` is not
+  installed on the Pi) and the restore guard refuses a missing or empty
+  archive before it deletes anything.
+- **Instance settings (compose)**: title `bb-homelab git`; every new
+  repository forced private; private preselected for organisations and
+  accounts; 2FA required for every account; sessions in the database
+  (a restart no longer signs out); mailer off.
+- **Checked on a throwaway local 15.0.12 instance**: title shown; session
+  kept after a restart; an account without 2FA is sent to the security
+  page and its API token is refused. `DEFAULT_PRIVATE` and
+  `DEFAULT_ORG_VISIBILITY` only preselect the web form: an API-created
+  repository or organisation was public. With `FORCE_PRIVATE=true` an
+  API-created repository is private, even with `"private": false`; an
+  admin `PATCH` can still publish it.
+- **Decision (owner MCDA)**: `FORCE_PRIVATE=true` (470) over the same
+  plus an agent convention (445) and the convention alone (225).
+- **Found**: `POST /user/repos` needs `write:user`; the agent token
+  (user read) creates repositories under an organisation only. Open
+  point for the migration (#262).
+- **Agent API token**: `user-benoit-agents-2026` (repository, issue and
+  organization write, user read; no admin, no notification), created by the owner, value
+  only in `~/.config/forgejo/token` on the dev PC. No expiry: rotate by
+  hand, reminder 2027-11.
+- **Decision (owner MCDA)**: repository layout mirrors GitHub (440/500):
+  `benoit-bremaud/*` under `benoit/*`, `StudioB22/*` under a private
+  organisation `StudioB22`, same repository names. First repository:
+  `benoit/saint-thomas` (private).
+- **Checked after review**: an API token of the admin account with
+  `write:repository` only can `PATCH` a repository back to public
+  (`FORCE_PRIVATE` binds non-admins only): residual risk, recorded in the
+  README. Forgejo 15 tokens have no expiry field. `reset-mfa` exists for
+  a lost second factor. `DEFAULT_USER_VISIBILITY` applies to accounts
+  created from the CLI too.
+- **Also fixed**: the Uptime Kuma integrity check used `sqlite3` (absent
+  on the Pi); both checks open the database read-only, so a missing file
+  fails instead of answering `ok`; the restore guard also refuses an
+  unreadable archive. Stale "not deployed" lines updated in
+  `network/README.md`, `services/README.md`,
+  `services/uptime-kuma/README.md`. ADR 0011 left as a dated record.
+- **Not done yet**: apply the new settings on the Pi (`git pull`,
+  `docker compose up -d`); web upload above 64 MB and a PR merge;
+  organisation `StudioB22`; the ADR on Forgejo's role next to GitHub,
+  with the repository-layout decision; the migration bricks of epic #262.
+- **Refs**: #260, #262, #268

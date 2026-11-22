@@ -31,6 +31,25 @@ Schéma de déploiement :
 - Instance fermée : inscription désactivée, connexion obligatoire pour
   tout lire, assistant d'installation verrouillé, pas de runner Actions.
   Git LFS n'est pas activé.
+- Réglages d'instance (#268), tous dans le compose :
+
+  | Réglage | Valeur | Effet |
+  | --- | --- | --- |
+  | `APP_NAME` | `bb-homelab git` | titre de l'instance |
+  | `[repository] FORCE_PRIVATE` | `true` | tout dépôt est créé privé, par le web comme par l'API ; un admin peut le publier après coup |
+  | `[repository] DEFAULT_PRIVATE` | `private` | case « privé » cochée dans le formulaire web |
+  | `[service] DEFAULT_ORG_VISIBILITY` | `private` | valeur présélectionnée dans le formulaire web |
+  | `[service] DEFAULT_USER_VISIBILITY` | `private` | tout nouveau compte est privé par défaut (web, CLI, API sans `visibility` explicite) ; le compte `benoit`, créé avant, garde sa visibilité |
+  | `[security] GLOBAL_TWO_FACTOR_REQUIREMENT` | `all` | double authentification obligatoire pour tous les comptes |
+  | `[session] PROVIDER` | `db` | sessions en base : un redémarrage ne déconnecte plus |
+  | `[mailer] ENABLED` | `false` | aucun courriel : ni notification, ni réinitialisation de mot de passe (passer par la CLI) |
+
+  `DEFAULT_PRIVATE` et `DEFAULT_ORG_VISIBILITY` ne valent que pour le
+  formulaire web : l'API les ignore (vérifié sur 15.0.12). Rien ne
+  force la visibilité d'une organisation : la créer
+  avec `visibility: private` explicite et le vérifier ensuite.
+  Avec la double authentification obligatoire, le jeton d'API d'un
+  compte sans second facteur est refusé.
 
 ## Bootstrap
 
@@ -89,8 +108,16 @@ docker exec -it bb-homelab-forgejo forgejo admin user create \
 Le mot de passe s'affiche une seule fois. Forgejo demande de le changer à
 la première connexion (option explicite : le premier compte en est
 dispensé par défaut) : enregistrer le nouveau dans le gestionnaire de mots
-de passe. Activer ensuite la double authentification (Paramètres →
-Sécurité).
+de passe. La double authentification est obligatoire : Forgejo l'impose
+à la première connexion (Paramètres → Sécurité) et refuse le jeton d'API
+d'un compte qui ne l'a pas. Garder le code de secours dans le
+gestionnaire de mots de passe. Second facteur perdu : depuis le Pi,
+
+```bash
+docker exec -it bb-homelab-forgejo forgejo admin user reset-mfa --username <nom>
+```
+
+puis réenrôler un second facteur à la connexion suivante.
 
 ### Clients
 
@@ -111,15 +138,15 @@ La CA interne de Caddy doit être de confiance, comme pour les autres sites
 
 ### Essais du premier déploiement
 
-À noter dans `PROJECT_LOG.md` :
+Résultats dans `PROJECT_LOG.md` :
 
-- restauration d'une archive avec un dépôt d'essai
+- fait le 2026-11-21 : restauration d'une archive avec un dépôt d'essai
   ([APPDATA-BACKUP.md](../../storage/APPDATA-BACKUP.md#restauration)) ;
-- envoi par le web d'un fichier de plus de 64 Mo et fusion d'une PR : le
-  `/tmp` du conteneur est un tmpfs de 64 Mo (`GITEA_TEMP`). En cas
-  d'échec, agrandir le tmpfs ou déplacer le dossier temporaire sous
-  `/var/lib/gitea` ;
-- empreinte de la clé d'hôte SSH relevée (ci-dessous).
+- fait le 2026-11-21 : empreinte de la clé d'hôte SSH relevée (ci-dessous) ;
+- reste à faire : envoi par le web d'un fichier de plus de 64 Mo et
+  fusion d'une PR. Le `/tmp` du conteneur est un tmpfs de 64 Mo
+  (`GITEA_TEMP`) : en cas d'échec, agrandir le tmpfs ou déplacer le
+  dossier temporaire sous `/var/lib/gitea`.
 
 ## Utiliser git
 
@@ -130,7 +157,12 @@ dans `~/.ssh/config` du client :
 Host git.bb-homelab.local
   User git
   Port 2222
+  IdentityFile ~/.ssh/id_ed25519_forgejo
+  IdentitiesOnly yes
 ```
+
+`IdentityFile` désigne la clé dédiée à Forgejo ; `IdentitiesOnly` empêche
+`ssh` de proposer les autres clés du client.
 
 ```bash
 git clone git@git.bb-homelab.local:<utilisateur>/<dépôt>.git
@@ -147,8 +179,41 @@ lancée depuis le client, la commande ne prouverait rien.
 ssh-keyscan -p 2222 100.121.134.61 2>/dev/null | ssh-keygen -lf -
 ```
 
+Empreinte relevée le 2026-11-21 :
+`SHA256:0VjmYCYyYZkIa36N4JAtcgL6BqSsMC/4KQBs6/o73jQ`.
+
+Le port 2222 est aussi filtré par la politique d'accès du tailnet : seul
+le PC de développement (`100.67.85.126`) y est autorisé. Un nouveau
+client doit y être ajouté par le propriétaire, dans la console Tailscale.
+
 Le clone en HTTPS (`https://git.bb-homelab.local/<utilisateur>/<dépôt>.git`)
 demande un jeton d'accès Forgejo et que git fasse confiance à la CA interne.
+
+## API et jeton des agents
+
+- Base : `https://git.bb-homelab.local/api/v1`, en-tête
+  `Authorization: token <valeur>`.
+- Jeton `user-benoit-agents-2026` du compte `benoit` : écriture sur
+  `repository`, `issue` et `organization`, lecture sur `user` ; ni
+  `admin` ni `notification`. Créer un dépôt sous un compte
+  (`POST /user/repos`) demande `write:user` : ce jeton ne crée des
+  dépôts que sous une organisation.
+- Pas d'expiration : l'API de Forgejo 15 n'en propose pas (champs
+  `name`, `scopes`, `repositories` seulement). Rotation à la main, en
+  créant le nouveau jeton avant de révoquer l'ancien ; rappel en 2027-11.
+- Risque résiduel : le jeton appartient à un compte admin. Avec la seule
+  portée `write:repository`, il peut repasser un dépôt en public
+  (`PATCH`, vérifié sur 15.0.12) : `FORCE_PRIVATE` ne bloque que les
+  non-admins. Effet limité tant que l'instance exige une connexion pour
+  tout lire et n'a qu'un compte.
+- Valeur : fichier `~/.config/forgejo/token` du PC de développement
+  (`600`, dossier en `700`). Elle ne va ni dans git, ni dans une
+  commande affichée, ni dans une discussion :
+
+  ```bash
+  curl -fsS -H @<(printf 'Authorization: token %s' "$(cat ~/.config/forgejo/token)") \
+    https://git.bb-homelab.local/api/v1/user
+  ```
 
 ## Variables d'environnement
 
@@ -203,7 +268,7 @@ annoncée pour le 2027-04-15) avant cette date.
 
 ## Refs
 
-- Issue #260
+- Issues #260, #268
 - [ADR 0011](../../docs/decisions/0011-forgejo-git-forge.md),
   [ADR 0007](../../docs/decisions/0007-docker-published-ports-binding.md),
   [ADR 0009](../../docs/decisions/0009-per-backend-proxy-networks.md)

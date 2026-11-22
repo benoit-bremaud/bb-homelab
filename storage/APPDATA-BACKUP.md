@@ -80,17 +80,23 @@ le PC récupère ensuite les archives (voir [OFFPI-COPY.md](OFFPI-COPY.md)).
 ```bash
 A="$(ls -1t ~/backups/uptime-kuma/*.tar.gz | head -n1)"
 T="$(mktemp -d)" && tar -xzf "$A" -C "$T"
-sqlite3 "$T/app_data/kuma.db" 'PRAGMA integrity_check;'   # attendu : ok
+python3 -c 'import sqlite3, sys; print(sqlite3.connect("file:" + sys.argv[1] + "?mode=ro", uri=True).execute("PRAGMA integrity_check").fetchone()[0])' \
+  "$T/app_data/kuma.db"                                     # attendu : ok
 rm -rf "$T"
 tar -tzf "$(ls -1t ~/backups/caddy/*.tar.gz | head -n1)" | grep 'pki/authorities/local/root.key'
 ```
+
+`sqlite3` n'est pas installé sur le Pi : la vérification passe par
+`python3`, en lecture seule (`mode=ro`), pour qu'une base absente
+échoue au lieu de créer un fichier vide qui répondrait `ok`.
 
 Forgejo :
 
 ```bash
 A="$(ls -1t ~/backups/forgejo/*.tar.gz | head -n1)"
 T="$(mktemp -d)" && tar -xzf "$A" -C "$T"
-sqlite3 "$T/var_lib_gitea/data/gitea.db" 'PRAGMA integrity_check;'   # attendu : ok
+python3 -c 'import sqlite3, sys; print(sqlite3.connect("file:" + sys.argv[1] + "?mode=ro", uri=True).execute("PRAGMA integrity_check").fetchone()[0])' \
+  "$T/var_lib_gitea/data/gitea.db"                                   # attendu : ok
 ls "$T/var_lib_gitea/git/repositories"                               # un dossier par utilisateur
 test -s "$T/var_lib_gitea/custom/conf/app.ini" && echo "app.ini présent"
 rm -rf "$T"
@@ -124,19 +130,21 @@ DEST=/mnt/appdata/uptime-kuma
 OWNER=1000:1000
 case "${DEST}" in /mnt/appdata/?*) OK=1 ;; *) OK=0 ;; esac
 
-if [ "${OK}" = 1 ] && mountpoint -q /mnt/appdata && test -d "${DEST}"; then
+if [ "${OK}" = 1 ] && mountpoint -q /mnt/appdata && test -d "${DEST}" && test -s "${ARCHIVE}" \
+   && tar -tzf "${ARCHIVE}" "./${SRC}" >/dev/null; then
   docker compose down
   sudo find "${DEST}" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
   sudo tar -xzf "${ARCHIVE}" -C "${DEST}" --strip-components=2 "./${SRC}"
   sudo chown -R -h "${OWNER}" "${DEST}"
   docker compose up -d
 else
-  echo "STOP: DEST invalide ou disque non monté (${DEST})"
+  echo "STOP: DEST invalide, disque non monté ou archive absente (${DEST}, ${ARCHIVE})"
 fi
 ```
 
-Le garde-fou refuse toute cible hors de `/mnt/appdata/<service>` avant
-d'effacer quoi que ce soit, et `chown -h` ne suit pas un lien symbolique
+Le garde-fou refuse, avant d'effacer quoi que ce soit, toute cible hors
+de `/mnt/appdata/<service>` et toute archive absente, vide, illisible ou
+sans le dossier attendu ; et `chown -h` ne suit pas un lien symbolique
 qui se trouverait dans l'archive.
 
 Lancé sans root, `docker cp` écrit les fichiers au nom de `benoit`
@@ -151,9 +159,9 @@ le Pi avec `scp`.
 **Forgejo :** `.env` doit porter la même `FORGEJO_SECRET_KEY` qu'au
 moment de la sauvegarde. Après la restauration, ouvrir un dépôt dans le
 navigateur, puis lancer `git ls-remote` en SSH depuis un client : la clé
-d'hôte SSH est restaurée, aucun client ne voit d'alerte. Le test de
-restauration reste à faire au premier déploiement (#260), puis après
-chaque montée de version majeure ; noter la date et le résultat dans
+d'hôte SSH est restaurée, aucun client ne voit d'alerte. Test de
+restauration réussi le 2026-11-21 (premier déploiement, #260) ; à
+refaire après chaque montée de version majeure, date et résultat dans
 `PROJECT_LOG.md`.
 
 Après une restauration Caddy, la CA est identique : aucun client n'a à
