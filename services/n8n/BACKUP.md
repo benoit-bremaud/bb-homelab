@@ -186,18 +186,22 @@ Same flow as above, plus three prerequisites before step 1:
    sudo chown 1000:1000 /mnt/appdata/n8n
    ```
 
-   You can then proceed with steps 2-4 above, then step 5 as
-   `docker compose up -d n8n` while the old host still runs its tunnel
-   (prerequisite 3) (no need to start the
-   stack first — the bind-mount path is created by hand, unlike a
-   named volume which Docker only materialises on first `up`).
+   You can then proceed from `services/n8n` with steps 2-4 above, with
+   no need to start the stack first: the bind-mount path is created by
+   hand, unlike a named volume which Docker only materialises on first
+   `up`. Step 5 depends on the old host (prerequisite 3).
 
 3. `.env` also needs `N8N_HOST`, `N8N_WEBHOOK_URL` and
    `CLOUDFLARE_TUNNEL_TOKEN` (password manager), or `docker compose`
-   refuses to start. While the old host still runs its tunnel, start
-   **n8n only** (`docker compose up -d n8n`): a second cloudflared with
-   the same token joins the same tunnel, and Cloudflare would split
-   public traffic between two n8n databases.
+   refuses to start. Step 5:
+   - old host still running its tunnel: `docker compose up -d n8n`
+     only. A second cloudflared with the same token joins the same
+     tunnel, and Cloudflare would split public traffic between two n8n
+     databases. Once the old host's cloudflared is stopped, run
+     `docker compose up -d`;
+   - old host dead or gone: `docker compose up -d`.
+
+   Then check `https://n8n.benoitbremaud.fr/healthz` returns 200.
 
 ## Verifying an archive is restorable
 

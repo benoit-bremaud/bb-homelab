@@ -114,7 +114,8 @@ incident de rotation dans `PROJECT_LOG.md`, voir
    redémarrage de cloudflared.
 2. En cas de fuite seulement : couper aussitôt toutes les connexions du
    tunnel (API Cloudflare, `DELETE …/cfd_tunnel/<id>/connections`) ; le
-   connecteur d'un attaquant reste sinon actif.
+   connecteur d'un attaquant reste sinon actif. n8n reste alors
+   injoignable jusqu'à l'étape 4.
 3. *Add a replica* : copier le jeton (`eyJ…`) de la commande
    d'installation, sans l'exécuter, dans le `.env` du Pi
    (`CLOUDFLARE_TUNNEL_TOKEN=`) et dans le gestionnaire de mots de passe.
