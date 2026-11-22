@@ -176,11 +176,9 @@ de toute la pile : voir #206 et la surveillance SMART (#11).
    docker ps -q | xargs -r docker inspect -f '{{.Name}} {{.HostConfig.LogConfig.Config}}'   # attendu : max-file:3 max-size:10m partout
    ```
 
-8. Tunnel n8n, seulement s'il tournait avant : un redémarrage de Docker lui
-   donne une nouvelle adresse `trycloudflare`. Suivre la rotation décrite
-   dans [AUDIT.md](../docs/security/AUDIT.md) (nouvelle adresse dans
-   `WEBHOOK_URL` et `N8N_HOST`, n8n recréé, moniteur Kuma et widget
-   Impropedia repointés, webhook testé de bout en bout).
+8. Tunnel n8n : depuis le tunnel nommé (#143), un redémarrage de Docker
+   garde le nom `n8n.benoitbremaud.fr`. Vérifier seulement que
+   `https://n8n.benoitbremaud.fr/healthz` renvoie 200.
 
 ## Vérifier
 

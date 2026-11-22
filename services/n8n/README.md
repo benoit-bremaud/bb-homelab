@@ -16,9 +16,12 @@ homelab needs in one clone.
 - **n8n** — the orchestrator itself, bound to `127.0.0.1:5678` so the
   outside world can only reach it through the reverse proxy /
   cloudflared tunnel (never directly on a LAN/WAN port).
-- **cloudflared** — Cloudflare tunnel exposing n8n as a public HTTPS
-  URL without any port forwarding. Ephemeral `*.trycloudflare.com`
-  today; named tunnel when a domain is bought (decision #28).
+- **cloudflared** — tunnel Cloudflare nommé : expose n8n en HTTPS sur
+  le nom public stable `n8n.benoitbremaud.fr`, sans redirection de port
+  (#143, [ADR 0012](../../docs/decisions/0012-n8n-named-cloudflare-tunnel.md)).
+  Il remplace le tunnel rapide `*.trycloudflare.com`, dont le nom
+  changeait à chaque recréation et qui ne transporte pas les
+  Server-Sent Events dont le serveur MCP de n8n a besoin.
 - **bind-mount `/mnt/appdata/n8n`** — host directory on the HDD that
   persists n8n's SQLite DB, encrypted credentials, workflow JSONs.
   Backup target. Migrated from the SD-card Docker named volume
@@ -45,8 +48,8 @@ cp .env.example .env
 # Replace the empty N8N_ENCRYPTION_KEY= placeholder in-place (avoids
 # leaving the original empty line sitting above a duplicate).
 sed -i "s|^N8N_ENCRYPTION_KEY=.*|N8N_ENCRYPTION_KEY=$(openssl rand -hex 32)|" .env
-# Edit .env to set WEBHOOK_URL / N8N_HOST once cloudflared announces
-# its ephemeral URL on first start.
+# Renseigner dans .env : N8N_HOST, N8N_WEBHOOK_URL et
+# CLOUDFLARE_TUNNEL_TOKEN (voir « Tunnel nommé » plus bas).
 docker compose up -d
 ```
 
@@ -55,9 +58,10 @@ Then:
 ```bash
 # Check both containers are healthy
 docker compose ps
-# Grab the public tunnel URL (changes at every cloudflared restart
-# unless we switch to a named tunnel)
-docker compose logs cloudflared | grep -E "https://[a-z0-9-]+\.trycloudflare\.com"
+# Tunnel connecté (attendu : « Registered tunnel connection »)
+docker compose logs cloudflared | grep -i "registered tunnel connection"
+# Nom public de bout en bout (attendu : 200)
+curl -s -o /dev/null -w '%{http_code}\n' https://n8n.benoitbremaud.fr/healthz
 # Access the n8n UI locally
 # http://localhost:5678
 ```
@@ -70,11 +74,61 @@ On first start, n8n will prompt for an admin account creation.
 |---|---|
 | `N8N_ENCRYPTION_KEY` | Encrypts all credentials stored in n8n. **Lose it = lose them**. Must stay identical across migrations. |
 | `TZ` | Timezone (default `Europe/Paris`). |
-| `WEBHOOK_URL` | The public URL cloudflared announces. Used by n8n to build absolute webhook URLs (e.g. what the Impropedia widget posts to). |
-| `N8N_HOST` | Hostname n8n serves (set to the cloudflared subdomain). |
-| `CLOUDFLARE_TUNNEL_TOKEN` | *(future)* Stable named tunnel token once a Cloudflare domain is bought. |
+| `N8N_HOST` | Nom public servi par n8n : `n8n.benoitbremaud.fr`. |
+| `N8N_WEBHOOK_URL` | URL publique de base, avec la barre finale : `https://n8n.benoitbremaud.fr/`. n8n en tire les URL absolues des webhooks (celle du widget Impropedia par exemple). Remplace `WEBHOOK_URL`, dépréciée depuis n8n 2.35 (#151). |
+| `CLOUDFLARE_TUNNEL_TOKEN` | Jeton du tunnel nommé, passé à cloudflared comme `TUNNEL_TOKEN`. Secret : `.env` du Pi et gestionnaire de mots de passe seulement. Obligatoire. |
+
+`N8N_PROXY_HOPS=1` est fixé dans le compose : un seul proxy
+(cloudflared ou Caddy) se tient devant n8n et pose `X-Forwarded-For`.
 
 All sensitive values live in `.env` (gitignored). Never commit `.env`.
+
+## Tunnel nommé
+
+Le tunnel est géré à distance : sa route de nom public vit dans le
+tableau de bord Cloudflare, le Pi ne détient que le jeton.
+
+| Élément | Valeur |
+|---|---|
+| Compte Cloudflare | celui du propriétaire, qui porte la zone `benoitbremaud.fr` |
+| Nom du tunnel | `bb-homelab-n8n` |
+| Nom public | `n8n.benoitbremaud.fr` → `HTTP` `127.0.0.1:5678` (cloudflared tourne dans le réseau de l'hôte) |
+| TLS | certificat du bord Cloudflare ; le HSTS de la zone (`includeSubDomains`, preload) impose HTTPS |
+| Jeton | `.env` du Pi (`CLOUDFLARE_TUNNEL_TOKEN`) et gestionnaire de mots de passe ; jamais dans git, un chat ou un journal |
+| Échéance du jeton | les jetons de tunnel Cloudflare n'expirent pas : rotation annuelle, prochaine en 2027-11 |
+
+Recréer cloudflared (`docker compose up -d --force-recreate
+cloudflared`, montée de version, redémarrage) garde le nom : rien à
+repointer.
+
+### Rotation du jeton
+
+Chaque année, ou tout de suite en cas de fuite (consigner alors un
+incident de rotation dans `PROJECT_LOG.md`, voir
+`.claude/rules/security-invariants.md`).
+
+1. Tableau de bord Cloudflare → Networking → Tunnels → `bb-homelab-n8n`
+   → *Rotate token* (ou *Refresh token*). L'ancien jeton n'ouvre plus de
+   nouvelle connexion ; la connexion en cours reste active jusqu'au
+   redémarrage de cloudflared.
+2. *Add a replica* : copier le jeton (`eyJ…`) de la commande
+   d'installation, sans l'exécuter, dans le `.env` du Pi
+   (`CLOUDFLARE_TUNNEL_TOKEN=`) et dans le gestionnaire de mots de passe.
+3. `docker compose up -d --force-recreate cloudflared`.
+4. Contrôle : les journaux de cloudflared montrent des connexions
+   enregistrées, `https://n8n.benoitbremaud.fr/healthz` renvoie 200.
+5. En cas de fuite seulement : couper aussi toutes les connexions du
+   tunnel (API Cloudflare, `DELETE …/cfd_tunnel/<id>/connections`).
+6. Noter la date de rotation et la suivante dans `PROJECT_LOG.md`.
+
+### Consommateurs du nom public
+
+- Widget de retours Impropedia (dépôt à part) : `POST
+  https://n8n.benoitbremaud.fr/webhook/feedback`.
+- Connecteur n8n de claude.ai :
+  `https://n8n.benoitbremaud.fr/mcp-server/http` (OAuth par n8n).
+- Moniteur HTTPS Uptime Kuma du tunnel :
+  `https://n8n.benoitbremaud.fr/healthz`.
 
 ## Security notes
 
@@ -109,6 +163,6 @@ inventoriés dans [Bots Telegram](../../docs/telegram-bots.md).
 C'est le seul workflow et le seul credential présents dans n8n
 (`n8n list:workflow`, actifs compris). Le tunnel cloudflared, arrêté du
 2026-11-03 au 2026-11-21 (#196), tourne de nouveau (décision du
-propriétaire, risque accepté) : le webhook est joignable par l'URL
-trycloudflare courante jusqu'à #143. Le Kaggle watcher ne tourne pas dans n8n ;
+propriétaire, risque accepté) ; depuis #143 le webhook est joignable
+sur le nom stable `n8n.benoitbremaud.fr`. Le Kaggle watcher ne tourne pas dans n8n ;
 l'ancien `n8n-watchdog` du portable a été retiré par l'ADR 0004.

@@ -18,11 +18,16 @@ services:
     ports:
       - "127.0.0.1:5678:5678"
     environment:
-      # Bind only to localhost; public access goes through cloudflared.
+      # Bind only to localhost; public access goes through the named
+      # cloudflared tunnel on a stable hostname (#143, ADR 0012).
       - N8N_HOST=${N8N_HOST:-localhost}
       - N8N_PORT=5678
       - N8N_PROTOCOL=http
-      - WEBHOOK_URL=${WEBHOOK_URL:-https://localhost}
+      # Replaces WEBHOOK_URL, deprecated since n8n 2.35 (#151).
+      - N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL:-https://localhost/}
+      # One proxy (cloudflared or Caddy) sets X-Forwarded-For in front of
+      # n8n: trust exactly one hop for the client IP and protocol.
+      - N8N_PROXY_HOPS=1
       - GENERIC_TIMEZONE=${TZ:-Europe/Paris}
       - TZ=${TZ:-Europe/Paris}
       # Encryption key is mandatory: it protects every credential n8n
@@ -66,7 +71,10 @@ services:
       - default
       - proxy
 
-  # Cloudflare Tunnel — exposes n8n through a public HTTPS URL.
+  # Cloudflare named tunnel — exposes n8n on a stable public HTTPS
+  # hostname (#143, ADR 0012). The tunnel and its public hostname route
+  # (-> http://127.0.0.1:5678) are managed in the Cloudflare Zero Trust
+  # dashboard; the container only needs the tunnel token.
   # network_mode: host so cloudflared uses the host's network stack
   # directly, avoiding Docker-bridge MTU/TLS handshake issues on some
   # environments. On host mode, it reaches n8n via 127.0.0.1:5678 (the
@@ -81,9 +89,11 @@ services:
     depends_on:
       n8n:
         condition: service_healthy
-    command: tunnel --no-autoupdate --url http://127.0.0.1:5678
-    # The public URL is printed in the logs:
-    #   docker compose logs cloudflared | grep trycloudflare.com
+    environment:
+      # Tunnel token, only in the Pi .env (never in git). Fail fast at
+      # `docker compose up` rather than start a tunnel that cannot log in.
+      - "TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN:?CLOUDFLARE_TUNNEL_TOKEN must be set in .env}"
+    command: tunnel --no-autoupdate run
 
 networks:
   default:

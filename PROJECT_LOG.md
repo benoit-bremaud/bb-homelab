@@ -2307,3 +2307,49 @@ was done and why, by date.
   organisation `StudioB22`; the ADR on Forgejo's role next to GitHub,
   with the repository-layout decision; the migration bricks of epic #262.
 - **Refs**: #260, #262, #268
+
+### Deployment: PR #269 on the Pi (#268)
+
+- **Applied, 2026-11-22**: Pi clone fast-forwarded to `518f4f1`,
+  `bb-homelab-forgejo` recreated at 22:05 UTC with the hardened instance
+  settings, healthy.
+- **Refs**: #268, PR #269
+
+### Incident: claude.ai n8n connector "Server not responding"
+
+- **Symptom, 2026-11-22**: the claude.ai n8n connector showed "Server not
+  responding".
+- **Checked**: n8n healthy (`/healthz` 200, `/mcp-server/http` 401
+  without a token); OAuth complete (consent given, authorization code and
+  refresh token rows in n8n's SQLite); yet no MCP request reached n8n.
+  Temporary debug logging reverted.
+- **Root cause**: Cloudflare quick tunnels (`*.trycloudflare.com`) do not
+  support Server-Sent Events; the edge buffers `text/event-stream`, which
+  n8n's MCP streamable HTTP transport relies on.
+- **Decision (owner MCDA)**: named Cloudflare tunnel (470/500) over
+  Tailscale Funnel (410) and keeping the quick tunnel (155). Fixed in
+  #143 below.
+- **Refs**: #143
+
+### Network: n8n named Cloudflare tunnel (#143)
+
+- **What**: cloudflared runs the remotely managed named tunnel
+  `bb-homelab-n8n` (`tunnel --no-autoupdate run`, token from the Pi
+  `.env` as `TUNNEL_TOKEN`, compose fails fast without it). Public
+  hostname `n8n.benoitbremaud.fr` → `http://127.0.0.1:5678`, created in
+  the Cloudflare dashboard by the owner. n8n gets `N8N_HOST`,
+  `N8N_WEBHOOK_URL` (replaces `WEBHOOK_URL`, deprecated since n8n 2.35,
+  #151) and `N8N_PROXY_HOPS=1` (one proxy in front: cloudflared or Caddy;
+  silences the express-rate-limit `X-Forwarded-For` warning).
+- **Decision (owner MCDA)**: hostname `n8n.benoitbremaud.fr` (450) over
+  `automation.` (340) and `hooks.` (310). ADR 0012.
+- **Token**: tunnel `bb-homelab-n8n`; no expiry on Cloudflare tunnel
+  tokens, yearly rotation, next 2027-11; procedure in
+  `services/n8n/README.md`.
+- **Docs**: `services/n8n/README.md` (named tunnel, rotation, consumers),
+  `network/README.md`, `docs/security/AUDIT.md` (R2/R6 hostname
+  resolved), `docs/security/pentest-plan.md`,
+  `storage/DOCKER-STORAGE-MOVE.md`, `services/caddy/README.md`.
+- **Follow-up**: Cloudflare Access on the n8n editor (outside webhooks,
+  MCP and OAuth paths).
+- **Refs**: #143, #151, #46
