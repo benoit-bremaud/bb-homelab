@@ -2220,3 +2220,26 @@ was done and why, by date.
   monitor and the Impropedia widget at the new hostname.
 - **Durable fix**: #143 (named tunnel, Cloudflare Access).
 - **Refs**: #196, #143, #152
+
+### Backup: stale restic locks cleared before each vaultwarden off-site run (#265)
+
+- **What**: `services/vaultwarden/scripts/offsite.sh` runs a plain
+  `restic unlock` before `restic backup`; a killed run no longer blocks
+  every later run. New stubbed test `services/vaultwarden/tests/offsite-test.sh`
+  (call order, failed unlock stops the run, fails on `--remove-all` or
+  `--quiet`); `BACKUP.md` documents the behaviour.
+- **Why**: the Home Assistant off-site was blocked for 14 days by one
+  stale lock (#263); vaultwarden had the same pattern.
+- **Decision (owner MCDA)**: unlock before each run (485) over unlock on
+  failure only (405) and no change (300).
+- **Rule**: manual restic runs on the Pi use the cron user, never `sudo`:
+  restic cannot signal another user's PID and would treat that live lock
+  as stale.
+- **Pi check, 2026-11-21**: a `restic backup` killed with SIGKILL left
+  1 lock; the next `offsite.sh` run logged `successfully removed 1 locks`,
+  then backup, retention and check, exit 0, 0 locks left. A 0 B snapshot
+  tagged `lock-test`, left by a first botched attempt, was removed with
+  `restic forget --prune` (owner's yes); 21 vaultwarden snapshots intact.
+- **Not done yet**: the same fix in the home-assistant repository (own
+  session); fixed `flock` path (#266).
+- **Refs**: #263, #265, #266
