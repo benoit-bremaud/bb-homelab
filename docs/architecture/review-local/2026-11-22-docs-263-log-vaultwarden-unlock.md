@@ -5,7 +5,7 @@ Pre-push review of the log entry for the vaultwarden stale-lock cleanup (#265).
 - Date: 2026-11-22
 - Commit: 915533a
 - Scope: branch diff `origin/main...HEAD` (`PROJECT_LOG.md` only)
-- Checks run: adversarial (fresh reviewer, 2 rounds) · markdownlint (CI mirror) · secrets
+- Checks run: adversarial (fresh reviewer, 2 rounds) · markdownlint (CI mirror) · SonarQube · secrets
 - Verdict: ship · Must 0 · Should 0 · Nice 0 open
 
 ## Adversarial review (#236)
@@ -21,7 +21,7 @@ Pre-push review of the log entry for the vaultwarden stale-lock cleanup (#265).
 | 0 CI mirror | ✅ markdownlint-cli2 0.13.0 (action v16): 0 errors |
 | 1 Tests | n/a (docs only) |
 | 2 Coverage | n/a (docs only) |
-| 3 SonarQube | n/a (no analysed file changed) |
+| 3 SonarQube | ✅ PASSED (project `bb-homelab`) |
 | 4 Secrets | ✅ gitleaks clean on `origin/main..HEAD` · diff read: nothing sensitive |
 | 5 E2E/smoke | n/a (docs only) |
 
