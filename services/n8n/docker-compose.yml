@@ -37,6 +37,11 @@ services:
       # than bringing up a stack whose future credentials would be
       # unrecoverable.
       - "N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:?N8N_ENCRYPTION_KEY must be set in .env -- generate with 'openssl rand -hex 32'}"
+      # Session (JWT) signing secret, independent from the encryption key.
+      # Unset, n8n derives it from every other character of
+      # N8N_ENCRYPTION_KEY; set, it overrides the copy stored in the
+      # database (#143 key-exposure incident).
+      - "N8N_USER_MANAGEMENT_JWT_SECRET=${N8N_USER_MANAGEMENT_JWT_SECRET:?set it in .env -- openssl rand -hex 32}"
       # Disable telemetry and version checks.
       - N8N_DIAGNOSTICS_ENABLED=false
       - N8N_VERSION_NOTIFICATIONS_ENABLED=false

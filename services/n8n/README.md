@@ -45,9 +45,11 @@ Pre-requisite: Docker + Compose v2 installed by `bootstrap/bootstrap.sh`.
 ```bash
 cd services/n8n
 cp .env.example .env
-# Replace the empty N8N_ENCRYPTION_KEY= placeholder in-place (avoids
+# Replace the empty N8N_ENCRYPTION_KEY= and N8N_USER_MANAGEMENT_JWT_SECRET=
+# placeholders in-place (avoids
 # leaving the original empty line sitting above a duplicate).
 sed -i "s|^N8N_ENCRYPTION_KEY=.*|N8N_ENCRYPTION_KEY=$(openssl rand -hex 32)|" .env
+sed -i "s|^N8N_USER_MANAGEMENT_JWT_SECRET=.*|N8N_USER_MANAGEMENT_JWT_SECRET=$(openssl rand -hex 32)|" .env
 # Renseigner dans .env : N8N_HOST, N8N_WEBHOOK_URL et
 # CLOUDFLARE_TUNNEL_TOKEN (voir « Tunnel nommé » plus bas).
 docker compose up -d
@@ -73,6 +75,7 @@ On first start, n8n will prompt for an admin account creation.
 | Variable | Role |
 |---|---|
 | `N8N_ENCRYPTION_KEY` | Encrypts all credentials stored in n8n. **Lose it = lose them**. Must stay identical across migrations. |
+| `N8N_USER_MANAGEMENT_JWT_SECRET` | Signe les sessions, invitations, réinitialisations de mot de passe et clés d'API n8n (JWT). Indépendant de `N8N_ENCRYPTION_KEY` : sans lui, n8n le tire d'un caractère sur deux de la clé. Le changer déconnecte tout le monde et invalide les clés d'API n8n, dont la clé d'API du serveur MCP (à régénérer) ; les identifiants chiffrés et le connecteur MCP en OAuth ne sont pas touchés. Rotation en cas de fuite seulement. Secret : `.env` du Pi et gestionnaire de mots de passe. Obligatoire. |
 | `TZ` | Timezone (default `Europe/Paris`). |
 | `N8N_HOST` | Nom public servi par n8n : `n8n.benoitbremaud.fr`. |
 | `N8N_WEBHOOK_URL` | URL publique de base, avec la barre finale : `https://n8n.benoitbremaud.fr/`. n8n en tire les URL absolues des webhooks (celle du widget Impropedia par exemple). Remplace `WEBHOOK_URL`, dépréciée depuis n8n 2.30 (#151). |

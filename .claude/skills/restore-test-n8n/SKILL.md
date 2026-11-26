@@ -94,6 +94,7 @@ services:
       - GENERIC_TIMEZONE=Europe/Paris
       - TZ=Europe/Paris
       - "N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:?required for restore test}"
+      - "N8N_USER_MANAGEMENT_JWT_SECRET=${N8N_USER_MANAGEMENT_JWT_SECRET:?required for restore test}"
       - N8N_DIAGNOSTICS_ENABLED=false
       - N8N_VERSION_NOTIFICATIONS_ENABLED=false
     volumes:
