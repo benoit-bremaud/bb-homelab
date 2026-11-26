@@ -13,7 +13,7 @@ cadre (issue #281).
 Inventaire du 2026-11-26 :
 
 - 137 dépôts sur le compte `benoit-bremaud` (environ 1,16 Go), 157 dans
-  l'organisation `StudioB22`, dont une cinquantaine d'actifs.
+  l'organisation `StudioB22`.
 - 84 projets GitHub Projects v2 ; 31 clones locaux portent encore
   `.github/workflows/`.
 - 74 dépôts publics, dont une soixantaine dans le périmètre de la
