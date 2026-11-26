@@ -35,6 +35,10 @@ If you lose both, you lose every credential n8n stores. No recovery.
 either: it lives in the Pi `.env` and the password manager, and can be
 rotated from the Cloudflare dashboard (see [README.md](README.md)).
 
+**`N8N_USER_MANAGEMENT_JWT_SECRET`** (#143) is not backed up either: it
+lives in the Pi `.env` and the password manager. Losing it only logs
+users out and invalidates n8n API keys; credentials are not affected.
+
 ## Backup — manual run
 
 ```bash
@@ -191,9 +195,10 @@ Same flow as above, plus three prerequisites before step 1:
    hand, unlike a named volume which Docker only materialises on first
    `up`. Step 5 depends on the old host (prerequisite 3).
 
-3. `.env` also needs `N8N_HOST`, `N8N_WEBHOOK_URL` and
-   `CLOUDFLARE_TUNNEL_TOKEN` (password manager), or `docker compose`
-   refuses to start. Step 5:
+3. `.env` also needs `N8N_USER_MANAGEMENT_JWT_SECRET`, `N8N_HOST`,
+   `N8N_WEBHOOK_URL` and `CLOUDFLARE_TUNNEL_TOKEN` (password manager), or
+   `docker compose` refuses to start. Reuse the same JWT secret: a new
+   value logs users out and invalidates the n8n API keys. Step 5:
    - old host still running its tunnel: `docker compose up -d n8n`
      only. A second cloudflared with the same token joins the same
      tunnel, and Cloudflare would split public traffic between two n8n

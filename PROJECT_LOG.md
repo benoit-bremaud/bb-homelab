@@ -2363,3 +2363,59 @@ was done and why, by date.
 - **Follow-ups**: #274 (Cloudflare Access on the n8n editor), #273
   (token rotation).
 - **Refs**: #143, #151, #46
+
+## 2026-11-26
+
+### Deployment: n8n named tunnel on the Pi (#143)
+
+- **Applied**: Pi `.env` set (`N8N_HOST`, `N8N_WEBHOOK_URL`, tunnel
+  token; old `WEBHOOK_URL` removed, mode 600, `docker compose config`
+  OK); `docker compose up -d`: 4 tunnel connections registered,
+  `https://n8n.benoitbremaud.fr/healthz` 200, `/mcp-server/http` 401
+  without a token, HSTS present. `--force-recreate cloudflared` keeps the
+  hostname (200). `.env.bak-143` deleted after the checks.
+- **MCP connector**: removed and re-added on
+  `https://n8n.benoitbremaud.fr/mcp-server/http`, owner login and
+  consent, status "Connected"; `search_projects` and `search_workflows`
+  answer. The 2 OAuth clients of the quick-tunnel era revoked in n8n;
+  3 token-less client rows left.
+- **Webhook end to end**: POST on `/webhook/feedback` 200, execution
+  succeeded, Telegram message received. The Impropedia widget is
+  disabled on GitHub Pages (no endpoint in the bundle,
+  `VITE_FEEDBACK_ENDPOINT` unset, Actions off on that repo): nothing to
+  repoint.
+- **Monitoring**: Uptime Kuma monitor "n8n tunnel (public)" moved to the
+  new hostname; it stays red because the Pi has no IPv4 Internet egress
+  (gateway answers, `ping -4 1.1.1.1` 100 % loss, IPv6 fine) and the
+  Kuma container has no IPv6. Follow-up #307 (owner MCDA: IPv6 probe plus
+  IPv4 egress watch, 425/500).
+- **Refs**: #143, #151, #307, PR #275
+
+### Token rotation incident: partial N8N_ENCRYPTION_KEY exposure (#143)
+
+- **What**: about 35 of the 64 hex characters of `N8N_ENCRYPTION_KEY`
+  were shown in a working session transcript during the Pi apply. No
+  value is recorded here.
+- **Impact**: credential encryption uses the whole key (about 116 bits
+  still unknown, and the attacker also needs `database.sqlite`).
+  Session signing was weaker: with `N8N_USER_MANAGEMENT_JWT_SECRET`
+  unset, n8n derives its JWT secret from every other character of the
+  key (seeded once in the database as `signing.jwt`), leaving about 56
+  unknown bits.
+- **Decision (owner MCDA)**: set an independent JWT secret, keep the
+  encryption key (420/500) over a full key rotation (370) and keeping
+  everything (365). The secret was generated on the Pi by the owner,
+  stored in the password manager, never displayed in a session.
+- **Change**: `N8N_USER_MANAGEMENT_JWT_SECRET` required by the compose
+  (fail fast), documented in `.env.example`, `services/n8n/README.md`,
+  `BACKUP.md`, `AGENTS.md` and the restore-test skill. Changing it logs
+  users out and invalidates n8n API keys (here only the "MCP
+  Server API Key", no consumer found); the OAuth MCP connector and the credentials are not
+  affected.
+- **automated review (Must Have)**: the docs first said only sessions
+  were affected (API keys too); `AGENTS.md` bootstrap and `BACKUP.md`
+  restore prerequisites lacked the new required variable. Fixed.
+- **Not done yet**: Pi deploy after the merge (`git pull`,
+  `docker compose up -d n8n`), then the editor login and connector
+  check.
+- **Refs**: #143

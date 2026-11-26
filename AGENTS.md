@@ -103,6 +103,7 @@ Never skip a required check with `--no-verify`, `--admin`, or by editing branch 
 cd services/n8n
 cp .env.example .env
 sed -i "s|^N8N_ENCRYPTION_KEY=.*|N8N_ENCRYPTION_KEY=$(openssl rand -hex 32)|" .env
+sed -i "s|^N8N_USER_MANAGEMENT_JWT_SECRET=.*|N8N_USER_MANAGEMENT_JWT_SECRET=$(openssl rand -hex 32)|" .env
 # Fill N8N_HOST, N8N_WEBHOOK_URL and CLOUDFLARE_TUNNEL_TOKEN in .env (services/n8n/README.md, ADR 0012)
 docker compose up -d
 docker compose ps
