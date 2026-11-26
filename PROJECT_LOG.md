@@ -2419,3 +2419,17 @@ was done and why, by date.
   `docker compose up -d n8n`), then the editor login and connector
   check.
 - **Refs**: #143
+
+### Deployment: PR #308 on the Pi (#143)
+
+- **Applied, 2026-11-26**: Pi clone fast-forwarded to `182f6f4`,
+  `bb-homelab-n8n` recreated, healthy, `N8N_USER_MANAGEMENT_JWT_SECRET`
+  present in its environment; `/healthz` 200, `/mcp-server/http` 401
+  without a token; the OAuth MCP connector still answers
+  (`search_projects`).
+- **Not done yet**: owner login to the editor with the new JWT secret.
+- **Follow-ups from the review of the n8n workflows and bots**: #309
+  (secure the public feedback webhook, error workflow, export),
+  benoit-bremaud/n8n-kaggle-watcher#72 (relaunch or retire the stopped
+  watcher).
+- **Refs**: #143, PR #308, #309, benoit-bremaud/n8n-kaggle-watcher#72
