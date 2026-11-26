@@ -2433,3 +2433,19 @@ was done and why, by date.
   benoit-bremaud/n8n-kaggle-watcher#72 (relaunch or retire the stopped
   watcher).
 - **Refs**: #143, PR #308, #309, benoit-bremaud/n8n-kaggle-watcher#72
+
+### PR #324 — docs(decisions): add ADR 0014 role of Forgejo against GitHub
+
+- **What**: `docs/decisions/0014-forgejo-role-against-github.md`
+  records the owner decisions of 2026-11-26 (epic #262): Forgejo is
+  the main forge of every active personal repository and of
+  `StudioB22`; everything private, no push mirror to GitHub (MCDA:
+  private + mirror 445, all private 375, stay on GitHub 350; owner
+  chose all private, portfolio visibility loss accepted); Renovate
+  replaces Dependabot (#297); Forgejo boards replace Projects v2
+  (#316; Forgejo boards 410, Plane 325, Linear 280); full history,
+  issues and PRs with their numbers, labels, milestones and releases
+  migrated; GitHub copies archived read-only and private, not deleted (#321).
+- **Follow-up**: the global "public by default" rule (ADR-0005) is
+  amended in benoit-bremaud/agents-skills#582; this repository's own "public" statements in #323; GitHub Packages added to #313.
+- **Refs**: #281, #262
