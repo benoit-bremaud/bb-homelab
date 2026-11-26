@@ -2434,7 +2434,7 @@ was done and why, by date.
   watcher).
 - **Refs**: #143, PR #308, #309, benoit-bremaud/n8n-kaggle-watcher#72
 
-### PR: ADR 0014 role of Forgejo against GitHub (#281)
+### PR #324 — docs(decisions): add ADR 0014 role of Forgejo against GitHub
 
 - **What**: `docs/decisions/0014-forgejo-role-against-github.md`
   records the owner decisions of 2026-11-26 (epic #262): Forgejo is
