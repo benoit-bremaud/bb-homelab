@@ -2447,5 +2447,5 @@ was done and why, by date.
   issues and PRs with their numbers, labels, milestones and releases
   migrated; GitHub copies archived, not deleted (#321).
 - **Follow-up**: the global "public by default" rule (ADR-0005) is
-  amended in benoit-bremaud/agents-skills#582.
+  amended in benoit-bremaud/agents-skills#582; this repository's own "public" statements in #323; GitHub Packages added to #313.
 - **Refs**: #281, #262

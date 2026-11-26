@@ -12,16 +12,20 @@ cadre (issue #281).
 
 Inventaire du 2026-11-26 :
 
-- 137 dépôts sur le compte `benoit-bremaud` (environ 1,16 Go), plus de
-  50 dans l'organisation `StudioB22`.
+- 137 dépôts sur le compte `benoit-bremaud` (environ 1,16 Go), 157 dans
+  l'organisation `StudioB22`, dont une cinquantaine d'actifs.
 - 84 projets GitHub Projects v2 ; 31 clones locaux portent encore
   `.github/workflows/`.
-- Environ 60 dépôts publics, conformément à la règle « public par
+- 74 dépôts publics, dont une soixantaine dans le périmètre de la
+  migration, conformément à la règle « public par
   défaut » de l'ADR-0005 des règles globales du propriétaire (dépôt
   agents-skills).
 
 Les décisions ci-dessous ont été prises par le propriétaire le
-2026-11-26 (section « Decisions » de #262). Les matrices MCDA (poids
+2026-11-26 : périmètre, contenu, tableaux et accès dans la section
+« Decisions » de #262 ; visibilité, miroir, Renovate et totaux MCDA
+en séance, repris dans benoit-bremaud/agents-skills#582 pour la
+visibilité. Les matrices MCDA (poids
 /100, notes 0–5, total /500) sont résumées par leurs totaux.
 
 ## Decision
@@ -60,23 +64,26 @@ Les décisions ci-dessous ont été prises par le propriétaire le
      | C. Linear | 280 |
 
      Linear est rejeté : service SaaS, sans intégration Forgejo.
-   - GitHub Pages et les déploiements liés à GitHub sont inventoriés
-     dans #313 avant toute migration du dépôt concerné.
+   - GitHub Pages, GitHub Packages et les déploiements liés à GitHub
+     sont inventoriés dans #313 avant toute migration du dépôt
+     concerné.
 
 4. **Contenu migré** : historique git complet, toutes les issues et
    pull requests (numéros conservés), labels, milestones ; releases
    pour les cinq dépôts qui en ont. Aucun dépôt n'utilise LFS ; les
    wikis seulement là où l'inventaire trouve du contenu.
 
-5. **Les copies GitHub sont archivées, pas supprimées** (#321), une
-   fois la migration de chaque dépôt vérifiée.
+5. **Les copies GitHub sont archivées en lecture seule et rendues
+   privées, pas supprimées** (#321), une fois que la copie Forgejo de
+   chaque dépôt a passé un test de restauration.
 
 ## Consequences
 
 **Positive:**
 
 - Une seule forge principale, sous contrôle du propriétaire, sans
-  dépendance à un service tiers ni jeton GitHub sur le Pi.
+  dépendance à un service tiers ni jeton GitHub permanent sur le Pi
+  (un jeton en lecture le temps de chaque migration, #315).
 - Le code, les issues et les tableaux vivent au même endroit.
 - Aucune copie publique à garder cohérente.
 
@@ -84,34 +91,37 @@ Les décisions ci-dessous ont été prises par le propriétaire le
 
 - Environ 60 dépôts publics quittent le profil public : le portfolio
   GitHub perd sa visibilité, les liens externes (CV, posts, README
-  d'autres dépôts) cassent ou pointent vers des copies archivées.
-- Le Pi devient le point unique de défaillance de toutes les forges :
+  d'autres dépôts) cassent.
+- Le Pi devient le point unique de défaillance de tous les dépôts :
   une instance, SQLite, une sauvegarde par nuit. La capacité disque
   (#312), la perte de données acceptée et le chemin de reprise sont à
-  fixer avant la vague 1.
+  fixer avant le pilote (#306).
 - `just gate` et `just merge` écrivent un statut de commit et
   fusionnent via l'API GitHub : leur portage vers l'API Forgejo
   (#311) bloque la migration de tout dépôt attesté.
 - Les skills, hooks et serveurs MCP qui supposent GitHub doivent
-  gagner un chemin Forgejo (benoit-bremaud/agents-skills#563).
-- Les 31 clones portant `.github/workflows/` seraient exécutés par
+  gagner un chemin Forgejo (#320 ; première brique :
+  benoit-bremaud/agents-skills#563).
+- Les workflows des 31 clones portant `.github/workflows/` seraient exécutés par
   Forgejo Actions si un runner était branché : à nettoyer avant
   migration (#314).
 - Ce dépôt est public depuis le 2026-06-16 ; il passera privé à sa
-  propre migration.
+  propre migration ; ses mentions « dépôt public » seront mises à
+  jour dans #323.
 
 ## Alternatives considered
 
 - **A. Privé sur Forgejo + miroir push vers GitHub (445)** : garde le
-  portfolio, mais exige un jeton d'écriture GitHub stocké sur la forge
-  et maintient deux copies ; écarté par le propriétaire.
+  portfolio ; coût : un jeton d'écriture GitHub sur la forge et deux
+  copies à maintenir. Écarté par le propriétaire malgré son score.
 - **C. Rester sur GitHub (350)** : ne répond pas au besoin de contrôle
   qui a motivé l'ADR 0011.
 - **Plane et Linear** pour les tableaux : voir le point 3.
 
 ## Refs
 
-- Issues #281, #262 (epic), #297, #311, #312, #313, #314, #316, #321
+- Issues #281, #262 (epic), #297, #311, #312, #313, #314, #315, #316, #320,
+  #321, #323
 - [ADR 0011](0011-forgejo-git-forge.md) — Forgejo comme forge git
   auto-hébergée
 - benoit-bremaud/agents-skills#563 — chemin Forgejo pour l'outillage
