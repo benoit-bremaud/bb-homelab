@@ -46,8 +46,8 @@ Pre-requisite: Docker + Compose v2 installed by `bootstrap/bootstrap.sh`.
 cd services/n8n
 cp .env.example .env
 # Replace the empty N8N_ENCRYPTION_KEY= and N8N_USER_MANAGEMENT_JWT_SECRET=
-# placeholders in-place (avoids
-# leaving the original empty line sitting above a duplicate).
+# placeholders in-place (avoids leaving the original empty lines sitting
+# above duplicates).
 sed -i "s|^N8N_ENCRYPTION_KEY=.*|N8N_ENCRYPTION_KEY=$(openssl rand -hex 32)|" .env
 sed -i "s|^N8N_USER_MANAGEMENT_JWT_SECRET=.*|N8N_USER_MANAGEMENT_JWT_SECRET=$(openssl rand -hex 32)|" .env
 # Renseigner dans .env : N8N_HOST, N8N_WEBHOOK_URL et
